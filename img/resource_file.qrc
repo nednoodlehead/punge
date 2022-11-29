@@ -1,0 +1,17 @@
+<RCC>
+  <qresource prefix="newPrefix">
+    <file>img/setting_icon_hover_test-01.png</file>
+    <file>img/resized hamburger menu.png</file>
+    <file>img/setting_icon_new_hover-01.png</file>
+    <file>img/scrubbing_cursor-01.png</file>
+    <file>img/defined background.png</file>
+    <file>img/setting_icon_new-01.png</file>
+    <file>img/palceholder_bg.jpg</file>
+    <file>img/punge_left_new.png</file>
+    <file>img/punge_pause_new.png</file>
+    <file>img/punge_play_new.png</file>
+    <file>img/punge_right_new.png</file>
+    <file>img/shuffle_off_new.png</file>
+    <file>img/shuffle_on_new.png</file>
+  </qresource>
+</RCC>
