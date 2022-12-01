@@ -4,3 +4,9 @@
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/punge.iml
 /.idea/vcs.xml
+
+
+# Added by cargo
+
+/target
+/.github/workflows/CI.yml
