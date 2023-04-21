@@ -1,6 +1,7 @@
 use std::fmt;
 use chrono::{DateTime, Local, NaiveDate};
-
+use rusqlite::{Connection, Error, types::FromSqlError};
+use thiserror::Error as terror;
 
 // object that will be returned, used to input into the database, this object is the
 // object that will be returned from the whole process of deciding what is title, auth, album...
@@ -9,6 +10,7 @@ pub struct PungeMusicObject {
     pub author: String,
     pub album: String,
     pub features: String,
+    pub length: usize,  // length in seconds
     pub savelocationmp3: String,
     pub savelocationjpg: String,
     pub datedownloaded: NaiveDate,
@@ -34,7 +36,8 @@ pub struct UserPlaylist {
     pub datecreated: NaiveDate,
     pub songcount: u16,
     pub totaltime: usize,  // updated each time a song is added or removed. in seconds
-    pub isautogen: bool
+    pub isautogen: bool,
+    pub uniqueid: String
 }
 
 impl fmt::Debug for Playlist {
@@ -42,3 +45,21 @@ impl fmt::Debug for Playlist {
         write!(f, "title: {} \nauthor: {}\nlength: {}\nlinks: {:?}", &self.title, &self.author, &self.length, &self.links)
     }
 }
+
+impl fmt::Debug for PungeMusicObject {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "title: {} author: {} unique: {}", &self.title, self.author, self.uniqueid)
+    }
+}
+
+// wrap the two errors that can arise from database problems into our own custom enum
+
+#[derive(Debug, terror)]
+pub enum DatabaseErrors {
+    #[error("Rusqlite error: {0}")]
+    RusqliteError(#[from] Error),
+    #[error("FromSql error: {0}")]
+    FromSqlError(#[from] FromSqlError),
+}
+
+
