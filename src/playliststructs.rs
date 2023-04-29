@@ -1,6 +1,6 @@
-use std::fmt;
 use chrono::{DateTime, Local, NaiveDate};
-use rusqlite::{Connection, Error, types::FromSqlError};
+use rusqlite::{types::FromSqlError, Connection, Error};
+use std::fmt;
 use thiserror::Error as terror;
 
 // object that will be returned, used to input into the database, this object is the
@@ -10,7 +10,7 @@ pub struct PungeMusicObject {
     pub author: String,
     pub album: String,
     pub features: String,
-    pub length: usize,  // length in seconds
+    pub length: String, // like: 3:20, 12:10
     pub savelocationmp3: String,
     pub savelocationjpg: String,
     pub datedownloaded: NaiveDate,
@@ -18,37 +18,45 @@ pub struct PungeMusicObject {
     pub ischild: bool, // used in reconstruction of lost music that exists in DB
     pub uniqueid: String,
     pub plays: u16,
-    pub weight: i16
+    pub weight: i16,
 }
 
 pub struct Playlist {
     pub links: Vec<String>,
     pub title: String,
     pub author: String,
-    pub length: u64
+    pub length: u64,
 }
 
 // this is the struct for making a playlist within the app. Not to be confused with playlist from youtube
 pub struct UserPlaylist {
     pub title: String,
     pub description: String,
-    pub thumbnail: String,  // path to thumbnail
+    pub thumbnail: String, // path to thumbnail
     pub datecreated: NaiveDate,
     pub songcount: u16,
-    pub totaltime: usize,  // updated each time a song is added or removed. in seconds
+    pub totaltime: usize, // updated each time a song is added or removed. in seconds
     pub isautogen: bool,
-    pub uniqueid: String
+    pub uniqueid: String,
 }
 
 impl fmt::Debug for Playlist {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "title: {} \nauthor: {}\nlength: {}\nlinks: {:?}", &self.title, &self.author, &self.length, &self.links)
+        write!(
+            f,
+            "title: {} \nauthor: {}\nlength: {}\nlinks: {:?}",
+            &self.title, &self.author, &self.length, &self.links
+        )
     }
 }
 
 impl fmt::Debug for PungeMusicObject {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "title: {} author: {} unique: {}", &self.title, self.author, self.uniqueid)
+        write!(
+            f,
+            "title: {} author: {} unique: {}",
+            &self.title, self.author, self.uniqueid
+        )
     }
 }
 
@@ -61,5 +69,3 @@ pub enum DatabaseErrors {
     #[error("FromSql error: {0}")]
     FromSqlError(#[from] FromSqlError),
 }
-
-
