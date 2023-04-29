@@ -1,16 +1,16 @@
-use rusqlite::{Connection, Params, params};
 use crate::playliststructs::DatabaseErrors;
+use rusqlite::{params, Connection, Params};
 // Creates the file with the two default tables :D
 
-pub fn create_table_defaults() -> Result<(), DatabaseErrors>{
+pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
     conn.execute(
-            "CREATE TABLE main (
+        "CREATE TABLE main (
             title TEXT,
             author TEXT,
             album TEXT,
             features TEXT,
-            length SMALLINT,
+            length TEXT,
             savelocationmp3 TEXT,
             savelocationjpg TEXT,
             datedownloaded DATE,
@@ -20,10 +20,10 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors>{
             plays SMALLINT,
             weight SMALLINT
             )",
-            params![]
-        )?;
-        conn.execute(
-            "CREATE TABLE metadata (
+        params![],
+    )?;
+    conn.execute(
+        "CREATE TABLE metadata (
             title TEXT,
             description TEXT,
             thumbnail TEXT,
@@ -33,16 +33,14 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors>{
             isautogen BOOL,
             playlist_id TEXT
             )",
-            params![]
-        )?;
-        conn.execute(
-            "CREATE TABLE playlist_relations (
+        params![],
+    )?;
+    conn.execute(
+        "CREATE TABLE playlist_relations (
             playlist_id TEXT,
             song_id TEXT
             )",
-            params![]
-        )?;
-        Ok(())
-
+        params![],
+    )?;
+    Ok(())
 }
-
