@@ -1,9 +1,8 @@
+use crate::playliststructs::{DatabaseErrors, PungeMusicObject};
+use rusqlite::{params, Connection};
 use std::fs::symlink_metadata;
-use rusqlite::{Connection, params};
-use crate::playliststructs::{PungeMusicObject, DatabaseErrors};
 
-
-pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject>, DatabaseErrors>{
+pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     // gets all songs from given table
     let conn = Connection::open("main.db")?;
     let mut stmt = conn.prepare("SELECT title, author, album, features,
@@ -32,7 +31,8 @@ pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject
     for item in punge_obj_iter {
         ret_vec.push(item?)
     }
-    conn.close().map_err(|(_, err) | err)?;
+    drop(stmt);
+    conn.close().map_err(|(_, err)| err)?;
     Ok(ret_vec)
 }
 
