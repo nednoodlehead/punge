@@ -65,6 +65,19 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     Ok(ret_vec)
 }
 
+pub fn exists_in_db(uniqueid: String) -> bool {
+    let conn = Connection::open("main.db").unwrap();
+    let mut stmt = conn.prepare("SELECT title FROM main WHERE uniqueid = ?").unwrap();
+    let mut rows = stmt.query(&[&uniqueid]).unwrap();
+    let val =     rows.next().unwrap().is_some();
+    drop(rows); // drop to release borrown on stmt
+    drop(stmt); // explicitly drop stmt to release borrow on conn
+    conn.close().unwrap();
+    val
+
+}
+
+
 // pub fn get_from_text_query(table: &str, query: &str) -> Vec<PungeMusicObject> {
 //     // user input searches through all table entries, and if title, author, album, features.
 //     // if it contains the user query, return that record
