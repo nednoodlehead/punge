@@ -19,7 +19,7 @@ mod decide_youtube;
 use decide_youtube::{begin_playlist, begin_single};
 
 // this is the function exposed to the rest of the app. It takes in the youtube link
-pub fn intro(link: &str) {
+pub fn download(link: &str) {
     // need to check if the file exists
     if link.contains("list=") {
         let vid = playlist_parse(link);
@@ -51,7 +51,6 @@ fn single_parse(single_link: &str) -> rustube::blocking::video::Video {
     let url = rustube::url::Url::parse(single_link).unwrap();
 
     let vid = rustube::blocking::Video::from_url(&url).unwrap();
-    let info = vid.video_details();
     vid
 }
 
