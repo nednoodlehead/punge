@@ -55,10 +55,17 @@ fn json_to_vec_videos(to_json: &String) -> Vec<String> {
     let bruh = vals.as_array().unwrap();
     for video in bruh {
         let id = &video["playlistPanelVideoRenderer"]["videoId"]
-            .as_str()
-            .unwrap();
-        let string = format!["https://youtube.com/watch?v={}", id];
-        return_vals.push(string)
+            .as_str();
+        match id {
+            Some(t) => {
+                let string = format!["https://youtube.com/watch?v={}", t];
+            return_vals.push(string)
+            }
+            None => {
+                println!("Unable to fetch video data. Ignoring.")
+            }
+        }
+
     }
     return return_vals;
 }
