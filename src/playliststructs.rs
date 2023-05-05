@@ -60,6 +60,7 @@ impl fmt::Debug for PungeMusicObject {
     }
 }
 
+
 // wrap the two errors that can arise from database problems into our own custom enum
 
 #[derive(Debug, terror)]
@@ -68,4 +69,8 @@ pub enum DatabaseErrors {
     RusqliteError(#[from] Error),
     #[error("FromSql error: {0}")]
     FromSqlError(#[from] FromSqlError),
+    #[error("File Already Exists")]
+    FileExistsError,  // used when a song already downloaded
+    #[error("UniqueID Already Present in DB")]
+    DatabaseEntryExistsError  // used when the unique id is already present in the database
 }
