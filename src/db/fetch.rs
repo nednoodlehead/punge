@@ -69,12 +69,18 @@ pub fn exists_in_db(uniqueid: String) -> bool {
     let conn = Connection::open("main.db").unwrap();
     let mut stmt = conn.prepare("SELECT title FROM main WHERE uniqueid = ?").unwrap();
     let mut rows = stmt.query(&[&uniqueid]).unwrap();
-    let val =     rows.next().unwrap().is_some();
+    let val = rows.next().unwrap().is_some();
     drop(rows); // drop to release borrown on stmt
     drop(stmt); // explicitly drop stmt to release borrow on conn
     conn.close().unwrap();
     val
+}
 
+pub fn get_uuid_from_name(playlist_name: String) -> String {
+    let conn = Connection::open("main.db").unwrap();
+    let mut stmt = conn.prepare("SELECT playlist_id from metadata WHERE title = ?").unwrap();
+    let mut result: String = stmt.query_row(&[&playlist_name], |row| row.get(0)).unwrap();
+    result
 }
 
 
