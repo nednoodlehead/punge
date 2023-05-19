@@ -2,6 +2,7 @@ use chrono::{DateTime, Local, NaiveDate};
 use rusqlite::{types::FromSqlError, Connection, Error};
 use std::fmt;
 use thiserror::Error as terror;
+use uuid::Uuid;
 
 // object that will be returned, used to input into the database, this object is the
 // object that will be returned from the whole process of deciding what is title, auth, album...
@@ -40,6 +41,18 @@ pub struct UserPlaylist {
     pub uniqueid: String,
 }
 
+impl UserPlaylist {
+    pub fn new(title: String,
+           description: String,
+           thumbnail: String,
+            isautogen: bool
+            ) -> UserPlaylist {
+        UserPlaylist {
+            title, description, thumbnail, datecreated: Local::now().date_naive(), songcount: 0,
+            totaltime: 0, isautogen, uniqueid: Uuid::new_v4().to_string()
+        }
+    }
+}
 impl fmt::Debug for Playlist {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
