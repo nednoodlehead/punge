@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
 use std::sync::{mpsc::Receiver, mpsc};
 use crate::playliststructs::PungeMusicObject;
+use crate::fetch;
 
 
 pub enum Command {
@@ -44,12 +45,16 @@ impl MusicPlayer {
     }
 
 
-    fn fetch_and_update_playlist(&mut self, playlist_name: String) {}
+    fn fetch_and_update_playlist(&mut self, playlist_name: String) {
+        let playlist_uuid = fetch::get_uuid_from_name(playlist_name);
+        let new = fetch::get_all_from_playlist(playlist_uuid.as_str()).expect("playlist uuid not found:");
+        self.list = new;
+    }
 
     fn play_from_time(&mut self, time: usize) {
         // used when playing from the scrubbing bar
         self.sink.stop(); // is this required? likely
-        self.sink.append(read_from_time(self.list[self.count as usize].mp3.clone(), time));
+        self.sink.append(read_from_time(self.list[self.count as usize].savelocationmp3.clone(), time));
         self.play_loop()
     }
     // maybe revise at some point i dont think there needs to be so many receiver checks .. fine for now
@@ -65,7 +70,7 @@ impl MusicPlayer {
                 self.count = 0
             }
             if self.sink.empty() {
-                self.sink.append(read_file_from_beginning(self.list[self.count as usize].mp3.clone()));
+                self.sink.append(read_file_from_beginning(self.list[self.count as usize].savelocationmp3.clone()));
             }
             self.sink.play();
             while !self.sink.empty() {
