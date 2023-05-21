@@ -4,7 +4,7 @@ from PyQt5 import QtCore as qtc
 
 
 # class used to hold the entire ui... if that makes sense. instance of this class = ui
-class PungeMainWindow(qtw.QWidget, Ui_MainWindow):
+class PungeMainWindow(qtw.QMainWindow, Ui_MainWindow):
 
     def __init__(self, parent=None):
         super(PungeMainWindow, self).__init__(parent=parent)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file './venv/Lib/site-packages/QtDesigner/punge_gui.ui'
+# Form implementation generated from reading ui file 'F:\Projects\Python Projects\punge\venv\Lib\site-packages\QtDesigner\punge_gui_exp.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
 #
@@ -29,7 +29,7 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName("centralwidget")
         self.stackedWidget = QtWidgets.QStackedWidget(self.centralwidget)
         self.stackedWidget.setEnabled(True)
-        self.stackedWidget.setGeometry(QtCore.QRect(-10, -30, 1070, 690))
+        self.stackedWidget.setGeometry(QtCore.QRect(-10, -30, 1071, 691))
         self.stackedWidget.setMinimumSize(QtCore.QSize(100, 0))
         self.stackedWidget.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.stackedWidget.setAutoFillBackground(False)
@@ -89,10 +89,197 @@ class Ui_MainWindow(object):
         self.settings_page = QtWidgets.QWidget()
         self.settings_page.setStyleSheet("background-color: rgb(39, 44, 52)")
         self.settings_page.setObjectName("settings_page")
-        self.label_2 = QtWidgets.QLabel(self.settings_page)
-        self.label_2.setGeometry(QtCore.QRect(520, 280, 201, 141))
-        self.label_2.setStyleSheet("color:white")
+        self.setting_scroll_area = QtWidgets.QScrollArea(self.settings_page)
+        self.setting_scroll_area.setGeometry(QtCore.QRect(9, 29, 1071, 681))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.setting_scroll_area.sizePolicy().hasHeightForWidth())
+        self.setting_scroll_area.setSizePolicy(sizePolicy)
+        self.setting_scroll_area.setStyleSheet("QscrollArea {\n"
+"    border: none;\n"
+"}\n"
+"QScrollArea QWidget {\n"
+"qproperty-alignment: \'AlignCenter\';\n"
+"}")
+        self.setting_scroll_area.setWidgetResizable(True)
+        self.setting_scroll_area.setObjectName("setting_scroll_area")
+        self.scroll_area_container = QtWidgets.QWidget()
+        self.scroll_area_container.setEnabled(True)
+        self.scroll_area_container.setGeometry(QtCore.QRect(0, 0, 1069, 679))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.MinimumExpanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.scroll_area_container.sizePolicy().hasHeightForWidth())
+        self.scroll_area_container.setSizePolicy(sizePolicy)
+        self.scroll_area_container.setMinimumSize(QtCore.QSize(1, 1))
+        self.scroll_area_container.setLayoutDirection(QtCore.Qt.LeftToRight)
+        self.scroll_area_container.setStyleSheet("border: none;")
+        self.scroll_area_container.setObjectName("scroll_area_container")
+        self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.scroll_area_container)
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
+        self.settings_label = QtWidgets.QLabel(self.scroll_area_container)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.settings_label.sizePolicy().hasHeightForWidth())
+        self.settings_label.setSizePolicy(sizePolicy)
+        self.settings_label.setStyleSheet("QLabel {\n"
+"    font-size: 50px;\n"
+"    color: white;\n"
+"    padding: 10px;\n"
+"    border-bottom: 2px solid #FFFFFF;\n"
+"    text-align: center;\n"
+"    text-shadow: 2px;\n"
+"\n"
+"}")
+        self.settings_label.setObjectName("settings_label")
+        self.verticalLayout_3.addWidget(self.settings_label)
+        self.change_download_location_frame = QtWidgets.QFrame(self.scroll_area_container)
+        self.change_download_location_frame.setStyleSheet("border: 10px;")
+        self.change_download_location_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.change_download_location_frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.change_download_location_frame.setObjectName("change_download_location_frame")
+        self.change_download_location_label = QtWidgets.QLabel(self.change_download_location_frame)
+        self.change_download_location_label.setGeometry(QtCore.QRect(70, 20, 241, 71))
+        self.change_download_location_label.setStyleSheet("QLabel {\n"
+"    font-size: 15px;\n"
+"    color: #aba9a9;\n"
+"    padding: 10px;\n"
+"    text-align: center;\n"
+"    text-shadow: 2px;\n"
+"\n"
+"}")
+        self.change_download_location_label.setObjectName("change_download_location_label")
+        self.frame = QtWidgets.QFrame(self.change_download_location_frame)
+        self.frame.setGeometry(QtCore.QRect(100, 70, 540, 90))
+        self.frame.setStyleSheet("QFrame {\n"
+"border: 3px solid #969393;\n"
+"border-radius: 8px;\n"
+"}")
+        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame.setObjectName("frame")
+        self.lineEdit = QtWidgets.QLineEdit(self.frame)
+        self.lineEdit.setGeometry(QtCore.QRect(80, 20, 371, 20))
+        self.lineEdit.setStyleSheet("background-color: #303030;\n"
+"color: white;")
+        self.lineEdit.setObjectName("lineEdit")
+        self.label_2 = QtWidgets.QLabel(self.frame)
+        self.label_2.setGeometry(QtCore.QRect(10, 20, 61, 20))
+        self.label_2.setStyleSheet("QLabel {\n"
+"border: none;\n"
+"color: #aba9a9;\n"
+"}")
         self.label_2.setObjectName("label_2")
+        self.label_3 = QtWidgets.QLabel(self.frame)
+        self.label_3.setGeometry(QtCore.QRect(10, 50, 61, 20))
+        self.label_3.setStyleSheet("QLabel {\n"
+"border: none;\n"
+"color: #aba9a9;\n"
+"}")
+        self.label_3.setObjectName("label_3")
+        self.lineEdit_2 = QtWidgets.QLineEdit(self.frame)
+        self.lineEdit_2.setGeometry(QtCore.QRect(80, 50, 371, 20))
+        self.lineEdit_2.setStyleSheet("background-color: #303030;\n"
+"color: white;")
+        self.lineEdit_2.setObjectName("lineEdit_2")
+        self.audio_folder_button = QtWidgets.QPushButton(self.frame)
+        self.audio_folder_button.setGeometry(QtCore.QRect(460, 20, 30, 20))
+        self.audio_folder_button.setStyleSheet("QPushButton {\n"
+"border: none;\n"
+"background-image: url(:/newPrefix/folder small.png);\n"
+"border-style: sunken;\n"
+" background-origin: content;\n"
+"background-size: contain;\n"
+"}")
+        self.audio_folder_button.setText("")
+        self.audio_folder_button.setObjectName("audio_folder_button")
+        self.thumbnail_button = QtWidgets.QPushButton(self.frame)
+        self.thumbnail_button.setGeometry(QtCore.QRect(460, 50, 30, 20))
+        self.thumbnail_button.setStyleSheet("QPushButton {\n"
+"border: none;\n"
+"background-image: url(:/newPrefix/folder small.png);\n"
+"border-style: sunken;\n"
+" background-origin: content;\n"
+"background-size: contain;\n"
+"}")
+        self.thumbnail_button.setText("")
+        self.thumbnail_button.setObjectName("thumbnail_button")
+        self.frame_2 = QtWidgets.QFrame(self.change_download_location_frame)
+        self.frame_2.setGeometry(QtCore.QRect(0, 270, 1051, 500))
+        self.frame_2.setMinimumSize(QtCore.QSize(500, 500))
+        self.frame_2.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame_2.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame_2.setObjectName("frame_2")
+        self.frame_3 = QtWidgets.QFrame(self.frame_2)
+        self.frame_3.setGeometry(QtCore.QRect(100, 90, 150, 90))
+        self.frame_3.setStyleSheet("QFrame {\n"
+"border: 3px solid #969393;\n"
+"border-radius: 8px;\n"
+"}")
+        self.frame_3.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame_3.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame_3.setObjectName("frame_3")
+        self.doubleSpinBox = QtWidgets.QDoubleSpinBox(self.frame_3)
+        self.doubleSpinBox.setGeometry(QtCore.QRect(80, 30, 62, 22))
+        self.doubleSpinBox.setStyleSheet("QDoubleSpinBox {\n"
+"background-color: #303030;\n"
+"color: white;\n"
+"border: 2px solid black;\n"
+"}\n"
+"")
+        self.doubleSpinBox.setObjectName("doubleSpinBox")
+        self.label_8 = QtWidgets.QLabel(self.frame_3)
+        self.label_8.setGeometry(QtCore.QRect(10, 35, 47, 13))
+        self.label_8.setStyleSheet("QLabel {\n"
+"border: none;\n"
+"color: #aba9a9;\n"
+"}")
+        self.label_8.setObjectName("label_8")
+        self.label_6 = QtWidgets.QLabel(self.frame_2)
+        self.label_6.setGeometry(QtCore.QRect(80, 40, 271, 61))
+        self.label_6.setStyleSheet("QLabel {\n"
+"    font-size: 15px;\n"
+"    color: #aba9a9;\n"
+"    padding: 10px;\n"
+"    text-align: center;\n"
+"    text-shadow: 2px;\n"
+"\n"
+"}")
+        self.label_6.setObjectName("label_6")
+        self.frame_4 = QtWidgets.QFrame(self.frame_2)
+        self.frame_4.setGeometry(QtCore.QRect(280, 90, 150, 90))
+        self.frame_4.setStyleSheet("QFrame {\n"
+"border: 3px solid #969393;\n"
+"border-radius: 8px;\n"
+"}")
+        self.frame_4.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame_4.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame_4.setObjectName("frame_4")
+        self.doubleSpinBox_4 = QtWidgets.QDoubleSpinBox(self.frame_4)
+        self.doubleSpinBox_4.setGeometry(QtCore.QRect(80, 30, 62, 22))
+        self.doubleSpinBox_4.setStyleSheet("QDoubleSpinBox {\n"
+"background-color: #303030;\n"
+"color: white;\n"
+"border: 2px solid black;\n"
+"}\n"
+"\n"
+"\n"
+"")
+        self.doubleSpinBox_4.setObjectName("doubleSpinBox_4")
+        self.label_9 = QtWidgets.QLabel(self.frame_4)
+        self.label_9.setGeometry(QtCore.QRect(10, 35, 47, 13))
+        self.label_9.setStyleSheet("QLabel {\n"
+"border: none;\n"
+"color: #aba9a9;\n"
+"}")
+        self.label_9.setObjectName("label_9")
+        self.label_6.raise_()
+        self.frame_3.raise_()
+        self.frame_4.raise_()
+        self.verticalLayout_3.addWidget(self.change_download_location_frame)
+        self.setting_scroll_area.setWidget(self.scroll_area_container)
         self.stackedWidget.addWidget(self.settings_page)
         self.right_frame = QtWidgets.QFrame(self.centralwidget)
         self.right_frame.setGeometry(QtCore.QRect(1060, 0, 180, 660))
@@ -122,10 +309,10 @@ class Ui_MainWindow(object):
         self.home_button.setGeometry(QtCore.QRect(0, 0, 180, 50))
         self.home_button.setStyleSheet("color: rgb(148, 148, 148)")
         self.home_button.setObjectName("home_button")
-        self.scrollArea = QtWidgets.QScrollArea(self.right_frame)
-        self.scrollArea.setGeometry(QtCore.QRect(0, 215, 180, 445))
-        self.scrollArea.setMinimumSize(QtCore.QSize(0, 100))
-        self.scrollArea.setStyleSheet("QScrollArea {\n"
+        self.playlist_scroll_area = QtWidgets.QScrollArea(self.right_frame)
+        self.playlist_scroll_area.setGeometry(QtCore.QRect(0, 215, 180, 445))
+        self.playlist_scroll_area.setMinimumSize(QtCore.QSize(0, 100))
+        self.playlist_scroll_area.setStyleSheet("QScrollArea {\n"
 "border: 0px\n"
 "}\n"
 "\n"
@@ -133,16 +320,16 @@ class Ui_MainWindow(object):
 "height: 0px;\n"
 "width: 0px;\n"
 "}")
-        self.scrollArea.setFrameShadow(QtWidgets.QFrame.Plain)
-        self.scrollArea.setLineWidth(0)
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setObjectName("scrollArea")
+        self.playlist_scroll_area.setFrameShadow(QtWidgets.QFrame.Plain)
+        self.playlist_scroll_area.setLineWidth(0)
+        self.playlist_scroll_area.setWidgetResizable(True)
+        self.playlist_scroll_area.setObjectName("playlist_scroll_area")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
         self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 180, 445))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        self.playlist_scroll_area.setWidget(self.scrollAreaWidgetContents)
         self.menu_playlist_divider = QtWidgets.QFrame(self.right_frame)
         self.menu_playlist_divider.setGeometry(QtCore.QRect(0, 200, 180, 20))
         self.menu_playlist_divider.setStyleSheet("color: #2D334E")
@@ -161,41 +348,55 @@ class Ui_MainWindow(object):
         self.left_skip_button = QtWidgets.QPushButton(self.centralwidget)
         self.left_skip_button.setGeometry(QtCore.QRect(425, 675, 110, 50))
         self.left_skip_button.setStyleSheet("QPushButton {\n"
-"image: url(:/newPrefix/img/punge_left_new.png);\n"
+"border: none;\n"
+"background-image: url(:/newPrefix/img/punge_left_new.png);\n"
 "border-style: sunken;\n"
-"background-orgin: content;\n"
+" background-origin: content;\n"
 "}\n"
 "QPushButton:pressed {\n"
-"    padding-bottom: 2px;\n"
-"    padding-left: 2px;\n"
+"    padding-top: 4px;\n"
+"    padding-bottom: 0px;\n"
 "}")
         self.left_skip_button.setText("")
         self.left_skip_button.setObjectName("left_skip_button")
         self.right_skip_button = QtWidgets.QPushButton(self.centralwidget)
         self.right_skip_button.setGeometry(QtCore.QRect(645, 675, 110, 50))
         self.right_skip_button.setStyleSheet("QPushButton {\n"
-"image: url(:/newPrefix/img/punge_right_new.png);\n"
+"border: none;\n"
+"background-image: url(:/newPrefix/img/punge_right_new.png);\n"
 "border-style: sunken;\n"
-"background-orgin: content;\n"
+" background-origin: content;\n"
 "}\n"
 "QPushButton:pressed {\n"
-"    padding-bottom: 2px;\n"
-"    padding-left: 2px;\n"
+"    padding-top: 4px;\n"
+"    padding-bottom: 0px;\n"
 "}")
         self.right_skip_button.setText("")
         self.right_skip_button.setObjectName("right_skip_button")
         self.shuffle_button = QtWidgets.QPushButton(self.centralwidget)
-        self.shuffle_button.setGeometry(QtCore.QRect(910, 670, 55, 55))
-        self.shuffle_button.setStyleSheet("border-image: url(:/newPrefix/img/shuffle_off_new.png)")
+        self.shuffle_button.setGeometry(QtCore.QRect(910, 690, 45, 45))
+        self.shuffle_button.setStyleSheet("QPushButton {\n"
+"border-image: url(:/newPrefix/img/shuffle_off_new.png);\n"
+"    background-repeat: no-repeat;\n"
+"    background-position: center center;\n"
+"    padding: 0;\n"
+"    border: none;\n"
+"}\n"
+"QPushButton::checked {\n"
+"border-image: url(:/newPrefix/img/shuffle_on_new.png);\n"
+"}\n"
+"QPushButton::indicator {\n"
+"image: none;\n"
+"}")
         self.shuffle_button.setText("")
         self.shuffle_button.setObjectName("shuffle_button")
         self.album_button = QtWidgets.QPushButton(self.centralwidget)
-        self.album_button.setGeometry(QtCore.QRect(990, 670, 55, 55))
+        self.album_button.setGeometry(QtCore.QRect(990, 690, 45, 45))
         self.album_button.setStyleSheet("border-image: url(:/newPrefix/img/defined background.png)")
         self.album_button.setText("")
         self.album_button.setObjectName("album_button")
         self.verticalLayoutWidget = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(140, 670, 241, 71))
+        self.verticalLayoutWidget.setGeometry(QtCore.QRect(140, 670, 241, 51))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
@@ -208,13 +409,9 @@ class Ui_MainWindow(object):
         self.artist_label.setStyleSheet("color: white")
         self.artist_label.setObjectName("artist_label")
         self.verticalLayout.addWidget(self.artist_label)
-        self.album_label = QtWidgets.QLabel(self.verticalLayoutWidget)
-        self.album_label.setStyleSheet("color: white")
-        self.album_label.setObjectName("album_label")
-        self.verticalLayout.addWidget(self.album_label)
         self.cover_frame = QtWidgets.QFrame(self.centralwidget)
         self.cover_frame.setGeometry(QtCore.QRect(30, 670, 100, 100))
-        self.cover_frame.setStyleSheet("")
+        self.cover_frame.setStyleSheet("border-image: url(:/newPrefix/img/palceholder_bg.jpg)")
         self.cover_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.cover_frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.cover_frame.setObjectName("cover_frame")
@@ -294,7 +491,7 @@ class Ui_MainWindow(object):
         self.end_time_label.setStyleSheet("color: white\n"
 "")
         self.end_time_label.setObjectName("end_time_label")
-#        MainWindow.setCentralWidget(self.centralwidget)
+        MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
         self.stackedWidget.setCurrentIndex(3)
@@ -307,17 +504,23 @@ class Ui_MainWindow(object):
         self.clear_link_button.setText(_translate("MainWindow", "X (close)"))
         self.download_link_button.setText(_translate("MainWindow", "Download!"))
         self.label.setText(_translate("MainWindow", "youtube downloader pagel"))
-        self.label_2.setText(_translate("MainWindow", "settings page!"))
+        self.settings_label.setText(_translate("MainWindow", "Settings"))
+        self.change_download_location_label.setText(_translate("MainWindow", "Change Download Locations"))
+        self.label_2.setText(_translate("MainWindow", "Audio"))
+        self.label_3.setText(_translate("MainWindow", "Thumbnails"))
+        self.label_8.setText(_translate("MainWindow", "Increase"))
+        self.label_6.setText(_translate("MainWindow", "Change Bind Volume Increments"))
+        self.label_9.setText(_translate("MainWindow", "Decrease"))
         self.settings_menu_button.setText(_translate("MainWindow", "Settings"))
         self.youtube_dl_menu_button.setText(_translate("MainWindow", "YouTube Downloader"))
         self.download_music_menu_button.setText(_translate("MainWindow", "Download Music"))
         self.home_button.setText(_translate("MainWindow", "Home"))
         self.song_label.setText(_translate("MainWindow", "Otis"))
         self.artist_label.setText(_translate("MainWindow", "Kanye West"))
-        self.album_label.setText(_translate("MainWindow", "Watch The Throne"))
         self.beginning_time_label.setText(_translate("MainWindow", "0:00"))
         self.end_time_label.setText(_translate("MainWindow", "5:00"))
-import resource_file
+
+import resource_file_rc
 
 
 if __name__ == "__main__":
