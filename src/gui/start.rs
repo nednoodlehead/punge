@@ -6,12 +6,14 @@ use crate::player::interface;
 use crate::{gui, playliststructs};
 use std::thread;
 use iced_native::Command;
-use crate::gui::subscription as sub;
 
 use iced_native::subscription::{self, Subscription};
 use iced_native::futures::channel::mpsc;
 use iced_native::futures::sink::SinkExt;
-use crate::gui::subscription::Event;
+use rodio::Sink;
+use crate::player::interface::{AUDIO_PLAYER, read_file_from_beginning};
+
+use std::sync::atomic::{Ordering, AtomicBool, AtomicUsize};
 
 
 pub fn begin() -> iced::Result {
@@ -22,15 +24,12 @@ pub fn begin() -> iced::Result {
 
 struct App {
     theme: Theme,
-    is_paused: bool,
-    current_song: (String, String, String),
-    sender: Option<mpsc::Sender<PungeCommand>>, // was not an option before !
+    // player: playliststructs::AudioPlayer this is held inside a static in interface.rs
 }
 
 #[derive(Debug, Clone)]
 enum ProgramCommands {
     Test,
-    Alt(sub::Event),
     Send(PungeCommand)
 }
 
@@ -42,12 +41,22 @@ impl Application for App {
     type Flags = ();
 
     fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
+        let (stream, streamhandle) = rodio::OutputStream::try_default().unwrap();
+        let sink = Sink::try_new(&streamhandle).unwrap();
+        let new_player = interface::MusicPlayer {  // this is a 100% requirement for this to be constructed like this and not using ::new()
+            // ::new() will not play the music. something something where the OutputStream is, and it getting dropped somewhere
+            list: vec![],
+            sink,
+            count: AtomicUsize::new(1),
+            shuffle: AtomicBool::new(false), // should be read from cache eventually
+            stream,
+            is_paused: Default::default(),
+            song_time: Default::default()
+        };
+        *interface::AUDIO_PLAYER.lock().unwrap() = Some(new_player);  // update the static to be an audio player
         (
         App {
             theme: Default::default(),
-            is_paused: false,
-            current_song: ("".to_string(), "".to_string(), "".to_string()),
-            sender: None
         },
         Command::none())
     }
@@ -63,20 +72,40 @@ impl Application for App {
                     //self.sender.as_mut().unwrap().send(PungeCommand::Play);  // does it work?
                 // self.sender.send(Command::Play).unwrap();  // i dont think this unwrap() can fail ..
             }
-            Self::Message::Alt(sender) => {
-                match sender {
-                    Event::Ready(sender) => {
-                        println!("yup, sender: {:?}", &sender);
-                        self.sender = Some(sender);
+            Self::Message::Send(cmd) => {
+                println!("yeah, command: {:?}", cmd);
+                match cmd {
+                    PungeCommand::Play => {
+                if AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().is_paused.load(Ordering::SeqCst) {
+                    println!("ok just continuing, since it is true?");
+                    AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.play()
+                }
+                else {
+                    println!("creating from new file: {}", AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.is_paused());
+                let val = read_file_from_beginning(String::from(r#"F:\spingus.mp3"#));
+                interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.append(val);
+                interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.play();
+                    AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().is_paused.store(false, Ordering::SeqCst)
+                        }
                     }
-                    Event::AppClosed => {
-                        println!("when does this happen?")
+                    PungeCommand::Stop => {
+                        interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.stop();
+                        AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().is_paused.store(true, Ordering::SeqCst)
+                    }
+                    PungeCommand::GoToAlbum => {
+                        println!("status of is_paused: {}", AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().is_paused.load(Ordering::SeqCst));
+                    }
+                    PungeCommand::StaticVolumeUp => {
+                        // testing play with no specific appendation
+                        AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.play();
+                    }
+                    _ => {
+                        println!("all others!!");
                     }
                 }
             }
-            Self::Message::Send(cmd) => {
-                self.sender.as_mut().unwrap().try_send(cmd).expect("failure sending msg");
-            }
+
+
             _ => println!("inumplmented")
         }
         Command::none()
@@ -86,15 +115,17 @@ impl Application for App {
         container(row![
                 button(text("Go back")),
                 button(text("Pause / Play")).on_press(ProgramCommands::Send(PungeCommand::Play)),
-                button(text("Go forwards")),
-                button(text("Shuffle"))
+                button(text("pause")).on_press(ProgramCommands::Send(PungeCommand::Stop)),
+                button(text("Shuffle")),
+                button(text("is paused::")).on_press(ProgramCommands::Send(PungeCommand::GoToAlbum)),
+                button(text("Hard resume")).on_press(ProgramCommands::Send(PungeCommand::StaticVolumeUp))
             ].spacing(50)
             .padding(iced::Padding::new(10 as f32)))
             .into()
     }
 
-    fn subscription(&self) -> Subscription<Self::Message> {
-        sub::punge_listening_thread().map(Self::Message::Alt)
-    }
+    // fn subscription(&self) -> Subscription<Self::Message> {
+    //     sub::punge_listening_thread().map(Self::Message::Alt)
+    // }
 
 }
