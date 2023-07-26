@@ -4,6 +4,8 @@
 /.idea/inspectionProfiles/Project_Default.xml
 /.idea/punge.iml
 /.idea/vcs.xml
+./src/old_main.rs
+./src/old_lib.rs
 
 
 # Added by cargo
