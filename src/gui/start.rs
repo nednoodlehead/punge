@@ -50,8 +50,6 @@ impl Application for App {
             count: AtomicUsize::new(1),
             shuffle: AtomicBool::new(false), // should be read from cache eventually
             stream,
-            is_paused: Default::default(),
-            song_time: Default::default()
         };
         *interface::AUDIO_PLAYER.lock().unwrap() = Some(new_player);  // update the static to be an audio player
         (
@@ -76,28 +74,28 @@ impl Application for App {
                 println!("yeah, command: {:?}", cmd);
                 match cmd {
                     PungeCommand::Play => {
-                if AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().is_paused.load(Ordering::SeqCst) {
+                if AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.is_paused() {
                     println!("ok just continuing, since it is true?");
                     AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.play()
                 }
                 else {
-                    println!("creating from new file: {}", AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.is_paused());
                 let val = read_file_from_beginning(String::from(r#"F:\spingus.mp3"#));
                 interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.append(val);
                 interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.play();
-                    AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().is_paused.store(false, Ordering::SeqCst)
                         }
                     }
                     PungeCommand::Stop => {
-                        interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.stop();
-                        AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().is_paused.store(true, Ordering::SeqCst)
+                        interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.pause();
                     }
                     PungeCommand::GoToAlbum => {
-                        println!("status of is_paused: {}", AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().is_paused.load(Ordering::SeqCst));
+                        println!("status of is_paused: {}", AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.is_paused());
                     }
                     PungeCommand::StaticVolumeUp => {
                         // testing play with no specific appendation
                         AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.play();
+                    }
+                    PungeCommand::ToggleShuffle => {
+                        println!("yeah, toggle shguffle!!")
                     }
                     _ => {
                         println!("all others!!");

@@ -10,6 +10,7 @@ use crate::playliststructs::PungeMusicObject;
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 
+// global music player lol
 pub static AUDIO_PLAYER: Mutex<Option<MusicPlayer>> = Mutex::new(None);
 
 pub struct MusicPlayer {  // assembled once in ./gui/start.rs
@@ -18,8 +19,6 @@ pub struct MusicPlayer {  // assembled once in ./gui/start.rs
     pub count: AtomicUsize,
     pub shuffle: AtomicBool,
     pub stream: rodio::OutputStream,
-    pub is_paused: AtomicBool,
-    pub song_time: AtomicU64,  // how long the song has been playing for in ms
 }
 unsafe impl Send for MusicPlayer {}  // ok so these impls allow the musicplayer to be sent across threads
 unsafe impl Sync for MusicPlayer {}  // idea comes from : https://github.com/Amazingkenneth/graduate/blob/192a29e1ab7a6090848a9725bc3091da2deeea57/src/audio.rs#L12
@@ -34,8 +33,6 @@ impl MusicPlayer {
          count: AtomicUsize::new(1),
          shuffle: AtomicBool::new(false),  // this should be derived from the json that logs this data
          stream,
-         is_paused: AtomicBool::new(true),
-         song_time: AtomicU64::new(0)
      }
     }
 
