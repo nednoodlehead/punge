@@ -62,7 +62,9 @@ pub fn punge_listening_thread() -> Subscription<Event> {
                         PungeCommand::Play => {
                             println!("doing play! {}", music_obj.count);
                             let item = music_obj.list[0].savelocationmp3.clone();
-                            let n = music_obj
+                            let n = interface::read_file_from_beginning(item);
+                            music_obj.sink.append(n);
+                            music_obj.sink.play()
 
                         }
                         _ => {
