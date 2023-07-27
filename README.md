@@ -15,3 +15,4 @@ New Punge brings on multiple improvements:
 7) Playlist metadata
 8) Better data about each individiual song
 
+This experimental branch is a version of Punge that is going to be worked on and completed first. This uses threads more similarly to how original Punge did. It also does unsafe implementations for various parts of it. Compromising certain parts. The master branch should be the one that is stable and made with best practice. This will be the 'working' version.
