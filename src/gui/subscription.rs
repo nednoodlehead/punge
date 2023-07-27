@@ -33,7 +33,7 @@ pub fn punge_listening_thread() -> Subscription<Event> {
                         album: "expanded".to_string(),
                         features: "asd".to_string(),
                         length: "sadds".to_string(),
-                        savelocationmp3: r#"F:\Punge Downloads\Downloads\JPEGMAFIA & Danny Brown - Guess What Bitch, We Back Hoe!cIXklqch9zc.mp3"#.to_string(),
+                        savelocationmp3: r#"F:\spingus.mp3"#.to_string(),
                         savelocationjpg: "bruh".to_string(),
                         datedownloaded: Default::default(),
                         lastlistenedto: Default::default(),
@@ -61,6 +61,8 @@ pub fn punge_listening_thread() -> Subscription<Event> {
                     match input {
                         PungeCommand::Play => {
                             println!("doing play! {}", music_obj.count);
+                            let item = music_obj.list[0].savelocationmp3.clone();
+                            let n = music_obj
 
                         }
                         _ => {
