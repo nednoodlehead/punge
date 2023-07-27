@@ -86,6 +86,7 @@ impl Application for App {
         container(row![
                 button(text("Go back")),
                 button(text("Pause / Play")).on_press(ProgramCommands::Send(PungeCommand::Play)),
+                button(text("pause fr")).on_press(ProgramCommands::Send(PungeCommand::Stop)),
                 button(text("Go forwards")),
                 button(text("Shuffle"))
             ].spacing(50)

@@ -55,6 +55,18 @@ impl MusicPlayer {
         self.sink.append(read_from_time(self.list[self.count as usize].savelocationmp3.clone(), time));
        // self.play_loop()
     }
+    pub fn play_loop(&mut self) {
+        let thr = std::thread::spawn(||
+                loop {
+            if self.sink.empty() && !self.sink.is_paused() {
+                println!("we should play a new song here!");
+            }
+
+            std::thread::sleep(std::time::Duration::from_secs(3))
+        }
+        );
+        println!("exiting loop i guess");
+    }
     // maybe revise at some point i dont think there needs to be so many receiver checks .. fine for now
    // pub fn play_loop(&mut self) {
    //      loop {

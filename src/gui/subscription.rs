@@ -67,6 +67,16 @@ pub fn punge_listening_thread() -> Subscription<Event> {
                             music_obj.sink.play()
 
                         }
+                        PungeCommand::Stop => {
+                            println!("trying to pause");
+                            music_obj.sink.pause()
+                        }
+                        PungeCommand::Check => { // check if we should loop
+                            if !music_obj.sink.is_paused() && music_obj.sink.empty() {
+                                music_obj.count += 1;
+                                music_obj.sink.play()
+                            }
+                        }
                         _ => {
                             println!("anything else!!")
                         }
