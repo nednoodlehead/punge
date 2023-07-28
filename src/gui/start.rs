@@ -4,16 +4,16 @@ use iced::{Alignment, Length, Color, Settings, Sandbox, Element, Error, Theme, e
 use crate::gui::messages::PungeCommand;
 use crate::player::interface;
 use crate::{gui, playliststructs};
-use std::thread;
 use iced_native::Command;
 
 use iced_native::subscription::{self, Subscription};
-use iced_native::futures::channel::mpsc;
+use std::sync::mpsc;
 use iced_native::futures::sink::SinkExt;
 use rodio::Sink;
-use crate::player::interface::{AUDIO_PLAYER, read_file_from_beginning};
+use crate::player::interface::{ read_file_from_beginning};  // used too import AUdio_PLAYER
 
 use std::sync::atomic::{Ordering, AtomicBool, AtomicUsize};
+use crate::playliststructs::PungeMusicObject;
 
 
 pub fn begin() -> iced::Result {
@@ -25,12 +25,13 @@ pub fn begin() -> iced::Result {
 struct App {
     theme: Theme,
     // player: playliststructs::AudioPlayer this is held inside a static in interface.rs
+    sender: mpsc::Sender<PungeCommand>
 }
 
 #[derive(Debug, Clone)]
 enum ProgramCommands {
     Test,
-    Send(PungeCommand)
+    PungeSend(PungeCommand)
 }
 
 
@@ -43,18 +44,72 @@ impl Application for App {
     fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
         let (stream, streamhandle) = rodio::OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&streamhandle).unwrap();
+        let (sender, receiver) = mpsc::channel();
+        
+        let temp_item = PungeMusicObject {
+            title: "da title".to_string(),
+            author: "da authoir".to_string(),
+            album: "".to_string(),
+            features: "".to_string(),
+            length: "".to_string(),
+            savelocationmp3: r#"F:\spingus.mp3"#.to_string(),
+            savelocationjpg: "".to_string(),
+            datedownloaded: Default::default(),
+            lastlistenedto: Default::default(),
+            ischild: false,
+            uniqueid: "bruh".to_string(),
+            plays: 0,
+            weight: 0
+        };
+        
+        let temp_2 = PungeMusicObject {
+            title: "".to_string(),
+            author: "".to_string(),
+            album: "".to_string(),
+            features: "".to_string(),
+            length: "".to_string(),
+            savelocationmp3: r#"F:\Punge Downloads\Downloads\McKinley Dixon - Live From The Kitchen Table feat Ghais GuevaraZ9VvZpeemO04.mp3"#.to_string(),
+            savelocationjpg: "".to_string(),
+            datedownloaded: Default::default(),
+            lastlistenedto: Default::default(),
+            ischild: false,
+            uniqueid: "".to_string(),
+            plays: 0,
+            weight: 0
+        };
+        let temp_3 = PungeMusicObject {
+            title: "".to_string(),
+            author: "".to_string(),
+            album: "".to_string(),
+            features: "".to_string(),
+            length: "".to_string(),
+            savelocationmp3: r#"F:\testing.mp3"#.to_string(),
+            savelocationjpg: "".to_string(),
+            datedownloaded: Default::default(),
+            lastlistenedto: Default::default(),
+            ischild: false,
+            uniqueid: "".to_string(),
+            plays: 0,
+            weight: 0
+        };
         let new_player = interface::MusicPlayer {  // this is a 100% requirement for this to be constructed like this and not using ::new()
             // ::new() will not play the music. something something where the OutputStream is, and it getting dropped somewhere
-            list: vec![],
+            list: vec![temp_item, temp_2, temp_3],
             sink,
-            count: AtomicUsize::new(1),
-            shuffle: AtomicBool::new(false), // should be read from cache eventually
+            count: 1,
+            to_play: false,
+            shuffle: false, // should be read from cache eventually
             stream,
+            listener: receiver
         };
-        *interface::AUDIO_PLAYER.lock().unwrap() = Some(new_player);  // update the static to be an audio player
+        let mut audio_player = new_player;  // update the static to be an audio player
+        let thread_handle =  std::thread::spawn(move || {
+            audio_player.play_loop()
+        });
         (
         App {
             theme: Default::default(),
+            sender,
         },
         Command::none())
     }
@@ -70,37 +125,9 @@ impl Application for App {
                     //self.sender.as_mut().unwrap().send(PungeCommand::Play);  // does it work?
                 // self.sender.send(Command::Play).unwrap();  // i dont think this unwrap() can fail ..
             }
-            Self::Message::Send(cmd) => {
-                println!("yeah, command: {:?}", cmd);
-                match cmd {
-                    PungeCommand::Play => {
-                if AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.is_paused() {
-                    println!("ok just continuing, since it is true?");
-                    AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.play()
-                }
-                else {
-                let val = read_file_from_beginning(String::from(r#"F:\spingus.mp3"#));
-                interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.append(val);
-                interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.play();
-                        }
-                    }
-                    PungeCommand::Stop => {
-                        interface::AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.pause();
-                    }
-                    PungeCommand::GoToAlbum => {
-                        println!("status of is_paused: {}", AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.is_paused());
-                    }
-                    PungeCommand::StaticVolumeUp => {
-                        // testing play with no specific appendation
-                        AUDIO_PLAYER.lock().unwrap().as_ref().unwrap().sink.play();
-                    }
-                    PungeCommand::ToggleShuffle => {
-                        println!("yeah, toggle shguffle!!")
-                    }
-                    _ => {
-                        println!("all others!!");
-                    }
-                }
+            Self::Message::PungeSend(cmd) => {
+                println!("sent cmd: {:?}", &cmd);
+                self.sender.send(cmd).unwrap();
             }
 
 
@@ -112,11 +139,11 @@ impl Application for App {
     fn view(&self) -> Element<'_, Self::Message> {
         container(row![
                 button(text("Go back")),
-                button(text("Pause / Play")).on_press(ProgramCommands::Send(PungeCommand::Play)),
-                button(text("pause")).on_press(ProgramCommands::Send(PungeCommand::Stop)),
+                button(text("Pause / Play")).on_press(ProgramCommands::PungeSend(PungeCommand::Play)),
+                button(text("pause")).on_press(ProgramCommands::PungeSend(PungeCommand::Stop)),
                 button(text("Shuffle")),
-                button(text("is paused::")).on_press(ProgramCommands::Send(PungeCommand::GoToAlbum)),
-                button(text("Hard resume")).on_press(ProgramCommands::Send(PungeCommand::StaticVolumeUp))
+                button(text("is paused::")),
+                button(text("Hard resume"))
             ].spacing(50)
             .padding(iced::Padding::new(10 as f32)))
             .into()
