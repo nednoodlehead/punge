@@ -28,7 +28,7 @@ impl MusicPlayer {
 
     fn fetch_and_update_playlist(&mut self, playlist_name: String) {
         let playlist_uuid = db::fetch::get_uuid_from_name(playlist_name);
-        let new = db::fetch::get_all_from_playlist(playlist_uuid.as_str()).expect("playlist uuid not found:");
+        let new = db::fetch::get_all_from_playlist(playlist_uuid.unwrap().as_str()).expect("playlist uuid not found:");
         self.list = new;
     }
 
@@ -153,6 +153,8 @@ impl MusicPlayer {
                 }
             }
             Some(gui::messages::PungeCommand::GoToAlbum) => {
+                // for testing
+                println!("{:?}", &self.list)
                 // unimplemented
             }
             Some(gui::messages::PungeCommand::ChangePlaylist(playlist)) => {

@@ -62,7 +62,8 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     for obj in song_iter {
         ret_vec.push(obj?)
     }
-    conn.close()?;
+    drop(stmt);
+    conn.close().map_err(|(_, err)| err)?;
     Ok(ret_vec)
 }
 
@@ -73,7 +74,7 @@ pub fn exists_in_db(uniqueid: String) -> Result<bool, DatabaseErrors> {
     let val = rows.next().unwrap().is_some();
     drop(rows); // drop to release borrown on stmt
     drop(stmt); // explicitly drop stmt to release borrow on conn
-    conn.close()?;
+    conn.close().map_err(|(_, err)| err)?;
     Ok(val)
 }
 
