@@ -62,25 +62,26 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     for obj in song_iter {
         ret_vec.push(obj?)
     }
+    conn.close()?;
     Ok(ret_vec)
 }
 
-pub fn exists_in_db(uniqueid: String) -> bool {
-    let conn = Connection::open("main.db").unwrap();
-    let mut stmt = conn.prepare("SELECT title FROM main WHERE uniqueid = ?").unwrap();
-    let mut rows = stmt.query(&[&uniqueid]).unwrap();
+pub fn exists_in_db(uniqueid: String) -> Result<bool, DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    let mut stmt = conn.prepare("SELECT title FROM main WHERE uniqueid = ?")?;
+    let mut rows = stmt.query(&[&uniqueid])?;
     let val = rows.next().unwrap().is_some();
     drop(rows); // drop to release borrown on stmt
     drop(stmt); // explicitly drop stmt to release borrow on conn
-    conn.close().unwrap();
-    val
+    conn.close()?;
+    Ok(val)
 }
 
-pub fn get_uuid_from_name(playlist_name: String) -> String {
-    let conn = Connection::open("main.db").unwrap();
-    let mut stmt = conn.prepare("SELECT playlist_id from metadata WHERE title = ?").unwrap();
-    let mut result: String = stmt.query_row(&[&playlist_name], |row| row.get(0)).unwrap();
-    result
+pub fn get_uuid_from_name(playlist_name: String) -> Result<String, DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    let mut stmt = conn.prepare("SELECT playlist_id from metadata WHERE title = ?")?;
+    let mut result: String = stmt.query_row(&[&playlist_name], |row| row.get(0))?;
+    Ok(result)
 }
 
 
