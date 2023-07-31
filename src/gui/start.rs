@@ -32,7 +32,8 @@ struct App {
 #[derive(Debug, Clone)]
 enum ProgramCommands {
     Test,
-    PungeSend(PungeCommand)
+    PungeSend(PungeCommand),
+    UpdateData(String, String, String)
 }
 
 
@@ -82,6 +83,9 @@ impl Application for App {
                     //self.sender.as_mut().unwrap().send(PungeCommand::Play);  // does it work?
                 // self.sender.send(Command::Play).unwrap();  // i dont think this unwrap() can fail ..
             }
+            Self::Message::UpdateData(title, auth, album) => {
+                println!("new data: {title} {auth} {album}");
+            }
             Self::Message::PungeSend(cmd) => {
                 println!("sent cmd: {:?}", &cmd);
                 self.sender.send(cmd).unwrap();
@@ -95,6 +99,9 @@ impl Application for App {
 
     fn view(&self) -> Element<'_, Self::Message> {
         container(row![
+                column![text("song name"),
+                text("artist name"),
+                text("album?")],
                 button(text("Go back")),
                 button(text("Pause / Play")).on_press(ProgramCommands::PungeSend(PungeCommand::Play)),
                 button(text("pause")).on_press(ProgramCommands::PungeSend(PungeCommand::Stop)),
