@@ -11,7 +11,7 @@ pub struct PungeMusicObject {
     pub author: String,
     pub album: String,
     pub features: String,
-    pub length: String, // like: 3:20, 12:10
+    pub length: String, // in seconds
     pub savelocationmp3: String,
     pub savelocationjpg: String,
     pub datedownloaded: NaiveDate,
