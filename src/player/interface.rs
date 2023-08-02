@@ -25,20 +25,25 @@ pub struct MusicPlayer {
     pub list: Vec<PungeMusicObject>,
     pub sink: rodio::Sink,
     pub count: isize,
-    pub shuffle: bool
+    pub shuffle: bool,
+    pub to_play: bool,
+    pub stream: rodio::OutputStream,
 }
+
+unsafe impl Send for MusicPlayer {}
+unsafe impl Sync for MusicPlayer {}
 
 impl MusicPlayer {
     pub fn new(list: Vec<PungeMusicObject>) -> MusicPlayer {
     let (stream, stream_handle) = OutputStream::try_default().unwrap();
-    // here, we leak `OutputStream` to make the audio not stop (if bevy does it, so can i :D )
-    std::mem::forget(stream);
     let sink = Sink::try_new(&stream_handle).unwrap();
      MusicPlayer {
          list,
          sink,
          count: 0,
-         shuffle: false  // this should be derived from the json that logs this data
+         shuffle: false,  // this should be derived from the json that logs this data
+         to_play: false,
+         stream
      }
     }
 
@@ -165,6 +170,7 @@ impl MusicPlayer {
 }
 
 pub fn read_file_from_beginning(file: String) -> Decoder<BufReader<File>> {
+    println!("file: {}", &file);
     let reader = BufReader::new(File::open(file).unwrap());
     let decoder = Decoder::new(reader).unwrap();
     decoder
