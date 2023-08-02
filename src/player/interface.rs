@@ -171,6 +171,8 @@ impl MusicPlayer {
 
 pub fn read_file_from_beginning(file: String) -> Decoder<BufReader<File>> {
     println!("file: {}", &file);
+    // we should overhaul this at some point to be a method associated with the app. when there is a file that doesn't exist,
+    // we can send it to some related "missing" vector. this can be written to json when program closes? or when found?
     let reader = BufReader::new(File::open(file).unwrap());
     let decoder = Decoder::new(reader).unwrap();
     decoder
