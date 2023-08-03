@@ -85,9 +85,9 @@ impl Application for App {
 
     fn view(&self) -> Element<'_, Self::Message> {
         container(row![
-                button(text("Go back")),
+                button(text("Go back")).on_press(ProgramCommands::Send(PungeCommand::SkipBackwards)),
                 button(text("Play")).on_press(ProgramCommands::Send(PungeCommand::Play)),
-            button(text("pause")).on_press(ProgramCommands::Send(PungeCommand::Stop)),
+                button(text("pause")).on_press(ProgramCommands::Send(PungeCommand::Stop)),
                 button(text("Go forwards")).on_press(ProgramCommands::Send(PungeCommand::SkipForwards)),
                 button(text("Shuffle"))
             ].spacing(50)
@@ -115,7 +115,7 @@ impl Application for App {
                     match cmd {
                         PungeCommand::Play => {
                             println!("obj list: {:?}", music_obj.list);
-                            let song = interface::read_file_from_beginning(music_obj.list[0].savelocationmp3.clone());
+                            let song = interface::read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone());
                             music_obj.sink.append(song);
                             music_obj.to_play = true;
                             music_obj.sink.play();
@@ -129,14 +129,19 @@ impl Application for App {
                         }
                         PungeCommand::SkipForwards => {
                             println!("skip forards, top!!");
-                            music_obj.count += 1;
-                            if !music_obj.sink.is_paused() {
-                                music_obj.sink.stop();  // stop
-                                music_obj.sink.clear() // clear the sink of current song
-                            }
+                            music_obj.count = change_count(true, music_obj.count.clone(), music_obj.list.len());
+                            music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
+                            println!("APPENDED!!!! {}", music_obj.sink.empty());
+                            music_obj.to_play = true;
+                            music_obj.sink.play();
+                            sender.send(ProgramCommands::NewData("pen".to_string(), "mug".to_string(), "not".to_string())).await.unwrap();
+                        }
+                        PungeCommand::SkipBackwards => {
+                            music_obj.count = change_count(false, music_obj.count.clone(), music_obj.list.len());
                             music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
                             music_obj.to_play = true;
-                            music_obj.sink.play()
+                            music_obj.sink.play();
+                            sender.send(ProgramCommands::NewData("pen".to_string(), "mug".to_string(), "not".to_string())).await.unwrap();
                         }
                         _ => {
                             println!("yeah, other stuff... {:?}", cmd)
@@ -149,7 +154,9 @@ impl Application for App {
             }
             if music_obj.to_play {  // if we are playing, we want to loop and keep playing !!
                 loop {
+                    // i think most of the count checks are depciated
                     println!("inside our palying loop!");
+                    println!("ALL: {} {} {:?}", music_obj.count, music_obj.to_play, music_obj.list);
                     // process commands (maybe turn it into a function i guess?, would sort of suck to copy and paste to make work)
                     if music_obj.count < 0 {
                         music_obj.count = (music_obj.list.len() as isize + music_obj.count) as isize;
@@ -161,10 +168,11 @@ impl Application for App {
                         println!("default appending!");
                         music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
                     }
+                    println!("playing, in theory");
                     music_obj.sink.play();
                     while !music_obj.sink.is_paused() {
                         // process again !?
-                                    match gui_rec.try_recv() {
+                    match gui_rec.try_recv() {
                 Ok(cmd) => {
                     match cmd {
                         PungeCommand::Play => {
@@ -184,19 +192,21 @@ impl Application for App {
                         }
                         PungeCommand::SkipForwards => {
                             println!("skippin forrards");
-                            music_obj.count += 1;  // do check for larger than music_obj.list.len()?
+                            music_obj.count = change_count(true, music_obj.count.clone(), music_obj.list.len());
                             if !music_obj.sink.is_paused() { // wait is this even required cause this can only be hit in the 'active palying' loop?
                                 music_obj.sink.stop();  // stop
                                 music_obj.sink.clear() // clear the sink of current song
                             }
-                            println!("appending new: {:?}", music_obj.list[music_obj.count as usize]);
                             music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
                             music_obj.to_play = true;
                             music_obj.sink.play()
                         }
                         PungeCommand::SkipBackwards => {
-                            music_obj.count -= 1; // do check for smaller than music_obj.len()?
-                            if !music_obj.sink.is_paused() { // wait is this even required cause this can only be hit in the 'active palying' loop?
+                            // music_obj.count -= 1; // do check for smaller than music_obj.len()?
+                            music_obj.count = change_count(false, music_obj.count.clone(), music_obj.list.len());
+                            if !music_obj.sink.is_paused() {
+                                // so this if stmt was on the upper match stmt, but kept causing problems with skipping and clearing the sink (even tho
+                                // the if occurs before the sink.append() ). so it only is down here, and seems to work just fine
                                 music_obj.sink.stop();
                                 music_obj.sink.clear()
                             }
@@ -214,9 +224,11 @@ impl Application for App {
                 }
             }
                         if music_obj.sink.is_paused() {
+                            println!("is paused break!");
                             break
                         }
                         else if music_obj.sink.empty() {
+                            println!("empty break!! ");
                             break
                         }
                         else {
@@ -226,7 +238,9 @@ impl Application for App {
                     if music_obj.sink.is_paused() {
                         break
                     } else {
-                        music_obj.count += 1;
+                        println!("default counter!");
+                        //music_obj.count += 1;
+                        music_obj.count = change_count(true, music_obj.count.clone(), music_obj.list.len())
                     }
                 }
 
@@ -236,6 +250,27 @@ impl Application for App {
     })
     }
 
+}
+
+
+pub fn change_count(incrementing: bool, count: isize, vec_len: usize) -> isize {
+    // change the count without worrying about index errors
+    let new_count: isize = if count == 0 && !incrementing { // if removing and count =0 (would make it -1)
+        // going below the limit
+        (vec_len as isize) -1
+    } else if (count == (vec_len -1).try_into().unwrap()) && incrementing {
+        0 as isize // going above or equal the limit
+    } else {
+        if incrementing { // all other cases!
+            count + 1
+        }
+        else {
+            count - 1
+        }
+
+
+    };
+        new_count
 }
 
 // pub fn process_command(receiver: &mut UnboundedReceiver<PungeCommand>, mut music_obj: interface::MusicPlayer, sender: &Sender<ProgramCommands>) -> MusicPlayer {
