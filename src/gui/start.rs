@@ -134,6 +134,7 @@ impl Application for App {
                         }
                         PungeCommand::SkipForwards => {
                             println!("skip forards, top!!");
+                            music_obj.sink.stop();
                             music_obj.count = change_count(true, music_obj.count.clone(), music_obj.list.len());
                             music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
                             music_obj.to_play = true;
@@ -141,6 +142,7 @@ impl Application for App {
                             sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
                         }
                         PungeCommand::SkipBackwards => {
+                            music_obj.sink.stop();
                             music_obj.count = change_count(false, music_obj.count.clone(), music_obj.list.len());
                             music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
                             music_obj.to_play = true;
