@@ -251,8 +251,10 @@ impl Application for App {
                         break
                     } else {
                         println!("default counter!");
-                        //music_obj.count += 1;
-                        music_obj.count = change_count(true, music_obj.count.clone(), music_obj.list.len())
+                        music_obj.count = change_count(true, music_obj.count.clone(), music_obj.list.len());
+                        // new info :P
+                        sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
+
                     }
                 }
 
