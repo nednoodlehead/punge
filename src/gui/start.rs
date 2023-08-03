@@ -76,7 +76,8 @@ impl Application for App {
                 self.sender = sender;
             }
             Self::Message::NewData(art, title, alb) => {
-                println!("The new information given to update: {art} {title} {alb}")
+                println!("The new information given to update: {art} {title} {alb}");
+                self.current_song = (art, title, alb)
             }
             _ => println!("inumplmented")
         }
@@ -85,6 +86,7 @@ impl Application for App {
 
     fn view(&self) -> Element<'_, Self::Message> {
         container(row![
+                column![text(self.current_song.0.clone()), text(self.current_song.1.clone()), text(self.current_song.2.clone())],
                 button(text("Go back")).on_press(ProgramCommands::Send(PungeCommand::SkipBackwards)),
                 button(text("Play")).on_press(ProgramCommands::Send(PungeCommand::Play)),
                 button(text("pause")).on_press(ProgramCommands::Send(PungeCommand::Stop)),
@@ -100,8 +102,12 @@ impl Application for App {
         iced::subscription::channel(0, 32, |mut sender| async move {
         let (gui_send, mut gui_rec) = tokio::sync::mpsc::unbounded_channel();
         sender.send(Self::Message::UpdateSender(Some(gui_send))).await.unwrap(); // send the sender to the gui !!
-
         let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
+        // maybe here  we need to get index of last song that was on?
+        let index: usize = 0;
+        let item_info: PungeMusicObject = items[index].clone();
+        // send the data to the program
+        sender.send(Self::Message::NewData(item_info.title, item_info.author, item_info.album)).await.unwrap();
 
         let mut music_obj = interface::MusicPlayer::new(items);
 
@@ -114,13 +120,12 @@ impl Application for App {
                 Ok(cmd) => {
                     match cmd {
                         PungeCommand::Play => {
-                            println!("obj list: {:?}", music_obj.list);
                             let song = interface::read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone());
                             music_obj.sink.append(song);
                             music_obj.to_play = true;
                             music_obj.sink.play();
                             println!("playing here... {}", music_obj.count);
-                            sender.send(ProgramCommands::NewData("one".to_string(), "two".to_string(), "three".to_string())).await.unwrap();
+                            sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
                         }
                         PungeCommand::Stop => {
                             println!("stooping here! (top)");
@@ -131,17 +136,16 @@ impl Application for App {
                             println!("skip forards, top!!");
                             music_obj.count = change_count(true, music_obj.count.clone(), music_obj.list.len());
                             music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
-                            println!("APPENDED!!!! {}", music_obj.sink.empty());
                             music_obj.to_play = true;
                             music_obj.sink.play();
-                            sender.send(ProgramCommands::NewData("pen".to_string(), "mug".to_string(), "not".to_string())).await.unwrap();
+                            sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
                         }
                         PungeCommand::SkipBackwards => {
                             music_obj.count = change_count(false, music_obj.count.clone(), music_obj.list.len());
                             music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
                             music_obj.to_play = true;
                             music_obj.sink.play();
-                            sender.send(ProgramCommands::NewData("pen".to_string(), "mug".to_string(), "not".to_string())).await.unwrap();
+                            sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
                         }
                         _ => {
                             println!("yeah, other stuff... {:?}", cmd)
@@ -178,12 +182,14 @@ impl Application for App {
                         PungeCommand::Play => {
                             if !music_obj.sink.is_paused() && music_obj.sink.empty() {
                               let song = interface::read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone());
-                                sender.send(ProgramCommands::NewData("one".to_string(), "two".to_string(), "three".to_string())).await.unwrap();
+                            sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
                             music_obj.sink.append(song);
                             }
 
                             music_obj.to_play = true;
                             music_obj.sink.play();
+                            sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
+
                         }
                         PungeCommand::Stop => {
                             println!("stooping here! (bottom)");
@@ -199,7 +205,9 @@ impl Application for App {
                             }
                             music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
                             music_obj.to_play = true;
-                            music_obj.sink.play()
+                            music_obj.sink.play();
+                            sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
+
                         }
                         PungeCommand::SkipBackwards => {
                             // music_obj.count -= 1; // do check for smaller than music_obj.len()?
@@ -212,7 +220,9 @@ impl Application for App {
                             }
                             music_obj.sink.append(read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone()));
                             music_obj.to_play = true;
-                            music_obj.sink.play()
+                            music_obj.sink.play();
+                            sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
+
                         }
                         _ => {
                             println!("yeah, other stuff... {:?}", cmd)
