@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 // object that will be returned, used to input into the database, this object is the
 // object that will be returned from the whole process of deciding what is title, auth, album...
+#[derive(Clone)]
 pub struct PungeMusicObject {
     pub title: String,
     pub author: String,
