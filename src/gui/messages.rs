@@ -6,7 +6,7 @@ pub enum PungeCommand {
     Play,
     Stop,
     ChangeSong(usize), // play this song at this index in the list. also, do we need this as &str for thread safety?
-    NewVolume(usize),  // change volume to this amount (processed beforehand I think)
+    NewVolume(u8),  // change volume to this amount (processed beforehand I think)
     SkipToSeconds(usize),  // intends to play current song from this time (bcs only active song can be target of this operation)
     SkipForwards,
     SkipBackwards,
