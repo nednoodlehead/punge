@@ -1,5 +1,5 @@
 // can we rename this to lib.rs at some point maybe??
-use iced::widget::{button, text, column, row, container};
+use iced::widget::{button, text, column, row, container, slider};
 use iced::{Alignment, Length, Color, Settings, Sandbox, Element, Error, Theme, executor, Application};
 use crate::gui::messages::PungeCommand;
 use crate::player::interface;
@@ -29,6 +29,7 @@ struct App {
     is_paused: bool,
     current_song: (String, String, String),
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
+    volume: u8,
 }
 
 #[derive(Debug, Clone)]
@@ -36,7 +37,8 @@ enum ProgramCommands {
     Test,
     Send(PungeCommand),
     UpdateSender(Option<async_sender::UnboundedSender<PungeCommand>>),
-    NewData(String, String, String) // for sending back title, artist and album to GUI
+    NewData(String, String, String), // for sending back title, artist and album to GUI
+    VolumeChange(u8)
 }
 
 
@@ -48,13 +50,15 @@ impl Application for App {
 
     fn new(_flags: Self::Flags) -> (App, iced::Command<Self::Message>) {
         (
-        App {
+            App {
             theme: Default::default(),
             is_paused: false,
             current_song: ("".to_string(), "".to_string(), "".to_string()),
-            sender: None
-        },
-        Command::none())
+            sender: None,
+            volume: 25 // read from json
+                // output stream?
+            },
+            Command::none())
     }
 
     fn title(&self) -> String {
@@ -79,6 +83,10 @@ impl Application for App {
                 println!("The new information given to update: {art} {title} {alb}");
                 self.current_song = (art, title, alb)
             }
+            Self::Message::VolumeChange(val) => {
+                self.volume = val;
+                self.sender.as_mut().unwrap().send(PungeCommand::NewVolume(val)).expect("failure sending msg");
+            }
             _ => println!("inumplmented")
         }
         Command::none()
@@ -91,7 +99,8 @@ impl Application for App {
                 button(text("Play")).on_press(ProgramCommands::Send(PungeCommand::Play)),
                 button(text("pause")).on_press(ProgramCommands::Send(PungeCommand::Stop)),
                 button(text("Go forwards")).on_press(ProgramCommands::Send(PungeCommand::SkipForwards)),
-                button(text("Shuffle"))
+                button(text("Shuffle")),
+                slider(0..=100, self.volume, Self::Message::VolumeChange).width(150)
             ].spacing(50)
             .padding(iced::Padding::new(10 as f32)))
             .into()
@@ -148,6 +157,10 @@ impl Application for App {
                             music_obj.to_play = true;
                             music_obj.sink.play();
                             sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
+                        }
+                        PungeCommand::NewVolume(val) => {
+
+                            music_obj.sink.set_volume((val as f32) / 10.0)
                         }
                         _ => {
                             println!("yeah, other stuff... {:?}", cmd)
