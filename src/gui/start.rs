@@ -127,6 +127,7 @@ impl Application for App {
            //let music_obj =  process_command(&mut gui_rec, music_obj, &sender);
             match gui_rec.try_recv() {
                 Ok(cmd) => {
+                    // println!("reiceiving: {:?}", &cmd);
                     match cmd {
                         PungeCommand::Play => {
                             let song = interface::read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone());
@@ -159,12 +160,35 @@ impl Application for App {
                             sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
                         }
                         PungeCommand::NewVolume(val) => {
-
-                            music_obj.sink.set_volume((val as f32) / 10.0)
+                            music_obj.sink.set_volume((val as f32) / 80.0)
                         }
-                        _ => {
-                            println!("yeah, other stuff... {:?}", cmd)
+                        PungeCommand::ChangeSong(index) => {
+                            println!("index for song: {}", index);
                         }
+                        PungeCommand::StaticVolumeUp => {
+                            println!("ok we increase volume!");
+                        }
+                        PungeCommand::StaticVolumeDown => {
+                            println!("ok, decrease now")
+                        }
+                        PungeCommand::GoToAlbum => {
+                            println!("going 2 album!")
+                        }
+                        PungeCommand::SkipToSeconds(val) => {
+                            println!("skipping to seconds")
+                        }
+                        PungeCommand::ToggleShuffle => {
+                            println!("imagine we are chaning shuffle status");
+                        }
+                        PungeCommand::ChangePlaylist(name) => {
+                            println!("changing name!!");
+                        }
+                        PungeCommand::None => {
+                            println!("is this even used?")
+                        }
+                        // _ => {
+                        //     println!("yeah, other stuff... {:?}", cmd)
+                        // }
                     }
                 }
                 _ => {
@@ -238,6 +262,9 @@ impl Application for App {
                             music_obj.sink.play();
                             sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
 
+                        }
+                        PungeCommand::NewVolume(val) => {
+                            music_obj.sink.set_volume((val as f32) / 80.0)
                         }
                         _ => {
                             println!("yeah, other stuff... {:?}", cmd)
