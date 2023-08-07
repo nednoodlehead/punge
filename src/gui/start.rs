@@ -1,18 +1,18 @@
 // can we rename this to lib.rs at some point maybe??
 use iced::widget::{button, text, column, row, container, slider};
 use iced::{Alignment, Length, Color, Settings, Sandbox, Element, Error, Theme, executor, Application};
-use crate::gui::messages::PungeCommand;
 use crate::player::interface;
 use crate::{gui, playliststructs};
 use std::thread;
 use iced::Command;
 use crate::gui::subscription as sub;
+use crate::gui::messages::{ProgramCommands, Page, PungeCommand};
 
 use iced::subscription::{self, Subscription};
 use std::sync::mpsc;
 use iced::futures::channel::mpsc::Sender;
 use iced::futures::sink::SinkExt;
-use tokio::sync::mpsc as async_sender;
+use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 use tokio::sync::mpsc::UnboundedReceiver;
 use crate::db::fetch;
 use crate::player::interface::{MusicPlayer, read_file_from_beginning};
@@ -21,25 +21,20 @@ use crate::playliststructs::PungeMusicObject;
 pub fn begin() -> iced::Result {
     App::run(Settings::default())
 }
+// pages for the gui
+use crate::gui::{download_page, setting_page};
 
-
-
-struct App {
+pub struct App {
     theme: Theme,
     is_paused: bool,
     current_song: (String, String, String),
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
     volume: u8,
+    current_view: Page,
+    download_page: crate::gui::download_page::DownloadPage,
+    setting_page: setting_page::SettingPage
 }
 
-#[derive(Debug, Clone)]
-enum ProgramCommands {
-    Test,
-    Send(PungeCommand),
-    UpdateSender(Option<async_sender::UnboundedSender<PungeCommand>>),
-    NewData(String, String, String), // for sending back title, artist and album to GUI
-    VolumeChange(u8)
-}
 
 
 impl Application for App {
@@ -55,8 +50,10 @@ impl Application for App {
             is_paused: false,
             current_song: ("".to_string(), "".to_string(), "".to_string()),
             sender: None,
-            volume: 25 // read from json
-                // output stream?
+            volume: 25,
+            current_view: Page::Main,
+            download_page: download_page::DownloadPage::new(),
+            setting_page: setting_page::SettingPage::new()
             },
             Command::none())
     }
@@ -87,13 +84,23 @@ impl Application for App {
                 self.volume = val;
                 self.sender.as_mut().unwrap().send(PungeCommand::NewVolume(val)).expect("failure sending msg");
             }
+            Self::Message::DownloadLink(link) => {
+                println!("imagine we download {} here", link)
+            }
+            Self::Message::ChangePage(page) => {
+                self.current_view = page
+            }
+
+
             _ => println!("inumplmented")
         }
         Command::none()
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        container(row![
+    let page_buttons = row![button(text("Settings")).on_press(ProgramCommands::ChangePage(Page::Settings)),
+                button(text("Download!")).on_press(ProgramCommands::ChangePage(Page::Download)),].spacing(50);
+        let main_page = container(column![page_buttons, row![
                 column![text(self.current_song.0.clone()), text(self.current_song.1.clone()), text(self.current_song.2.clone())],
                 button(text("Go back")).on_press(ProgramCommands::Send(PungeCommand::SkipBackwards)),
                 button(text("Play")).on_press(ProgramCommands::Send(PungeCommand::Play)),
@@ -102,8 +109,12 @@ impl Application for App {
                 button(text("Shuffle")),
                 slider(0..=100, self.volume, Self::Message::VolumeChange).width(150)
             ].spacing(50)
-            .padding(iced::Padding::new(10 as f32)))
-            .into()
+            .padding(iced::Padding::new(10 as f32))]);
+        match self.current_view {
+            Page::Main => main_page.into(),
+            Page::Download => self.download_page.view(),
+            Page::Settings => self.setting_page.view()
+        }
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
@@ -312,7 +323,7 @@ pub fn change_count(incrementing: bool, count: isize, vec_len: usize) -> isize {
     let new_count: isize = if count == 0 && !incrementing { // if removing and count =0 (would make it -1)
         // going below the limit
         (vec_len as isize) -1
-    } else if (count == (vec_len -1).try_into().unwrap()) && incrementing {
+    } else if (count == (vec_len -1) as isize) && incrementing {
         0 as isize // going above or equal the limit
     } else {
         if incrementing { // all other cases!
