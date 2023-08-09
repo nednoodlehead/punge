@@ -85,10 +85,15 @@ impl Application for App {
                 self.sender.as_mut().unwrap().send(PungeCommand::NewVolume(val)).expect("failure sending msg");
             }
             Self::Message::DownloadLink(link) => {
-                println!("imagine we download {} here", link)
+                println!("imagine we download {} here", &link);
+                // from here, we will match and add the result into a 'feedback box'
+
             }
             Self::Message::ChangePage(page) => {
                 self.current_view = page
+            }
+            Self::Message::UpdateDownloadEntry(string) => {
+                self.download_page.text = string;
             }
 
 
@@ -110,7 +115,7 @@ impl Application for App {
                 slider(0..=100, self.volume, Self::Message::VolumeChange).width(150)
             ].spacing(50)
             .padding(iced::Padding::new(10 as f32))]);
-        match self.current_view {
+        match self.current_view {  // which page to display
             Page::Main => main_page.into(),
             Page::Download => self.download_page.view(),
             Page::Settings => self.setting_page.view()
@@ -135,10 +140,8 @@ impl Application for App {
         // main music loop!
             println!("starting main loop");
         loop {
-           //let music_obj =  process_command(&mut gui_rec, music_obj, &sender);
             match gui_rec.try_recv() {
                 Ok(cmd) => {
-                    // println!("reiceiving: {:?}", &cmd);
                     match cmd {
                         PungeCommand::Play => {
                             let song = interface::read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone());
