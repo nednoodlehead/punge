@@ -28,7 +28,8 @@ pub enum ProgramCommands {
     NewData(String, String, String), // for sending back title, artist and album to GUI
     VolumeChange(u8),
     DownloadLink(String),
-    ChangePage(Page)
+    ChangePage(Page),
+    UpdateDownloadEntry(String),
 }
 
 #[derive(Debug, Clone, Copy)]
