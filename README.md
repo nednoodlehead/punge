@@ -15,4 +15,3 @@ New Punge brings on multiple improvements:
 7) Playlist metadata
 8) Better data about each individiual song
 
-The main issue is having the rodio::OutputStream in scope when trying to play the music. Clicking play and nothing happens
