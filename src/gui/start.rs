@@ -17,7 +17,7 @@ use tokio::sync::mpsc::UnboundedReceiver;
 use crate::db::fetch;
 use crate::player::interface::{MusicPlayer, read_file_from_beginning};
 use crate::playliststructs::PungeMusicObject;
-
+use crate::utils::youtube_interface;
 pub fn begin() -> iced::Result {
     App::run(Settings::default())
 }
@@ -94,6 +94,22 @@ impl Application for App {
             }
             Self::Message::UpdateDownloadEntry(string) => {
                 self.download_page.text = string;
+            }
+            Self::Message::Download(link) => {
+                let temp_link = link.clone();
+                for item in youtube_interface::download(link) {
+                    match item {
+                        Ok(auth_and_title) => {
+                        println!("{:?}", &auth_and_title);
+                        self.download_page.download_feedback.push(format!("{} downloaded successfully!", auth_and_title))
+                    }
+                    Err(error) => {
+                        self.download_page.download_feedback.push(format!("Error downloading {} : {:?}", temp_link, error))
+                        // add to some list ? like failed downloads
+                        }
+                    }
+                }
+                // so when something is downloaded we can see the immediate results of it inside of the feedbackbox
             }
 
 

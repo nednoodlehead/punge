@@ -7,6 +7,7 @@ mod playliststructs;
 mod db;
 mod gui;
 mod player;
+mod utils;
 
 
 fn main() {

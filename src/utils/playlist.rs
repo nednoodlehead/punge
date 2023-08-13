@@ -11,7 +11,9 @@ use std::fmt;
 
 // It should also be known that this does *not* support downloading playlists with more than 100 videos
 
-pub fn get_playlist(link: &str) -> Playlist {
+use crate::playliststructs::AppError;
+
+pub fn get_playlist(link: &str) -> Result<Playlist, AppError> {
     let html: String = get_html(link);
     let json: String = parse_for_js(html);
     let extras: (String, String, u64) = get_extras(&json);
@@ -22,7 +24,7 @@ pub fn get_playlist(link: &str) -> Playlist {
         author: extras.1,
         length: extras.2,
     };
-    final_exp
+    Ok(final_exp)
 }
 // gets the html from the given link
 fn get_html(link: &str) -> String {

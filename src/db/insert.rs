@@ -2,7 +2,7 @@ use crate::playliststructs::{DatabaseErrors, PungeMusicObject, UserPlaylist};
 use rusqlite::{params, Connection, Row};
 use uuid::Uuid;
 
-pub fn add_to_main(music_obj: PungeMusicObject) -> Result<(), DatabaseErrors> {
+pub fn add_to_main(music_obj: PungeMusicObject) -> Result<String, DatabaseErrors> {
     let conn = Connection::open("main.db")?;
     conn.execute("INSERT INTO main (title, author, album, features, length, savelocationmp3,\
                     savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays, weight)\
@@ -11,7 +11,7 @@ pub fn add_to_main(music_obj: PungeMusicObject) -> Result<(), DatabaseErrors> {
                  music_obj.savelocationjpg, music_obj.datedownloaded, music_obj.lastlistenedto, music_obj.ischild, music_obj.uniqueid,
                  music_obj.plays, music_obj.weight])?;
     conn.close().map_err(|(_, err)| err)?;
-    Ok(())
+    Ok(format!("{} - {}", &music_obj.title, &music_obj.author))
 }
 
 pub fn create_playlist(mut new_playlist: UserPlaylist) -> Result<(), DatabaseErrors> {

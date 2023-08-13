@@ -30,6 +30,7 @@ pub enum ProgramCommands {
     DownloadLink(String),
     ChangePage(Page),
     UpdateDownloadEntry(String),
+    Download(String)
 }
 
 #[derive(Debug, Clone, Copy)]

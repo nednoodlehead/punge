@@ -88,3 +88,41 @@ pub enum DatabaseErrors {
     #[error("UniqueID Already Present in DB")]
     DatabaseEntryExistsError  // used when the unique id is already present in the database
 }
+
+use crate::utils::youtube_errors::Errors;
+
+#[derive(Debug)]
+pub enum AppError {
+    DatabaseError(DatabaseErrors),
+    YoutubeError(Errors),
+    FfmpegError,
+    FileError,
+    UrlParseError,
+    RustubeVideoError
+}
+
+impl From<DatabaseErrors> for AppError {
+    fn from(error: DatabaseErrors) -> Self {
+        AppError::DatabaseError(error)
+    }
+}
+
+impl From<Errors> for AppError {
+    fn from(error: Errors) -> Self {
+        AppError::YoutubeError(error)
+    }
+}
+
+use rustube::url::ParseError;
+impl From<ParseError> for AppError {
+    fn from(e: ParseError) -> Self {
+        AppError::UrlParseError
+    }
+}
+
+use rustube::Error as TubeError;
+impl From<TubeError> for AppError {
+    fn from(e: TubeError) -> Self {
+        AppError::RustubeVideoError
+    }
+}

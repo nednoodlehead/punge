@@ -3,7 +3,7 @@ use std::env::args;
 use std::fmt::{format, Pointer};
 // purpose of this file is to have ./youtube_interface.rs pass this file data about the song, and this
 // file will decide what is the artist / album / song title
-use crate::playliststructs::{DatabaseErrors, Playlist, PungeMusicObject};
+use crate::playliststructs::{DatabaseErrors, Playlist, PungeMusicObject, AppError};
 use itertools::{min, Itertools};
 use regex::Regex;
 use rustube::blocking::Video;
@@ -16,14 +16,15 @@ use serde_json::{to_string, Value, json};
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 
-use std::{thread, time::Duration};  // for sleeping when retrying download
+use std::{thread, time::Duration};
+use std::slice::RSplit;  // for sleeping when retrying download
 
 // calls the file that <turns one video & timestamps -> multiple videos> into scope
-#[path = "./sep_video.rs"]
-mod sep_video;
+use crate::utils::sep_video;
+use crate::utils::youtube_errors;
 
-use crate::insert;
-use crate::fetch;
+use crate::db::insert;
+use crate::db::fetch;
 
 // all filenames should follow <artist> - <title><uniqueid>
 
@@ -37,7 +38,8 @@ pub struct Straggler {
 }
 
 
-pub fn begin_playlist(playlist: Playlist) {
+pub fn begin_playlist(playlist: Playlist) -> Vec<Result<String, AppError>> {
+    let mut results: Vec<Result<String, AppError>> = vec![];
     // the dir should be derived from a ./cache/downloadlocation.json["punge_downloads"] this for test
     // if the title of the playlist has the dash then it is: <artist> - <album>
     let (mp3, jpg) = fetch_json();
@@ -45,20 +47,15 @@ pub fn begin_playlist(playlist: Playlist) {
     if playlist.title.contains(" - ") {
         let (author, album): (&str, &str) = playlist.title.split(" - ").collect_tuple().unwrap();
         for song in playlist.links {
-            // create the url obj
-            let url = Url::parse(song.as_str()).unwrap();
-            // use that url obj and create the 'Video' type
-            let vid = Video::from_url(&url).unwrap();
-            let punge_obj = create_punge_obj(
-                vid.clone(),
-                vid.title().to_string(),
-                author.to_string(),
-                album.to_string(),
-                String::from("no features rn"),
-                jpg.clone(),
-                mp3.clone(),
-            );
-            handle_punge_obj(punge_obj)
+            match loop_handle_playlist(song, album.to_string(), Some(author.to_string()), jpg.clone(), mp3.clone()) {
+                Ok(title_auth) => {
+                results.push(Ok(title_auth))
+                }
+                Err(e) => {
+                    results.push(Err(e))
+                    // send to a log?
+                }
+            }
 
         }
     }
@@ -66,9 +63,27 @@ pub fn begin_playlist(playlist: Playlist) {
     else {
         let album = playlist.title;
         for song in playlist.links {
-            let url = Url::parse(song.as_str()).unwrap();
-            let vid = Video::from_url(&url).unwrap();
-            let author = clean_author(vid.video_details().author.to_string());
+            match loop_handle_playlist(song, album.to_string(), None, jpg.clone(), mp3.clone()) {
+                Ok(title_auth) => {
+                results.push(Ok(title_auth))
+                }
+                Err(e) => {
+                    results.push(Err(e))
+                    // send to a log?
+                }
+            }
+        }
+    }
+    results
+}
+
+fn loop_handle_playlist(song: String, album: String, temp_author: Option<String>, jpg: String, mp3: String) -> Result<String, AppError> {
+            let url = Url::parse(song.as_str())?;
+            let vid = Video::from_url(&url)?;
+            let author = match temp_author { // if we know the author before hand (begin_playlist)
+                Some(auth) => {auth},
+                None => { clean_author(vid.video_details().author.to_string()) }
+            };
             let punge_obj = create_punge_obj(
                 vid.clone(),
                 vid.title().to_string(),
@@ -78,16 +93,29 @@ pub fn begin_playlist(playlist: Playlist) {
                 jpg.clone(),
                 mp3.clone()
             );
-            handle_punge_obj(punge_obj)
-        }
-    }
+            match punge_obj {
+                Ok(punge) => {
+                    match insert::add_to_main(punge) {
+                        Ok(t) => {
+                            Ok(t)
+                        }
+                        Err(e) => {
+                            Err(AppError::DatabaseError(e))
+                        }
+                    }
+                }
+                Err(e) => {
+                    Err(e)
+                }
+            }
 }
 
 
-pub fn begin_single(video: Video) {
+pub fn begin_single(video: Video) -> Vec<Result<String, AppError>> { // can only create one item inside a vec, but done this way so the branches return the same type
     let (mp3, jpg) = fetch_json();
     // need to have the arms of the if statement handle the videos seperately since one of than can
     // create a vec of punge objects (compared to just one)
+    let mut ret_vec: Vec<Result<String, AppError>> = vec![];
 
     // case where it is a single album upload (description check passes and title contains ' - '
     if video.title().contains(" - ") && description_timestamp_check(video.clone().video_details().short_description.as_str()) {
@@ -110,18 +138,26 @@ pub fn begin_single(video: Video) {
             println!("messin with the objs");
             match punge_obj {
                 Ok(t) => {
-                                let album_songs = sep_video::seperate(
+                    let album_songs = sep_video::seperate(
                 video.video_details().short_description.to_owned(),t, mp3, video.video_details().length_seconds as usize);
                     for obj in album_songs {
-                        insert::add_to_main(obj).unwrap();
+                        match insert::add_to_main(obj) {
+                            Ok(ret_val) => {
+                                ret_vec.push(Ok(ret_val))
+                            }
+                            Err(e) => {
+                                ret_vec.push(Err(AppError::DatabaseError(e)))
+                            }
+                        }
                     }
 
                 },
                 Err(e) => {
-                    println!("Error when downloading: {:?}", e)
+                    ret_vec.push(Err(e))
                 }
             }
         }
+        ret_vec
     }
         // case of <title> - <artist> (in the title) that does not have the
         else if video.title().contains(" - ") {
@@ -144,7 +180,22 @@ pub fn begin_single(video: Video) {
                 jpg,
                 mp3,
             );
-            handle_punge_obj(punge_obj)
+            match punge_obj {
+                Ok(obj) => {
+                    match insert::add_to_main(obj) {
+                        Ok(e) => {
+                            ret_vec.push(Ok(e))
+                        }
+                        Err(e) => {
+                            ret_vec.push(Err(AppError::DatabaseError(e)))
+                        }
+                    }
+                }
+                Err(e) => {
+                    ret_vec.push(Err(e))
+                }
+            }
+            ret_vec
         } else {
             // title = title, author = author, album = single, features = none
             println!("here 0");
@@ -169,21 +220,25 @@ pub fn begin_single(video: Video) {
                 jpg,
                 mp3,
             );
-            println!("adding to main?");
-            handle_punge_obj(punge_obj);
+            match punge_obj {
+                Ok(t) => {
+                    match insert::add_to_main(t) {
+                Ok(ret_val) => {
+                    ret_vec.push(Ok(ret_val));
+                }
+                Err(e) => {
+                    ret_vec.push(Err(AppError::DatabaseError(e)));
+                }
+            }
+                }
+                Err(e) => {
+                    ret_vec.push(Err(e));
+                }
+            }
+            ret_vec
         }
     }
 
-fn handle_punge_obj(punge_obj: Result<PungeMusicObject, DatabaseErrors>) {
-    match punge_obj {
-        Ok(t) => {
-            insert::add_to_main(t).unwrap();
-        }
-        Err(e) => {
-            println!("Error adding to db: {:?}", e);
-        }
-    }
-}
 
 fn create_punge_obj(
     vid: Video,
@@ -193,7 +248,7 @@ fn create_punge_obj(
     features: String,
     jpg_dir: String,
     mp3_dir: String,
-) -> Result<PungeMusicObject, DatabaseErrors> {
+) -> Result<PungeMusicObject, AppError> {
     // downloads the video, thumbnail
     // creates the punge obj for further processing if needed (like one song -> whole album)
     let author = clean_inputs_for_win_saving(author);
@@ -203,13 +258,13 @@ fn create_punge_obj(
     let jpg_name = format!("{}{}.jpg", jpg_dir, naming_conv);
     let mp3_name = format!("{}{}.mp3", mp3_dir, naming_conv);
     if fetch::exists_in_db(vid.video_details().video_id.to_string()) {
-        return Err(DatabaseErrors::DatabaseEntryExistsError)
+        return Err(AppError::DatabaseError(DatabaseErrors::DatabaseEntryExistsError))
     }
     if std::path::Path::new(&mp3_name).exists() {
-        return Err(DatabaseErrors::FileExistsError)
+        return Err(AppError::DatabaseError(DatabaseErrors::FileExistsError))
     }
     // keep in mind that this will add to db whether it fails or not. which is intended
-    download_to_punge(vid.clone(), mp3_dir, jpg_dir, mp3_name.clone(), jpg_name.clone());
+    download_to_punge(vid.clone(), mp3_dir, jpg_dir, mp3_name.clone(), jpg_name.clone())?;
     Ok(PungeMusicObject {
         title,
         author,
@@ -282,8 +337,8 @@ fn download_to_punge(
     mp3_path: String,
     jpg_path: String,
     new_mp3_name: String,
-    new_jpg_name: String
-) {
+    new_jpg_name: String // unused rn
+) -> Result<(), AppError>{
     let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
     // we assume that the inputs are sanitized by "clean_input_for_win_saving"
     // the unwrap can fail sometimes. so we loop 5 times, sleeping for 3 seconds inbetween so it will try again
@@ -292,18 +347,24 @@ fn download_to_punge(
                 // convert the old file to (webm) to mp3 and rename
                 let x = Command::new("ffmpeg.exe").args(["-i", old_name.as_str(), "-vn",
                 "-c:a", "libmp3lame", "-b:a", "192k", new_mp3_name.as_str()]).output();
-                println!("result of x: {:?}", x.unwrap());
-                fs::remove_file(old_name.clone()).unwrap();
-
-
+                match x {
+                    Ok(t) => {
+                    match fs::remove_file(old_name.clone()) {
+                        Ok(t) => {
+                            Ok(())  // if the ffmpeg operation goes well and he file is removed
+                        }
+                        Err(e) => {
+                            Err(AppError::FileError)  // if the ffmpeg operation works, and the file is not removed
+                        }
+                        }
+                    }
+                    Err(e) => {
+                        Err(AppError::FfmpegError)  // if the ffmpeg operation fails
+                    }
+                }
             }
             Err(e) => {
-                println!("failure downloading: {:?}", e);
-                add_to_stragglers(Straggler {
-                    id: vid.video_details().video_id.to_string(),
-                    mp3_path,
-                    jpg_path
-                })
+                Err(AppError::YoutubeError(youtube_errors::Errors::RustubeError(rustube::Error::Fatal("Unable to download!".to_string()))))
             }
         }
 
@@ -464,20 +525,20 @@ fn fetch_straggler_count() -> usize {
     fetch_stragglers().len()
 }
 
-fn download_stragglers() {
-    // will attempt to redownload all stragglers. if a straggler fails. we will write it back into stragglers.json
-    // also stragglers will / should only be singles, no playlists
-    // the data for stragglers is added into the db, but the actual download isn't there. we will download it with correct naming convention
-    let new_stragglers: Vec<Straggler> = Vec::new();
-    let ids: Vec<Straggler> = fetch_stragglers();
-    let (mp3_download, jpg_download) = fetch_json();
-    // clear stragglers. so that the download_to_punge function can put back any others that failed this time
-    clear_stragglers();
-    for straggler in ids {
-        let link = format!("www.youtube.com/watch?v={}", straggler.id);
-        let url = rustube::url::Url::parse(link.as_str()).unwrap();
-        let vid = rustube::blocking::Video::from_url(&url).unwrap();
-        download_to_punge(vid, mp3_download.clone(), jpg_download.clone(), straggler.mp3_path, straggler.jpg_path)
-    }
-}
+// fn download_stragglers() { // will come back to eventually !!
+//     // will attempt to redownload all stragglers. if a straggler fails. we will write it back into stragglers.json
+//     // also stragglers will / should only be singles, no playlists
+//     // the data for stragglers is added into the db, but the actual download isn't there. we will download it with correct naming convention
+//     let new_stragglers: Vec<Straggler> = Vec::new();
+//     let ids: Vec<Straggler> = fetch_stragglers();
+//     let (mp3_download, jpg_download) = fetch_json();
+//     // clear stragglers. so that the download_to_punge function can put back any others that failed this time
+//     clear_stragglers();
+//     for straggler in ids {
+//         let link = format!("www.youtube.com/watch?v={}", straggler.id);
+//         let url = rustube::url::Url::parse(link.as_str()).unwrap();
+//         let vid = rustube::blocking::Video::from_url(&url).unwrap();
+//         download_to_punge(vid, mp3_download.clone(), jpg_download.clone(), straggler.mp3_path, straggler.jpg_path)
+//     }
+// }
 
