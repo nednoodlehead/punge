@@ -86,7 +86,7 @@ fn loop_handle_playlist(song: String, album: String, temp_author: Option<String>
             };
             let punge_obj = create_punge_obj(
                 vid.clone(),
-                vid.title().to_string(),
+                clean_inputs_for_win_saving(vid.title().to_string()),
                 author,
                 album.to_owned(),
                 String::from("no features rn"),
@@ -203,13 +203,16 @@ pub fn begin_single(video: Video) -> Vec<Result<String, AppError>> { // can only
             let desc = video.video_details();
             let desc = desc.short_description.split("\n").collect::<Vec<&str>>();
             // the fifth line of the description will be the album name. or single name if its a single
-            let album_or_single: String = if &desc[4] == &video.title() {
+            let album_or_single: String = if !&desc.len() > 3 {  // edge case where description is not more than 4 lines
+                String::from("Single")
+            }
+            else if &desc[4] == &video.title() {
                 String::from("Single")
             } else {
                 desc[2].to_string()
             };
             let auth = clean_author(video.video_details().author.to_owned());
-            let title = video.title().to_string();
+            let title = clean_inputs_for_win_saving(video.title().to_string());
             // should probably parse and find features here
                 let punge_obj = create_punge_obj(
                 video,
@@ -339,7 +342,8 @@ fn download_to_punge(
     new_mp3_name: String,
     new_jpg_name: String // unused rn
 ) -> Result<(), AppError>{
-    let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
+    // let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
+    let old_name = format!("{}{}.mp4", mp3_path.clone(), vid.video_details().video_id);
     // we assume that the inputs are sanitized by "clean_input_for_win_saving"
     // the unwrap can fail sometimes. so we loop 5 times, sleeping for 3 seconds inbetween so it will try again
         match vid.best_audio().unwrap().blocking_download_to_dir(mp3_path.clone()) {
@@ -354,7 +358,8 @@ fn download_to_punge(
                             Ok(())  // if the ffmpeg operation goes well and he file is removed
                         }
                         Err(e) => {
-                            Err(AppError::FileError)  // if the ffmpeg operation works, and the file is not removed
+                            println!("nameer::  {} {}", new_mp3_name.as_str(), &old_name);
+                            Err(AppError::FileError(format!("{:?}", e)))  // if the ffmpeg operation works, and the file is not removed
                         }
                         }
                     }
