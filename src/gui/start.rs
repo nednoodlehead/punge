@@ -140,7 +140,7 @@ impl Application for App {
 
     fn subscription(&self) -> Subscription<Self::Message> {
         use iced::futures::SinkExt;
-        iced::subscription::channel(0, 32, |mut sender| async move {
+        let music_loop = iced::subscription::channel(0, 32, |mut sender| async move {
         let (gui_send, mut gui_rec) = tokio::sync::mpsc::unbounded_channel();
         sender.send(Self::Message::UpdateSender(Some(gui_send))).await.unwrap(); // send the sender to the gui !!
         let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
@@ -331,7 +331,8 @@ impl Application for App {
             }
             async_std::task::sleep(std::time::Duration::from_millis(50)).await;
         }
-    })
+    });
+        iced::subscription::Subscription::batch(vec![music_loop])
     }
 
 }
