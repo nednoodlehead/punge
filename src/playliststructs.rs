@@ -96,7 +96,7 @@ pub enum AppError {
     DatabaseError(DatabaseErrors),
     YoutubeError(Errors),
     FfmpegError,
-    FileError,
+    FileError(String),
     UrlParseError,
     RustubeVideoError
 }
