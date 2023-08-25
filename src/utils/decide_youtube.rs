@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::env::args;
 use std::fmt::{format, Pointer};
+use std::path::Path;
 // purpose of this file is to have ./youtube_interface.rs pass this file data about the song, and this
 // file will decide what is the artist / album / song title
 use crate::playliststructs::{DatabaseErrors, Playlist, PungeMusicObject, AppError};
@@ -342,7 +343,14 @@ fn download_to_punge(
     new_jpg_name: String // unused rn
 ) -> Result<(), AppError>{
     // let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
-    let old_name = format!("{}{}.mp4", mp3_path.clone(), vid.video_details().video_id);
+    let mp4_name = format!("{}{}.mp4", mp3_path.clone(), vid.video_details().video_id); // can sometimes be .webm??
+    let webm_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
+    let old_name = if Path::new(&mp4_name).exists() {  // sometimes its an mp4 download, sometimes mp4. dunno why
+        mp4_name
+    }
+    else {
+        webm_name
+    };
     // we assume that the inputs are sanitized by "clean_input_for_win_saving"
     // the unwrap can fail sometimes. so we loop 5 times, sleeping for 3 seconds inbetween so it will try again
         match vid.best_audio().unwrap().blocking_download_to_dir(mp3_path.clone()) {
