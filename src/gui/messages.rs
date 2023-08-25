@@ -2,6 +2,7 @@
 // as well as the actual music-playing portion of the app
 
 use tokio::sync::mpsc as async_sender;
+use crate::playliststructs::AppError;
 
 #[derive(Debug, Clone)]
 pub enum PungeCommand {
@@ -30,7 +31,8 @@ pub enum ProgramCommands {
     DownloadLink(String),
     ChangePage(Page),
     UpdateDownloadEntry(String),
-    Download(String)
+    Download(String),
+    AddToDownloadFeedback(Option<Vec<Result<String, AppError>>>) // only called from the subscription
 }
 
 #[derive(Debug, Clone, Copy)]
