@@ -21,7 +21,6 @@ use std::slice::RSplit;  // for sleeping when retrying download
 
 // calls the file that <turns one video & timestamps -> multiple videos> into scope
 use crate::utils::sep_video;
-use crate::utils::youtube_errors;
 
 use crate::db::insert;
 use crate::db::fetch;
@@ -369,7 +368,7 @@ fn download_to_punge(
                 }
             }
             Err(e) => {
-                Err(AppError::YoutubeError(youtube_errors::Errors::RustubeError(rustube::Error::Fatal("Unable to download!".to_string()))))
+                Err(AppError::YoutubeError(format!("YouTube Error: {:?}", e)))
             }
         }
 
@@ -487,14 +486,19 @@ fn description_timestamp_check(desc: &str) -> bool {  // answering the question:
     // a song will have repeating "timestamps" (in lyrics), legitimate timestamps will not
     let pattern = Regex::new(r"\d*:\d\d").unwrap();  // catches timestamps (10:10, 1:34:51..)
     let mut caught_list: Vec<&str> = pattern.find_iter(desc).map(|mat| mat.as_str()).collect();  // list for all captured regex patterns. We will check if they are all the same
-    let init_catch = caught_list[0].clone();
+    if caught_list.len() == 0 {  // if the caught list it empty, meaning that there are no timestamps
+        return false
+    }
+    else {
+       let init_catch = caught_list[0].clone();
     for catch in &mut caught_list[1..] {
-        if init_catch == *catch {
+        if init_catch == *catch {  // (after wrote) i think this is to check each one to see if it matches the first one, so songs that have timestamp in name are not caught
             return false
         }
     }
     // well, no repeats of the first found, is likely fine then
     true
+    }
 }
 
 fn add_to_stragglers(straggler: Straggler) {  // un-pub at some point
