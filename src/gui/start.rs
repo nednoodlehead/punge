@@ -17,7 +17,7 @@ use tokio::sync::mpsc::UnboundedReceiver;
 use crate::db::fetch;
 use crate::player::interface::{MusicPlayer, read_file_from_beginning};
 use crate::playliststructs::PungeMusicObject;
-use crate::utils::youtube_interface;
+use crate::utils::{youtube_interface, types};
 pub fn begin() -> iced::Result {
     App::run(Settings::default())
 }
@@ -32,7 +32,9 @@ pub struct App {
     volume: u8,
     current_view: Page,
     download_page: crate::gui::download_page::DownloadPage,
-    setting_page: setting_page::SettingPage
+    setting_page: setting_page::SettingPage,
+    download_list: Vec<types::Download>, // should also include the link somewhere to check for
+    last_id: usize,
 }
 
 
@@ -53,7 +55,9 @@ impl Application for App {
             volume: 25,
             current_view: Page::Main,
             download_page: download_page::DownloadPage::new(),
-            setting_page: setting_page::SettingPage::new()
+            setting_page: setting_page::SettingPage::new(),
+            download_list: vec![],
+            last_id: 0
             },
             Command::none())
     }
@@ -95,21 +99,36 @@ impl Application for App {
             Self::Message::UpdateDownloadEntry(string) => {
                 self.download_page.text = string;
             }
-            Self::Message::Download(link) => {
-                let temp_link = link.clone();
-                for item in youtube_interface::download(link) {
+            Self::Message::Download(link) => { // should be depreciated?
+                self.last_id += 1;
+                println!("pushing lol");
+                self.download_list.push(types::Download {
+                    id: self.last_id,
+                    link: Some(link)
+                });
+            }
+            Self::Message::AddToDownloadFeedback(feedback) => { // only is called from the subscription ??
+                match feedback {
+                    Some(T) => {
+                    for item in T {
                     match item {
                         Ok(auth_and_title) => {
                         println!("{:?}", &auth_and_title);
                         self.download_page.download_feedback.push(format!("{} downloaded successfully!", auth_and_title))
                     }
                     Err(error) => {
-                        self.download_page.download_feedback.push(format!("Error downloading {} : {:?}", temp_link, error))
+
+                        self.download_page.download_feedback.push(format!("Error downloading (should have link, will fix later) : {:?}", error))
                         // add to some list ? like failed downloads
                         }
                     }
                 }
-                // so when something is downloaded we can see the immediate results of it inside of the feedbackbox
+                    }
+                    None => {
+                        println!("start.rs: none after downloadfeedback?? 128")
+                    }
+                }
+
             }
 
 
@@ -332,7 +351,13 @@ impl Application for App {
             async_std::task::sleep(std::time::Duration::from_millis(50)).await;
         }
     });
-        iced::subscription::Subscription::batch(vec![music_loop])
+    // so this could eventually mimic the iced-rs/iced/blob/0.10/examples/download_progress, but i dont want to impl that, it would take so long
+    // and im pretty sure that rustube has async callback for download progress, so it should be possible.
+
+    // will also need to implement keybinds here. will do at another time though
+
+        iced::subscription::Subscription::batch(vec![music_loop, Subscription::batch(self.download_list.iter()
+            .map(types::Download::subscription))]) // is two batches required?? prolly not
     }
 
 }
