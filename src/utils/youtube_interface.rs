@@ -14,13 +14,11 @@ use std::thread;
 // use decide::entry;
 
 use crate::playliststructs::{Playlist, PungeMusicObject, AppError};
-use crate::utils::youtube_errors;
 use crate::utils::decide_youtube::{begin_playlist, begin_single};
 
 // this is the function exposed to the rest of the app. It takes in the youtube link
 
-pub fn download(link: String) -> Vec<Result<String, AppError>>{
-    thread::spawn(|| {
+pub async fn download(link: String) -> Vec<Result<String, AppError>> {
 
     let mut values: Vec<Result<String, AppError>> = vec![];
     if link.contains("list=") {
@@ -67,7 +65,6 @@ pub fn download(link: String) -> Vec<Result<String, AppError>>{
         }
     }
     values
-    }).join().unwrap()
 }
 
 pub fn check_if_exists(uniqueid: String) {
