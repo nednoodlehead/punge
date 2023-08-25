@@ -107,18 +107,18 @@ impl Application for App {
                     link: Some(link)
                 });
             }
-            Self::Message::AddToDownloadFeedback(feedback) => { // only is called from the subscription ??
+            Self::Message::AddToDownloadFeedback(feedback) => { // only is called from the subscription !!
                 match feedback {
-                    Some(T) => {
-                    for item in T {
+                    Some(t) => {
+                    for item in t {
                     match item {
-                        Ok(auth_and_title) => {
-                        println!("{:?}", &auth_and_title);
+                        Ok((link, auth_and_title)) => {
+                        println!("{} made {:?}", &link, &auth_and_title);
                         self.download_page.download_feedback.push(format!("{} downloaded successfully!", auth_and_title))
                     }
                     Err(error) => {
 
-                        self.download_page.download_feedback.push(format!("Error downloading (should have link, will fix later) : {:?}", error))
+                        self.download_page.download_feedback.push(format!("Error downloading {}: {:?}", self.download_list[self.download_list.len() -1].link.clone().unwrap() ,error))
                         // add to some list ? like failed downloads
                         }
                     }
@@ -235,9 +235,6 @@ impl Application for App {
                         PungeCommand::None => {
                             println!("is this even used?")
                         }
-                        // _ => {
-                        //     println!("yeah, other stuff... {:?}", cmd)
-                        // }
                     }
                 }
                 _ => {
@@ -382,32 +379,3 @@ pub fn change_count(incrementing: bool, count: isize, vec_len: usize) -> isize {
     };
         new_count
 }
-
-// pub fn process_command(receiver: &mut UnboundedReceiver<PungeCommand>, mut music_obj: interface::MusicPlayer, sender: &Sender<ProgramCommands>) -> MusicPlayer {
-//     println!("pretend to process here... yadda yada");
-//     match receiver.try_recv() {
-//                         Ok(cmd) => {
-//                     match cmd {
-//                         PungeCommand::Play => {
-//                             println!("obj list: {:?}", music_obj.list);
-//                             let song = interface::read_file_from_beginning(music_obj.list[0].savelocationmp3.clone());
-//                             music_obj.sink.append(song);
-//                             music_obj.to_play = true;
-//                             music_obj.sink.play();
-//                             println!("playing here... {}", music_obj.count);
-//                             sender.send(ProgramCommands::NewData("one".to_string(), "two".to_string(), "three".to_string())).await.unwrap();
-//                         }
-//                         PungeCommand::Stop => {
-//                             println!("stooping here!");
-//                             music_obj.sink.pause();
-//                             music_obj.to_play = false
-//                         }
-//                         _ => {
-//                             println!("yeah, other stuff... {:?}", cmd)
-//                         }
-//                     }
-//                 }
-//         _ => {} // ignore 4 now
-//     }
-//     music_obj
-// }

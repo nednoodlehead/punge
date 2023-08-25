@@ -18,17 +18,16 @@ pub enum DownloadState {
 }
 
 
-pub fn subscription_convert(id: usize, link: String) -> Subscription<Option<Vec<Result<String, AppError>>>> {
+pub fn subscription_convert(id: usize, link: String) -> Subscription<Option<Vec<Result<(String, String), AppError>>>> {
     subscription::unfold(id, DownloadState::Ready(link), move |state| {
        download_int(id, state)
     })
 }
 
-pub async fn download_int(id: usize, state: DownloadState) -> (Option<Vec<Result<String, AppError>>>, DownloadState) { // option should hold the state type?? {
+pub async fn download_int(id: usize, state: DownloadState) -> (Option<Vec<Result<(String, String), AppError>>>, DownloadState) { // option should hold the state type?? {
 
     match state {
         DownloadState::Ready(link) => {
-            //(youtube_interface::download(link).await, DownloadState::Finished)
            (Some(youtube_interface::download(link).await), DownloadState::Finished)
         }
         DownloadState::Downloading => {  // not sure if this is needed?

@@ -376,7 +376,7 @@ fn download_to_punge(
                 }
             }
             Err(e) => {
-                Err(AppError::YoutubeError(format!("YouTube Error: {:?}", e)))
+                Err(AppError::YoutubeError(format!("Error downloading {}: {:?}", format!("https://www.youtube.com/watch?v={}", vid.video_details().video_id.to_string()), e)))
             }
         }
 

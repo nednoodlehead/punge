@@ -32,7 +32,7 @@ pub enum ProgramCommands {
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),
-    AddToDownloadFeedback(Option<Vec<Result<String, AppError>>>) // only called from the subscription
+    AddToDownloadFeedback(Option<Vec<Result<(String, String), AppError>>>) // only called from the subscription
 }
 
 #[derive(Debug, Clone, Copy)]
