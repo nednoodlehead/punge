@@ -18,9 +18,10 @@ use crate::utils::decide_youtube::{begin_playlist, begin_single};
 
 // this is the function exposed to the rest of the app. It takes in the youtube link
 
-pub async fn download(link: String) -> Vec<Result<String, AppError>> {
+pub async fn download(link: String) -> Vec<Result<(String, String), AppError>> {  // (String, String) = (url, auth and title)
 
-    let mut values: Vec<Result<String, AppError>> = vec![];
+    let mut values: Vec<Result<(String, String), AppError>> = vec![];
+    let link_clone = link.clone();
     if link.contains("list=") {
         let vid = playlist_parse(link);
             match vid {
@@ -29,10 +30,10 @@ pub async fn download(link: String) -> Vec<Result<String, AppError>> {
                for item in begin_playlist(ok_list) {
                    match item {
                        Ok(good_vid) => {
-                           values.push(Ok(good_vid));
+                           values.push(Ok((link_clone.clone(), good_vid)));
                        }
                        Err(e) => {
-                           values.push(Err(e));
+                           values.push(Err((e)));
                        }
                    }
                }
@@ -46,18 +47,16 @@ pub async fn download(link: String) -> Vec<Result<String, AppError>> {
         let vid = single_parse(link);
                 match vid {
             Ok(video) => {
-               // match begin_single(video) {
                 for item in begin_single(video) {
                     match item {
                         Ok(good_vid) => {
-                            values.push(Ok(good_vid));
+                            values.push(Ok((link_clone.clone(), good_vid)));
                         }
                         Err(e) => {
                             values.push(Err(e));
                         }
                     }
                 }
-        //}
             }
             Err(e) => {
                 values.push(Err(e));
@@ -84,7 +83,7 @@ fn playlist_parse(playlist_link: String) -> Result<Playlist, AppError> {
             Ok(good_playlist)
         }
         Err(e) => {
-            Err(AppError::UrlParseError)
+            Err(AppError::InvalidUrlError)
         }
     }
 }
@@ -98,7 +97,7 @@ fn single_parse(single_link: String) -> Result<rustube::blocking::video::Video, 
         Ok(vid)
         }
         Err(e) => {
-            Err(AppError::UrlParseError)
+            Err(AppError::InvalidUrlError)
         }
     }
 

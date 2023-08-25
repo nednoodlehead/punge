@@ -91,10 +91,10 @@ pub enum DatabaseErrors {
 #[derive(Debug, Clone)]
 pub enum AppError {
     DatabaseError(DatabaseErrors),
-    YoutubeError(String),
+    YoutubeError(String),  // url, what went wrong
     FfmpegError,
     FileError(String),
-    UrlParseError,
+    InvalidUrlError,
     RustubeVideoError
 }
 
@@ -108,7 +108,7 @@ impl From<DatabaseErrors> for AppError {
 use rustube::url::ParseError;
 impl From<ParseError> for AppError {
     fn from(e: ParseError) -> Self {
-        AppError::UrlParseError
+        AppError::InvalidUrlError
     }
 }
 
