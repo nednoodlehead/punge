@@ -77,24 +77,21 @@ impl fmt::Debug for PungeMusicObject {
 
 // wrap the two errors that can arise from database problems into our own custom enum
 
-#[derive(Debug, terror)]
+#[derive(Debug, terror, Clone)]
 pub enum DatabaseErrors {
-    #[error("Rusqlite error: {0}")]
-    RusqliteError(#[from] Error),
-    #[error("FromSql error: {0}")]
-    FromSqlError(#[from] FromSqlError),
     #[error("File Already Exists")]
     FileExistsError,  // used when a song already downloaded
     #[error("UniqueID Already Present in DB")]
-    DatabaseEntryExistsError  // used when the unique id is already present in the database
+    DatabaseEntryExistsError,  // used when the unique id is already present in the database
+    #[error("Error inserting")]
+    FromSqlError
 }
 
-use crate::utils::youtube_errors::Errors;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AppError {
     DatabaseError(DatabaseErrors),
-    YoutubeError(Errors),
+    YoutubeError(String),
     FfmpegError,
     FileError(String),
     UrlParseError,
@@ -107,11 +104,6 @@ impl From<DatabaseErrors> for AppError {
     }
 }
 
-impl From<Errors> for AppError {
-    fn from(error: Errors) -> Self {
-        AppError::YoutubeError(error)
-    }
-}
 
 use rustube::url::ParseError;
 impl From<ParseError> for AppError {
@@ -126,3 +118,22 @@ impl From<TubeError> for AppError {
         AppError::RustubeVideoError
     }
 }
+
+impl From<FromSqlError> for AppError {
+    fn from(e: FromSqlError) -> Self {
+        AppError::DatabaseError(DatabaseErrors::FromSqlError)
+    }
+}
+
+impl From<rusqlite::Error> for AppError {
+    fn from(e: Error) -> Self {
+        AppError::DatabaseError(DatabaseErrors::FromSqlError)
+    }
+}
+
+impl From<rusqlite::Error> for DatabaseErrors {
+    fn from(e: Error) -> Self {
+        DatabaseErrors::FromSqlError
+    }
+}
+
