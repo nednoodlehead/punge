@@ -1,3 +1,5 @@
+extern crate core;
+
 use rodio::{OutputStream, Sink, Decoder};
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
