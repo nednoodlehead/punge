@@ -17,13 +17,14 @@ impl DownloadPage {
         }
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
+        let debug_button = button(text("List check")).on_press(ProgramCommands::Debug);
         let input_field = text_input("Paste YouTube links here!", self.text.as_str())
             .on_input(ProgramCommands::UpdateDownloadEntry).width(Length::Fixed(400.0));
         let confirm_button = button(text("Download!")).on_press(ProgramCommands::Download(self.text.clone()));
         let download_row = row![horizontal_space(Length::Fixed(300.0)),input_field, confirm_button].align_items(Alignment::End);
         let feedback_scrollable = row![horizontal_space(Length::Fixed(300.0)), container(self.create_scrollable()).style(iced::theme::Container::Custom(Box::from(scroller::ScrollerContainer)))];
         Container::new(column![text("Download page"), button(text("Home")).on_press(ProgramCommands::ChangePage(Page::Main)), download_row,
-        feedback_scrollable].spacing(10.0)).into()
+        feedback_scrollable, debug_button].spacing(10.0)).into()
     }
     fn create_scrollable(&self) -> Element<'_, ProgramCommands> { // not the right output type?
         scrollable(self.download_feedback.iter().fold(

@@ -32,6 +32,7 @@ pub enum ProgramCommands {
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),
+    Debug, // a message that has its associated action changed with the debug in question
     AddToDownloadFeedback(Option<Vec<Result<(String, String), AppError>>>) // only called from the subscription
 }
 
