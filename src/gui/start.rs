@@ -100,12 +100,23 @@ impl Application for App {
                 self.download_page.text = string;
             }
             Self::Message::Download(link) => { // should be depreciated?
-                self.last_id += 1;
-                println!("pushing lol");
+                let mut eval: bool = false;
+                for download in self.download_list.iter() {
+                    if &download.link.clone().unwrap() == &link {
+                        self.download_page.download_feedback.push(format!("Download already started on {}", link.clone()));
+                        eval = true;
+                    }
+                }
+                if eval == false {
+                    println!("pushing and downloading!");
                 self.download_list.push(types::Download {
                     id: self.last_id,
                     link: Some(link)
                 });
+                }
+                else {
+                    println!("not pushing !!! already downloading")
+                }
             }
             Self::Message::AddToDownloadFeedback(feedback) => { // only is called from the subscription !!
                 match feedback {
@@ -114,7 +125,15 @@ impl Application for App {
                     match item {
                         Ok((link, auth_and_title)) => {
                         println!("{} made {:?}", &link, &auth_and_title);
-                        self.download_page.download_feedback.push(format!("{} downloaded successfully!", auth_and_title))
+                        self.download_page.download_feedback.push(format!("{} downloaded successfully!", auth_and_title));
+                            let mut ind = 0;
+                        for (index, download) in self.download_list.iter().enumerate() {
+                            if download.link.as_ref().unwrap() == &link {
+                                println!("removed: {}", &link);
+                                ind = index;
+                            }
+                        }
+                        self.download_list.remove(ind);
                     }
                     Err(error) => {
 
@@ -129,6 +148,9 @@ impl Application for App {
                     }
                 }
 
+            }
+            Self::Message::Debug => {
+                println!("Da list: {:?}", self.download_list)
             }
 
 
