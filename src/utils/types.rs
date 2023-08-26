@@ -1,3 +1,5 @@
+use core::fmt;
+use std::fmt::Formatter;
 // types for the 'download' struct. Only used in the gui for sending back data
 // in theory, this should allow for multiple downloads at the same time ?
 use iced::{Subscription, subscription};
@@ -15,6 +17,11 @@ pub enum DownloadState {
     Ready(String),
     Downloading,
     Finished
+}
+impl std::fmt::Debug for Download {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.link.clone().unwrap())
+    }
 }
 
 
