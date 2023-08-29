@@ -201,8 +201,10 @@ impl Application for App {
                 Ok(cmd) => {
                     match cmd {
                         PungeCommand::Play => {
+                            if music_obj.sink.empty() {
                             let song = interface::read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone());
                             music_obj.sink.append(song);
+                            }
                             music_obj.to_play = true;
                             music_obj.sink.play();
                             println!("playing here... {}", music_obj.count);
