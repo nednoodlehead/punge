@@ -25,3 +25,4 @@ rodio = "0.17.1"
 iced = {version = "0.10", features = ["advanced"] }
 tokio = {version = "1.29.0", features = ["time", "sync"]}
 async-std = "1.12.0"
+global-hotkey = "0.2.4"
