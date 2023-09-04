@@ -23,6 +23,7 @@ pub fn begin() -> iced::Result {
 }
 // pages for the gui
 use crate::gui::{download_page, setting_page};
+use global_hotkey::{GlobalHotKeyManager, hotkey::{HotKey, Modifiers, Code}, GlobalHotKeyEvent};
 
 pub struct App {
     theme: Theme,
@@ -46,6 +47,20 @@ impl Application for App {
     type Flags = ();
 
     fn new(_flags: Self::Flags) -> (App, iced::Command<Self::Message>) {
+        // hotkey management and this is where new keybinds are to be added
+        let manager = GlobalHotKeyManager::new().unwrap();
+        let hotkey_1 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowRight);
+        let hotkey_2 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowLeft);
+        let hotkey_3 = HotKey::new(Some(Modifiers::CONTROL), Code::End);
+        let hotkey_4 = HotKey::new(Some(Modifiers::CONTROL), Code::PageDown);
+        let hotkey_5 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowUp);
+        let hotkey_6 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowDown);
+        manager.register(hotkey_1).unwrap();
+        manager.register(hotkey_2).unwrap();
+        manager.register(hotkey_3).unwrap();
+        manager.register(hotkey_4).unwrap();
+        manager.register(hotkey_5).unwrap();
+        manager.register(hotkey_6).unwrap();
         (
             App {
             theme: Default::default(),
@@ -67,6 +82,7 @@ impl Application for App {
     }
 
     fn update(&mut self, msg: Self::Message) -> iced::Command<ProgramCommands> {
+        println!("updated");
         match msg {
             Self::Message::Test => {
                 println!("doing play, here?");
@@ -74,6 +90,7 @@ impl Application for App {
                 // self.sender.send(Command::Play).unwrap();  // i dont think this unwrap() can fail ..
             }
             Self::Message::Send(cmd) => {
+                println!("sending punge cmd: {:?}", &cmd);
                 self.sender.as_mut().unwrap().send(cmd).expect("failure sending msg");
             }
             Self::Message::UpdateSender(sender) => {
@@ -180,6 +197,52 @@ impl Application for App {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
+
+        let hotkey_loop = iced::subscription::channel(5, 32, |mut sender | async move {
+            use iced::futures::sink::SinkExt;
+            loop {
+            match GlobalHotKeyEvent::receiver().try_recv() {
+                Ok(hotkey) => {
+                    // handle global keybinds
+                    println!("new keybind incming: {:?}", hotkey);
+                    match hotkey {
+                        GlobalHotKeyEvent { id: 4121890298 } => {
+                            // right arrow
+                            sender.send(Self::Message::Send(PungeCommand::SkipForwards)).await.unwrap();
+                        }
+                        GlobalHotKeyEvent { id: 2037224482 } => {
+                            // up arrow
+                            sender.send(Self::Message::Send(PungeCommand::StaticVolumeUp)).await.unwrap();
+                        }
+                        GlobalHotKeyEvent { id: 1912779161 } => {
+                            // left arrow??
+                            sender.send(Self::Message::Send(PungeCommand::SkipBackwards)).await.unwrap();
+                        }
+                        GlobalHotKeyEvent { id: 4174001518 } => {
+                            // down arrow!
+                            sender.send(Self::Message::Send(PungeCommand::StaticVolumeDown)).await.unwrap();
+
+                        }
+                        GlobalHotKeyEvent { id: 3520754938 } => {
+                            // page down (shuffle)
+                        }
+                        GlobalHotKeyEvent { id: 3009842507 } => {
+                            // end (pause)
+                            sender.send(Self::Message::Send(PungeCommand::PlayOrPause)).await.unwrap()
+                        }
+
+                    _ => {
+                        println!("anything else")
+                    }
+                    }
+                }
+                Err(e) => {
+                    // erm, ignore
+                }
+            }
+            async_std::task::sleep(std::time::Duration::from_millis(50)).await; // required for the stuff to work
+            }
+        });
         use iced::futures::SinkExt;
         let music_loop = iced::subscription::channel(0, 32, |mut sender| async move {
         let (gui_send, mut gui_rec) = tokio::sync::mpsc::unbounded_channel();
@@ -377,7 +440,7 @@ impl Application for App {
 
     // will also need to implement keybinds here. will do at another time though
 
-        iced::subscription::Subscription::batch(vec![music_loop, Subscription::batch(self.download_list.iter()
+        iced::subscription::Subscription::batch(vec![music_loop, hotkey_loop, Subscription::batch(self.download_list.iter()
             .map(types::Download::subscription))]) // is two batches required?? prolly not
     }
 
