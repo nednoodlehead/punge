@@ -49,22 +49,22 @@ impl Application for App {
     fn new(_flags: Self::Flags) -> (App, iced::Command<Self::Message>) {
         // hotkey management and this is where new keybinds are to be added
         let manager = GlobalHotKeyManager::new().unwrap();
-        let hotkey_1 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowRight);
-        let hotkey_2 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowLeft);
-        let hotkey_3 = HotKey::new(Some(Modifiers::CONTROL), Code::End);
-        let hotkey_4 = HotKey::new(Some(Modifiers::CONTROL), Code::PageDown);
-        let hotkey_5 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowUp);
-        let hotkey_6 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowDown);
-        manager.register(hotkey_1).unwrap();
-        manager.register(hotkey_2).unwrap();
-        manager.register(hotkey_3).unwrap();
-        manager.register(hotkey_4).unwrap();
-        manager.register(hotkey_5).unwrap();
-        manager.register(hotkey_6).unwrap();
+        // let hotkey_1 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowRight);
+        // let hotkey_2 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowLeft);
+        // let hotkey_3 = HotKey::new(Some(Modifiers::CONTROL), Code::End);
+        // let hotkey_4 = HotKey::new(Some(Modifiers::CONTROL), Code::PageDown);
+        // let hotkey_5 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowUp);
+        // let hotkey_6 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowDown);
+        // manager.register(hotkey_1).unwrap();
+        // manager.register(hotkey_2).unwrap();
+        // manager.register(hotkey_3).unwrap();
+        // manager.register(hotkey_4).unwrap();
+        // manager.register(hotkey_5).unwrap();
+        // manager.register(hotkey_6).unwrap();
         (
             App {
             theme: Default::default(),
-            is_paused: false,
+            is_paused: true,
             current_song: ("".to_string(), "".to_string(), "".to_string()),
             sender: None,
             volume: 25,
@@ -82,7 +82,6 @@ impl Application for App {
     }
 
     fn update(&mut self, msg: Self::Message) -> iced::Command<ProgramCommands> {
-        println!("updated");
         match msg {
             Self::Message::Test => {
                 println!("doing play, here?");
@@ -182,8 +181,7 @@ impl Application for App {
         let main_page = container(column![page_buttons, row![
                 column![text(self.current_song.0.clone()), text(self.current_song.1.clone()), text(self.current_song.2.clone())],
                 button(text("Go back")).on_press(ProgramCommands::Send(PungeCommand::SkipBackwards)),
-                button(text("Play")).on_press(ProgramCommands::Send(PungeCommand::Play)),
-                button(text("pause")).on_press(ProgramCommands::Send(PungeCommand::Stop)),
+                button(text("Play / Pause")).on_press(ProgramCommands::Send(PungeCommand::PlayOrPause)),
                 button(text("Go forwards")).on_press(ProgramCommands::Send(PungeCommand::SkipForwards)),
                 button(text("Shuffle")),
                 slider(0..=100, self.volume, Self::Message::VolumeChange).width(150)
@@ -263,20 +261,22 @@ impl Application for App {
             match gui_rec.try_recv() {
                 Ok(cmd) => {
                     match cmd {
-                        PungeCommand::Play => {
-                            if music_obj.sink.empty() {
+                        PungeCommand::PlayOrPause => {
+                            if music_obj.sink.is_paused() || music_obj.sink.empty() {
+                                if music_obj.sink.empty() {
                             let song = interface::read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone());
                             music_obj.sink.append(song);
                             }
                             music_obj.to_play = true;
                             music_obj.sink.play();
                             println!("playing here... {}", music_obj.count);
-                            sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
-                        }
-                        PungeCommand::Stop => {
+
+                            }
+                            else {
                             println!("stooping here! (top)");
                             music_obj.sink.pause();
                             music_obj.to_play = false
+                            }
                         }
                         PungeCommand::SkipForwards => {
                             println!("skip forards, top!!");
@@ -351,8 +351,9 @@ impl Application for App {
                     match gui_rec.try_recv() {
                 Ok(cmd) => {
                     match cmd {
-                        PungeCommand::Play => {
-                            if !music_obj.sink.is_paused() && music_obj.sink.empty() {
+                        PungeCommand::PlayOrPause => {
+                            if music_obj.sink.is_paused() || music_obj.sink.empty() {  // we are going to play
+                             if !music_obj.sink.is_paused() && music_obj.sink.empty() {
                               let song = interface::read_file_from_beginning(music_obj.list[music_obj.count as usize].savelocationmp3.clone());
                             sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
                             music_obj.sink.append(song);
@@ -362,11 +363,12 @@ impl Application for App {
                             music_obj.sink.play();
                             sender.send(ProgramCommands::NewData(music_obj.list[music_obj.count as usize].title.clone(), music_obj.list[music_obj.count as usize].author.clone(), music_obj.list[music_obj.count as usize].album.clone())).await.unwrap();
 
-                        }
-                        PungeCommand::Stop => {
+                            }
+                        else {
                             println!("stooping here! (bottom)");
                             music_obj.sink.pause();
                             music_obj.to_play = false
+                        }
                         }
                         PungeCommand::SkipForwards => {
                             println!("skippin forrards");
