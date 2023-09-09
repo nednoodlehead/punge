@@ -36,6 +36,7 @@ pub struct App {
     setting_page: setting_page::SettingPage,
     download_list: Vec<types::Download>, // should also include the link somewhere to check for
     last_id: usize,
+    manager: GlobalHotKeyManager,
 }
 
 
@@ -72,7 +73,8 @@ impl Application for App {
             download_page: download_page::DownloadPage::new(),
             setting_page: setting_page::SettingPage::new(),
             download_list: vec![],
-            last_id: 0
+            last_id: 0,
+            manager
             },
             Command::none())
     }
