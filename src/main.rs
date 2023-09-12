@@ -13,8 +13,8 @@ mod utils;
 
 fn main() {
     // gui::start::begin().unwrap();
-    let x = utils::db_convert::get_duration(String::from(
-        r"F:\Projects\Python Projects\punge\default\mp3\Kanye West - FamousLq2TmRzg19k.mp3",
-    ));
-    println!("x={}", x);
+    // utils::db_convert::convert_and_insert(String::from(
+    //     r"F:\punge releases\punge_newest_2\Punge\MAINPLAYLIST.sqlite",
+    // ));
+        utils::db_convert::actually_download_old_songs();
 }

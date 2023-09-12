@@ -28,6 +28,7 @@ pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject
         })
     })?;
     let mut ret_vec = Vec::new();
+
     for item in punge_obj_iter {
         ret_vec.push(item?)
     }
@@ -37,6 +38,7 @@ pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject
 }
 
 pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
+    // erm, forgot to close the db connection :nerd:
     let conn = Connection::open("main.db")?;
     let mut ret_vec: Vec<PungeMusicObject> = Vec::new();
     let mut stmt = conn.prepare("SELECT title, author, album, features,
@@ -67,7 +69,9 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
 
 pub fn exists_in_db(uniqueid: String) -> bool {
     let conn = Connection::open("main.db").unwrap();
-    let mut stmt = conn.prepare("SELECT title FROM main WHERE uniqueid = ?").unwrap();
+    let mut stmt = conn
+        .prepare("SELECT title FROM main WHERE uniqueid = ?")
+        .unwrap();
     let mut rows = stmt.query(&[&uniqueid]).unwrap();
     let val = rows.next().unwrap().is_some();
     drop(rows); // drop to release borrown on stmt
@@ -78,11 +82,12 @@ pub fn exists_in_db(uniqueid: String) -> bool {
 
 pub fn get_uuid_from_name(playlist_name: String) -> String {
     let conn = Connection::open("main.db").unwrap();
-    let mut stmt = conn.prepare("SELECT playlist_id from metadata WHERE title = ?").unwrap();
+    let mut stmt = conn
+        .prepare("SELECT playlist_id from metadata WHERE title = ?")
+        .unwrap();
     let mut result: String = stmt.query_row(&[&playlist_name], |row| row.get(0)).unwrap();
     result
 }
-
 
 // pub fn get_from_text_query(table: &str, query: &str) -> Vec<PungeMusicObject> {
 //     // user input searches through all table entries, and if title, author, album, features.
