@@ -1,3 +1,4 @@
+pub mod compare_db;
 pub mod db_convert;
 pub mod decide_youtube;
 pub mod playlist;

@@ -16,5 +16,9 @@ fn main() {
     // utils::db_convert::convert_and_insert(String::from(
     //     r"F:\punge releases\punge_newest_2\Punge\MAINPLAYLIST.sqlite",
     // ));
-        utils::db_convert::actually_download_old_songs();
+    // println!(
+    //     "{:?}",
+    //     utils::db_convert::download(String::from(r"https://www.youtube.com/watch?v=LuKm4L9ryB0"))
+    // );
+    utils::compare_db::reorder_db();
 }

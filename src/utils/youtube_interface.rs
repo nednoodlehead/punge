@@ -94,7 +94,7 @@ pub fn single_parse(single_link: String) -> Result<rustube::blocking::video::Vid
     let url = rustube::url::Url::parse(single_link.as_str());
     match url {
         Ok(good_url) => {
-            let vid = rustube::blocking::Video::from_url(&good_url).unwrap();
+            let vid = rustube::blocking::Video::from_url(&good_url)?; // fails here if video is unavailable
             Ok(vid)
         }
         Err(e) => Err(AppError::InvalidUrlError),

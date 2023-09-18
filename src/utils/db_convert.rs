@@ -3,15 +3,31 @@ use chrono::Local;
 use mp3_duration;
 use rodio::Source;
 use rusqlite::{params, Connection, Result};
+use rustube::download_best_quality;
 use std::io::BufReader;
 use std::path::Path;
-struct OldData {
-    title: String,
-    author: String,
-    savelocation: String,
-    savelocationthumb: String,
-    album: String,
-    uniqueid: String,
+#[derive(Clone)]
+pub struct OldData {
+    pub title: String,
+    pub author: String,
+    pub savelocation: String,
+    pub savelocationthumb: String,
+    pub album: String,
+    pub uniqueid: String,
+}
+
+impl std::fmt::Debug for OldData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "OldData: {:?} \n",
+            (
+                self.title.clone(),
+                self.author.clone(),
+                format!("https://www.youtube.com/watch?v={}", self.uniqueid.clone())
+            )
+        )
+    }
 }
 
 struct Link {
@@ -166,6 +182,14 @@ pub fn download(link: String) -> Vec<Result<(String, String), AppError>> {
 }
 
 pub fn actually_download_old_songs() {
+    // fetch songs that have already been downloaded and skip over them...
+    use crate::db::fetch::get_all_main;
+    let main: Vec<String> = get_all_main()
+        .unwrap()
+        .iter()
+        .map(|x| x.uniqueid.clone())
+        .collect();
+
     let old_path = r"F:\punge releases\punge_newest_2\Punge\MAINPLAYLIST.sqlite";
     let conn = Connection::open(old_path).unwrap();
     let mut stmt = conn
@@ -196,7 +220,8 @@ pub fn actually_download_old_songs() {
                 } else {
                     entry[..entry.len() - 2].to_owned()
                 };
-                println!("first instance: https://www.youtube.com/watch?v={}", entry);
+                println!("first instance: https://www.youtube.com/watch?v={}", &entry);
+                download_handle(entry.clone());
                 bool_check = true;
                 holding.push(entry.clone());
             } else {
@@ -208,18 +233,35 @@ pub fn actually_download_old_songs() {
                     // we have broken out of the loop, download normally
                     println!(
                         "download (no more loop): https://www.youtube.com/watch?v={}",
-                        entry
+                        &entry
                     );
+                    download_handle(entry);
                     holding.clear() // now that the video set is gone, #ignore
                 }
             }
         } else {
             println!(
                 "average download: https://www.youtube.com/watch?v={} | len={}",
-                entry,
+                &entry,
                 holding.len()
             );
+            download_handle(entry);
             holding.clear();
         }
     } // for loop
+}
+
+fn download_handle(link: String) {
+    let url = format!("https://www.youtube.com/watch?v={}", link);
+    let downloaded = download(url);
+    for item in downloaded {
+        match item {
+            Ok(t) => {
+                println!("downloaded successfully: {:?}", t);
+            }
+            Err(e) => {
+                println!("ERROR DOWNLOADING: {:?}", e);
+            }
+        }
+    }
 }
