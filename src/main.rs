@@ -18,7 +18,7 @@ fn main() {
     // ));
     // println!(
     //     "{:?}",
-    //     utils::db_convert::download(String::from(r"https://www.youtube.com/watch?v=LuKm4L9ryB0"))
+    //     utils::db_convert::download(String::from(r"https://www.youtube.com/watch?v=-5pIEDvec0g"))
     // );
-    utils::compare_db::reorder_db();
+    utils::convert_old_mp3::find_and_convert_old_db();
 }

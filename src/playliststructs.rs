@@ -43,14 +43,21 @@ pub struct UserPlaylist {
 }
 
 impl UserPlaylist {
-    pub fn new(title: String,
-           description: String,
-           thumbnail: String,
-            isautogen: bool
-            ) -> UserPlaylist {
+    pub fn new(
+        title: String,
+        description: String,
+        thumbnail: String,
+        isautogen: bool,
+    ) -> UserPlaylist {
         UserPlaylist {
-            title, description, thumbnail, datecreated: Local::now().date_naive(), songcount: 0,
-            totaltime: 0, isautogen, uniqueid: Uuid::new_v4().to_string()
+            title,
+            description,
+            thumbnail,
+            datecreated: Local::now().date_naive(),
+            songcount: 0,
+            totaltime: 0,
+            isautogen,
+            uniqueid: Uuid::new_v4().to_string(),
         }
     }
 }
@@ -74,28 +81,26 @@ impl fmt::Debug for PungeMusicObject {
     }
 }
 
-
 // wrap the two errors that can arise from database problems into our own custom enum
 
 #[derive(Debug, terror, Clone)]
 pub enum DatabaseErrors {
     #[error("File Already Exists")]
-    FileExistsError,  // used when a song already downloaded
+    FileExistsError, // used when a song already downloaded
     #[error("UniqueID Already Present in DB")]
-    DatabaseEntryExistsError,  // used when the unique id is already present in the database
+    DatabaseEntryExistsError, // used when the unique id is already present in the database
     #[error("Error inserting")]
-    FromSqlError
+    FromSqlError,
 }
-
 
 #[derive(Debug, Clone)]
 pub enum AppError {
     DatabaseError(DatabaseErrors),
-    YoutubeError(String),  // url, what went wrong
+    YoutubeError(String), // url, what went wrong
     FfmpegError,
     FileError(String),
     InvalidUrlError,
-    RustubeVideoError
+    RustubeVideoError(String),
 }
 
 impl From<DatabaseErrors> for AppError {
@@ -103,7 +108,6 @@ impl From<DatabaseErrors> for AppError {
         AppError::DatabaseError(error)
     }
 }
-
 
 use rustube::url::ParseError;
 impl From<ParseError> for AppError {
@@ -115,7 +119,7 @@ impl From<ParseError> for AppError {
 use rustube::Error as TubeError;
 impl From<TubeError> for AppError {
     fn from(e: TubeError) -> Self {
-        AppError::RustubeVideoError
+        AppError::RustubeVideoError(format!("{:?}", e))
     }
 }
 
@@ -136,4 +140,3 @@ impl From<rusqlite::Error> for DatabaseErrors {
         DatabaseErrors::FromSqlError
     }
 }
-

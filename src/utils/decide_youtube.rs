@@ -299,7 +299,7 @@ fn fetch_json() -> (String, String) {
     (mp3, jpg)
 }
 
-fn clean_inputs_for_win_saving(to_check: String) -> String {
+pub fn clean_inputs_for_win_saving(to_check: String) -> String {
     // will remove any characters that are not allowed in windows files. Not intended for directory names, only potential filenames
     let mut new_string = String::new();
     let forbidden: Vec<char> = vec!['\\', '/', ':', '*', '?', '\"', '<', '>', '|'];
@@ -338,8 +338,14 @@ fn download_to_punge(
     // let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
     let mp4_name = format!("{}{}.mp4", mp3_path.clone(), vid.video_details().video_id); // can sometimes be .webm??
     let webm_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
+    println!(
+        "mp4_name: {} \nwebm name: {}\ndoes path exist: {}",
+        &mp4_name,
+        &webm_name,
+        Path::new(&mp4_name).exists()
+    );
     let old_name = if Path::new(&mp4_name).exists() {
-        // sometimes its an mp4 download, sometimes mp4. dunno why
+        // sometimes its an webm download, sometimes mp4. dunno why
         mp4_name
     } else {
         webm_name
