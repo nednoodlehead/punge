@@ -2825,6 +2825,7 @@ dependencies = [
  "itertools",
  "lazy_static",
  "mp3-duration",
+ "rand",
  "regex",
  "reqwest",
  "rodio",
