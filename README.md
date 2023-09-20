@@ -1,7 +1,7 @@
 # Punge
 Punge is an Application for listening to music. It downloads songs from YouTube and provides a based listening experience. I hate streaming services, let me listen to my stinky unreleased music.
 
-This is a newer version of Punge. As of now, only [old punge](https://github.com/nednoodlehead/old_punge) is working.
+This is a newer version of Punge. As of now, it is missing some important features (visually seeing your music, lol), but works fine for playing and downloading music
 Punge uses `rodio` for playing audio and `Iced` for GUI.
 
 New Punge brings on multiple improvements:
