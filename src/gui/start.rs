@@ -218,7 +218,8 @@ impl Application for App {
                     .on_press(ProgramCommands::Send(PungeCommand::PlayOrPause)),
                 button(text("Go forwards"))
                     .on_press(ProgramCommands::Send(PungeCommand::SkipForwards)),
-                button(text("Shuffle")),
+                button(text("Shuffle"))
+                    .on_press(ProgramCommands::Send(PungeCommand::ToggleShuffle)),
                 slider(0..=100, self.volume, Self::Message::VolumeChange).width(150)
             ]
             .spacing(50)
@@ -306,19 +307,16 @@ impl Application for App {
                 .unwrap(); // send the sender to the gui !!
             let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
             // maybe here  we need to get index of last song that was on?
-            let index: usize = 0;
-            let item_info: PungeMusicObject = items[index].clone();
             // send the data to the program
+            let mut music_obj = interface::MusicPlayer::new(items);
             sender
                 .send(Self::Message::NewData(
-                    item_info.title,
-                    item_info.author,
-                    item_info.album,
+                    music_obj.current_object.title.clone(),
+                    music_obj.current_object.author.clone(),
+                    music_obj.current_object.album.clone(),
                 ))
                 .await
                 .unwrap();
-
-            let mut music_obj = interface::MusicPlayer::new(items);
 
             // main music loop!
             println!("starting main loop");
@@ -397,10 +395,10 @@ impl Application for App {
                             // also change music_obj.current_object
                         }
                         PungeCommand::StaticVolumeUp => {
-                            println!("ok we increase volume!");
+                            music_obj.sink.set_volume(music_obj.sink.volume() + 0.005);
                         }
                         PungeCommand::StaticVolumeDown => {
-                            println!("ok, decrease now")
+                            music_obj.sink.set_volume(music_obj.sink.volume() - 0.005);
                         }
                         PungeCommand::GoToAlbum => {
                             println!("going 2 album!")
@@ -448,10 +446,6 @@ impl Application for App {
                     loop {
                         // i think most of the count checks are depciated
                         println!("inside our palying loop!");
-                        println!(
-                            "ALL: {} {} {:?}",
-                            music_obj.count, music_obj.to_play, music_obj.list
-                        );
                         // process commands (maybe turn it into a function i guess?, would sort of suck to copy and paste to make work)
                         if music_obj.count < 0 {
                             music_obj.count =
@@ -624,6 +618,16 @@ impl Application for App {
                                                 music_obj.list.shuffle(&mut rng);
                                                 music_obj.shuffle = true;
                                             }
+                                        }
+                                        PungeCommand::StaticVolumeUp => {
+                                            music_obj
+                                                .sink
+                                                .set_volume(music_obj.sink.volume() + 0.005);
+                                        }
+                                        PungeCommand::StaticVolumeDown => {
+                                            music_obj
+                                                .sink
+                                                .set_volume(music_obj.sink.volume() - 0.005);
                                         }
                                         _ => {
                                             println!("yeah, other stuff... {:?}", cmd)

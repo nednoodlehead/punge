@@ -1,9 +1,12 @@
 use crate::db::fetch;
 use crate::playliststructs::PungeMusicObject;
+use rand::seq::SliceRandom;
 use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
 use std::sync::{mpsc, mpsc::Receiver};
+use crate::player::cache::{Cache, fetch_cache};
+use rand;
 
 pub enum Command {
     Play,
@@ -34,16 +37,25 @@ unsafe impl Send for MusicPlayer {}
 unsafe impl Sync for MusicPlayer {}
 
 impl MusicPlayer {
-    pub fn new(list: Vec<PungeMusicObject>) -> MusicPlayer {
-        // will pass in the count eventually (read from json)
+    pub fn new(mut list: Vec<PungeMusicObject>) -> MusicPlayer { // Music player and the song that will be used to update the gui
+        let cache: Cache = fetch_cache();
         let (stream, stream_handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&stream_handle).unwrap();
-        let current_object = list[0].clone();
+        sink.set_volume(cache.volume);
+        if cache.shuffle {
+            let mut rng = rand::thread_rng();
+            list.shuffle(&mut rng);
+        }
+        let count = list.iter().position(|r| {
+            r.clone().uniqueid == cache.song_id
+        }).unwrap();
+        let current_object = list[count as usize].clone();
+        // list should inherite from cache at some point. not worried now tho
         MusicPlayer {
             list,
             sink,
-            count: 0,
-            shuffle: false, // this should be derived from the json that logs this data
+            count: count as isize,
+            shuffle: cache.shuffle,
             to_play: false,
             stream,
             current_object,
