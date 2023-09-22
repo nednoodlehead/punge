@@ -1,9 +1,9 @@
 // these are the messages sent around the program. This is divded up here because start.rs imports this
 // as well as the actual music-playing portion of the app
 
+use crate::gui::start::MusicData;
 use crate::playliststructs::AppError;
 use tokio::sync::mpsc as async_sender;
-
 #[derive(Debug, Clone)]
 pub enum PungeCommand {
     PlayOrPause,
@@ -25,14 +25,15 @@ pub enum ProgramCommands {
     Test,
     Send(PungeCommand),
     UpdateSender(Option<async_sender::UnboundedSender<PungeCommand>>),
-    NewData(String, String, String), // for sending back title, artist and album to GUI
+    NewData(MusicData), // for sending back title, artist and album to GUI
     VolumeChange(u8),
     DownloadLink(String),
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),
     Debug, // a message that has its associated action changed with the debug in question
-    AddToDownloadFeedback(Option<Vec<Result<(String, String), AppError>>>), // only called from the subscription
+    AddToDownloadFeedback(Option<Vec<Result<(String, String), AppError>>>), // only called from the subscription,
+    InAppEvent(crate::gui::start::AppEvent),
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -1,12 +1,13 @@
 // can we rename this to lib.rs at some point maybe??
 use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
 use crate::gui::subscription as sub;
+use crate::player::cache;
 use crate::player::interface;
 use crate::{gui, playliststructs};
 use iced::widget::{button, column, container, row, slider, text};
 use iced::Command;
 use iced::{
-    executor, Alignment, Application, Color, Element, Error, Length, Sandbox, Settings, Theme,
+    executor, Alignment, Application, Color, Element, Error, Event, Length, Settings, Theme,
 };
 use std::thread;
 
@@ -23,7 +24,15 @@ use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 use tokio::sync::mpsc::UnboundedReceiver; // allow the playlist to be shuffled
 
 pub fn begin() -> iced::Result {
-    App::run(Settings::default())
+    App::run(Settings {
+        id: None,
+        flags: (),
+        window: Default::default(),
+        default_font: Default::default(),
+        default_text_size: 16.0,
+        antialiasing: false,
+        exit_on_close_request: false, // so we can save the data before exiting
+    })
 }
 // pages for the gui
 use crate::gui::{download_page, setting_page};
@@ -35,7 +44,7 @@ use global_hotkey::{
 pub struct App {
     theme: Theme,
     is_paused: bool,
-    current_song: (String, String, String),
+    current_song: MusicData, // represents title, auth, album, song_id, volume, shuffle, playlist
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
     volume: u8,
     current_view: Page,
@@ -71,7 +80,7 @@ impl Application for App {
             App {
                 theme: Default::default(),
                 is_paused: true,
-                current_song: ("".to_string(), "".to_string(), "".to_string()),
+                current_song: MusicData::default(),
                 sender: None,
                 volume: 25,
                 current_view: Page::Main,
@@ -108,9 +117,12 @@ impl Application for App {
                 println!("updated sender!");
                 self.sender = sender;
             }
-            Self::Message::NewData(art, title, alb) => {
-                println!("The new information given to update: {art} {title} {alb}");
-                self.current_song = (art, title, alb)
+            Self::Message::NewData(data) => {
+                println!(
+                    "The new information given to update: {} {} {}",
+                    data.author, data.title, data.album
+                );
+                self.current_song = (data)
             }
             Self::Message::VolumeChange(val) => {
                 self.volume = val;
@@ -192,6 +204,20 @@ impl Application for App {
             Self::Message::Debug => {
                 println!("Da list: {:?}", self.download_list)
             }
+            Self::Message::InAppEvent(t) => match t {
+                AppEvent::CloseRequested => {
+                    let cache = cache::Cache {
+                        song_id: self.current_song.song_id.clone(),
+                        volume: self.current_song.volume,
+                        shuffle: self.current_song.shuffle,
+                        playlist: self.current_song.playlist.clone(),
+                    };
+                    cache::dump_cache(cache); // dumps user cache
+                    println!("dumpepd cache!");
+
+                    return iced::window::close::<Self::Message>();
+                }
+            },
 
             _ => println!("inumplmented"),
         }
@@ -208,9 +234,9 @@ impl Application for App {
             page_buttons,
             row![
                 column![
-                    text(self.current_song.0.clone()),
-                    text(self.current_song.1.clone()),
-                    text(self.current_song.2.clone())
+                    text(self.current_song.title.clone()),
+                    text(self.current_song.author.clone()),
+                    text(self.current_song.album.clone())
                 ],
                 button(text("Go back"))
                     .on_press(ProgramCommands::Send(PungeCommand::SkipBackwards)),
@@ -234,6 +260,7 @@ impl Application for App {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
+        let close_event_loop = subscription::events_with(handle_app_events);
         let hotkey_loop = iced::subscription::channel(5, 32, |mut sender| async move {
             use iced::futures::sink::SinkExt;
             loop {
@@ -310,11 +337,15 @@ impl Application for App {
             // send the data to the program
             let mut music_obj = interface::MusicPlayer::new(items);
             sender
-                .send(Self::Message::NewData(
-                    music_obj.current_object.title.clone(),
-                    music_obj.current_object.author.clone(),
-                    music_obj.current_object.album.clone(),
-                ))
+                .send(Self::Message::NewData(MusicData {
+                    title: music_obj.current_object.title.clone(),
+                    author: music_obj.current_object.author.clone(),
+                    album: music_obj.current_object.album.clone(),
+                    song_id: music_obj.current_object.uniqueid.clone(),
+                    volume: music_obj.sink.volume(),
+                    shuffle: music_obj.shuffle,
+                    playlist: "main".to_string(),
+                }))
                 .await
                 .unwrap();
 
@@ -357,11 +388,15 @@ impl Application for App {
                             music_obj.to_play = true;
                             music_obj.sink.play();
                             sender
-                                .send(ProgramCommands::NewData(
-                                    music_obj.list[music_obj.count as usize].title.clone(),
-                                    music_obj.list[music_obj.count as usize].author.clone(),
-                                    music_obj.list[music_obj.count as usize].album.clone(),
-                                ))
+                                .send(ProgramCommands::NewData(MusicData {
+                                    title: music_obj.current_object.title.clone(),
+                                    author: music_obj.current_object.author.clone(),
+                                    album: music_obj.current_object.author.clone(),
+                                    song_id: music_obj.current_object.uniqueid.clone(),
+                                    volume: music_obj.sink.volume(),
+                                    shuffle: music_obj.shuffle,
+                                    playlist: "main".to_string(),
+                                }))
                                 .await
                                 .unwrap();
                         }
@@ -379,11 +414,15 @@ impl Application for App {
                             music_obj.to_play = true;
                             music_obj.sink.play();
                             sender
-                                .send(ProgramCommands::NewData(
-                                    music_obj.list[music_obj.count as usize].title.clone(),
-                                    music_obj.list[music_obj.count as usize].author.clone(),
-                                    music_obj.list[music_obj.count as usize].album.clone(),
-                                ))
+                                .send(ProgramCommands::NewData(MusicData {
+                                    title: music_obj.current_object.title.clone(),
+                                    author: music_obj.current_object.author.clone(),
+                                    album: music_obj.current_object.album.clone(),
+                                    song_id: music_obj.current_object.uniqueid.clone(),
+                                    volume: music_obj.sink.volume(),
+                                    shuffle: music_obj.shuffle,
+                                    playlist: "main".to_string(),
+                                }))
                                 .await
                                 .unwrap();
                         }
@@ -482,20 +521,27 @@ impl Application for App {
                                                             .clone(),
                                                     );
                                                     sender
-                                                        .send(ProgramCommands::NewData(
-                                                            music_obj.list
-                                                                [music_obj.count as usize]
+                                                        .send(ProgramCommands::NewData(MusicData {
+                                                            title: music_obj
+                                                                .current_object
                                                                 .title
                                                                 .clone(),
-                                                            music_obj.list
-                                                                [music_obj.count as usize]
+                                                            author: music_obj
+                                                                .current_object
                                                                 .author
                                                                 .clone(),
-                                                            music_obj.list
-                                                                [music_obj.count as usize]
+                                                            album: music_obj
+                                                                .current_object
                                                                 .album
                                                                 .clone(),
-                                                        ))
+                                                            song_id: music_obj
+                                                                .current_object
+                                                                .uniqueid
+                                                                .clone(),
+                                                            volume: music_obj.sink.volume(),
+                                                            shuffle: music_obj.shuffle,
+                                                            playlist: "main".to_string(),
+                                                        }))
                                                         .await
                                                         .unwrap();
                                                     music_obj.sink.append(song);
@@ -504,17 +550,27 @@ impl Application for App {
                                                 music_obj.to_play = true;
                                                 music_obj.sink.play();
                                                 sender
-                                                    .send(ProgramCommands::NewData(
-                                                        music_obj.list[music_obj.count as usize]
+                                                    .send(ProgramCommands::NewData(MusicData {
+                                                        title: music_obj
+                                                            .current_object
                                                             .title
                                                             .clone(),
-                                                        music_obj.list[music_obj.count as usize]
+                                                        author: music_obj
+                                                            .current_object
                                                             .author
                                                             .clone(),
-                                                        music_obj.list[music_obj.count as usize]
+                                                        album: music_obj
+                                                            .current_object
                                                             .album
                                                             .clone(),
-                                                    ))
+                                                        song_id: music_obj
+                                                            .current_object
+                                                            .uniqueid
+                                                            .clone(),
+                                                        volume: music_obj.sink.volume(),
+                                                        shuffle: music_obj.shuffle,
+                                                        playlist: "main".to_string(),
+                                                    }))
                                                     .await
                                                     .unwrap();
                                             } else {
@@ -545,17 +601,18 @@ impl Application for App {
                                             music_obj.to_play = true;
                                             music_obj.sink.play();
                                             sender
-                                                .send(ProgramCommands::NewData(
-                                                    music_obj.list[music_obj.count as usize]
-                                                        .title
+                                                .send(ProgramCommands::NewData(MusicData {
+                                                    title: music_obj.current_object.title.clone(),
+                                                    author: music_obj.current_object.author.clone(),
+                                                    album: music_obj.current_object.album.clone(),
+                                                    song_id: music_obj
+                                                        .current_object
+                                                        .uniqueid
                                                         .clone(),
-                                                    music_obj.list[music_obj.count as usize]
-                                                        .author
-                                                        .clone(),
-                                                    music_obj.list[music_obj.count as usize]
-                                                        .album
-                                                        .clone(),
-                                                ))
+                                                    volume: music_obj.sink.volume(),
+                                                    shuffle: music_obj.shuffle,
+                                                    playlist: "main".to_string(),
+                                                }))
                                                 .await
                                                 .unwrap();
                                         }
@@ -582,17 +639,18 @@ impl Application for App {
                                             music_obj.to_play = true;
                                             music_obj.sink.play();
                                             sender
-                                                .send(ProgramCommands::NewData(
-                                                    music_obj.list[music_obj.count as usize]
-                                                        .title
+                                                .send(ProgramCommands::NewData(MusicData {
+                                                    title: music_obj.current_object.title.clone(),
+                                                    author: music_obj.current_object.author.clone(),
+                                                    album: music_obj.current_object.album.clone(),
+                                                    song_id: music_obj
+                                                        .current_object
+                                                        .uniqueid
                                                         .clone(),
-                                                    music_obj.list[music_obj.count as usize]
-                                                        .author
-                                                        .clone(),
-                                                    music_obj.list[music_obj.count as usize]
-                                                        .album
-                                                        .clone(),
-                                                ))
+                                                    volume: music_obj.sink.volume(),
+                                                    shuffle: music_obj.shuffle.clone(),
+                                                    playlist: "main".to_string(),
+                                                }))
                                                 .await
                                                 .unwrap();
                                         }
@@ -658,11 +716,15 @@ impl Application for App {
                                 music_obj.list[music_obj.count as usize].clone();
                             // new info :P
                             sender
-                                .send(ProgramCommands::NewData(
-                                    music_obj.list[music_obj.count as usize].title.clone(),
-                                    music_obj.list[music_obj.count as usize].author.clone(),
-                                    music_obj.list[music_obj.count as usize].album.clone(),
-                                ))
+                                .send(ProgramCommands::NewData(MusicData {
+                                    title: music_obj.current_object.title.clone(),
+                                    author: music_obj.current_object.author.clone(),
+                                    album: music_obj.current_object.album.clone(),
+                                    song_id: music_obj.current_object.uniqueid.clone(),
+                                    volume: music_obj.sink.volume(),
+                                    shuffle: music_obj.shuffle,
+                                    playlist: "main".to_string(),
+                                }))
                                 .await
                                 .unwrap();
                         }
@@ -680,6 +742,7 @@ impl Application for App {
             music_loop,
             hotkey_loop,
             Subscription::batch(self.download_list.iter().map(types::Download::subscription)),
+            close_event_loop,
         ]) // is two batches required?? prolly not
     }
 }
@@ -701,4 +764,45 @@ pub fn change_count(incrementing: bool, count: isize, vec_len: usize) -> isize {
         }
     };
     new_count
+}
+
+#[derive(Clone, Debug)]
+pub enum AppEvent {
+    // will include in-app keybinds at some point...
+    CloseRequested,
+}
+
+// handles app events, right now,
+fn handle_app_events(event: iced::Event, _status: iced::event::Status) -> Option<ProgramCommands> {
+    match &event {
+        iced::Event::Window(iced::window::Event::CloseRequested) => {
+            Some(ProgramCommands::InAppEvent(AppEvent::CloseRequested))
+        }
+        _ => None,
+    }
+}
+#[derive(Clone, Debug)]
+pub struct MusicData {
+    // passed from music subscription -> main thread
+    pub title: String, // used to updated active songs and whatnot
+    pub author: String,
+    pub album: String,
+    pub song_id: String,
+    pub volume: f32,
+    pub shuffle: bool,
+    pub playlist: String,
+}
+
+impl MusicData {
+    fn default() -> Self {
+        MusicData {
+            title: "".to_string(),
+            author: "".to_string(),
+            album: "".to_string(),
+            song_id: "".to_string(),
+            volume: 0.0,
+            shuffle: false,
+            playlist: "main".to_string(),
+        }
+    }
 }
