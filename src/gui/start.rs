@@ -93,6 +93,9 @@ impl Application for App {
             Command::none(),
         )
     }
+    fn theme(&self) -> Self::Theme {
+        Theme::Dark
+    }
 
     fn title(&self) -> String {
         String::from("Punge!!")
