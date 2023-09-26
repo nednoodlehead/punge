@@ -6,7 +6,7 @@ Punge uses `rodio` for playing audio and `Iced` for GUI.
 
 New Punge brings on multiple improvements:
 
-1) Improved preformance (significant)
+1) Improved preformance (significant, like up to 100x faster in certain scenarios)
 2) A nicer GUI (from Tkinter -> Iced)
 3) More sustainable and cleaner codebase
 4) Written entirely in rust ! 🦀
