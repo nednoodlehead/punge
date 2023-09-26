@@ -86,6 +86,8 @@ pub fn get_uuid_from_name(playlist_name: String) -> String {
         .prepare("SELECT playlist_id from metadata WHERE title = ?")
         .unwrap();
     let mut result: String = stmt.query_row(&[&playlist_name], |row| row.get(0)).unwrap();
+    drop(stmt);
+    conn.close().unwrap();
     result
 }
 
