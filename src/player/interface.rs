@@ -1,27 +1,12 @@
 use crate::db::fetch;
+use crate::player::cache::{fetch_cache, Cache};
 use crate::playliststructs::PungeMusicObject;
+use rand;
 use rand::seq::SliceRandom;
 use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
 use std::sync::{mpsc, mpsc::Receiver};
-use crate::player::cache::{Cache, fetch_cache};
-use rand;
-
-pub enum Command {
-    Play,
-    Stop,
-    ChangeSong(usize), // play this song at this index in the list. also, do we need this as &str for thread safety?
-    NewVolume(usize),  // change volume to this amount (processed beforehand I think)
-    SkipToSeconds(usize), // intends to play current song from this time (bcs only active song can be target of this operation)
-    SkipForwards,
-    SkipBackwards,
-    StaticVolumeUp, // used for binds to increase volume by x amount
-    StaticVolumeDown,
-    ToggleShuffle,          // will either shuffle or unshuffle the playlist
-    GoToAlbum, // not implemented yet. will be used as change the surrounding playlist to the album the song is from
-    ChangePlaylist(String), // change the current playlist to the one specified here
-}
 
 pub struct MusicPlayer {
     pub list: Vec<PungeMusicObject>,
@@ -37,7 +22,8 @@ unsafe impl Send for MusicPlayer {}
 unsafe impl Sync for MusicPlayer {}
 
 impl MusicPlayer {
-    pub fn new(mut list: Vec<PungeMusicObject>) -> MusicPlayer { // Music player and the song that will be used to update the gui
+    pub fn new(mut list: Vec<PungeMusicObject>) -> MusicPlayer {
+        // Music player and the song that will be used to update the gui
         let cache: Cache = fetch_cache();
         let (stream, stream_handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&stream_handle).unwrap();
@@ -46,9 +32,10 @@ impl MusicPlayer {
             let mut rng = rand::thread_rng();
             list.shuffle(&mut rng);
         }
-        let count = list.iter().position(|r| {
-            r.clone().uniqueid == cache.song_id
-        }).unwrap();
+        let count = list
+            .iter()
+            .position(|r| r.clone().uniqueid == cache.song_id)
+            .unwrap();
         let current_object = list[count as usize].clone();
         // list should inherite from cache at some point. not worried now tho
         MusicPlayer {

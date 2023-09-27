@@ -13,6 +13,7 @@ use std::thread;
 
 use crate::db::fetch;
 use crate::player::interface::{read_file_from_beginning, MusicPlayer};
+use crate::player::sort::get_values_from_db;
 use crate::playliststructs::PungeMusicObject;
 use crate::utils::{types, youtube_interface};
 use iced::futures::channel::mpsc::Sender;
@@ -53,6 +54,7 @@ pub struct App {
     download_list: Vec<types::Download>, // should also include the link somewhere to check for
     last_id: usize,
     manager: GlobalHotKeyManager,
+    search: String,
 }
 
 impl Application for App {
@@ -89,6 +91,7 @@ impl Application for App {
                 download_list: vec![],
                 last_id: 0,
                 manager,
+                search: "".to_string(),
             },
             Command::none(),
         )
@@ -136,6 +139,7 @@ impl Application for App {
                     .expect("failure sending msg");
             }
             Self::Message::DownloadLink(link) => {
+                // remove at some point? post done optimziing i guess
                 println!("imagine we download {} here", &link);
                 // from here, we will match and add the result into a 'feedback box'
             }
@@ -184,6 +188,15 @@ impl Application for App {
                                         }
                                     }
                                     self.download_list.remove(ind);
+                                    if self.current_song.playlist == "main".to_string() {
+                                        println!("sender status?: {:?}", self.sender);
+                                        // if main is the current playlist, refresh it so the new song shows up
+                                        self.sender
+                                            .as_mut()
+                                            .unwrap()
+                                            .send(PungeCommand::ChangePlaylist("main".to_string()))
+                                            .unwrap();
+                                    }
                                 }
                                 Err(error) => {
                                     self.download_page.download_feedback.push(format!(
@@ -221,6 +234,22 @@ impl Application for App {
                     return iced::window::close::<Self::Message>();
                 }
             },
+            Self::Message::UpdateSearch(input) => {
+                self.search = input;
+            }
+
+            Self::Message::GoToSong => {
+                let val =
+                    get_values_from_db(self.current_song.playlist.clone(), self.search.clone());
+                println!("GoToSong: {:?}", val);
+                self.sender
+                    .as_ref()
+                    .unwrap()
+                    .send(PungeCommand::ChangeSong(
+                        val[val.len() - 1].clone().1.uniqueid,
+                    ))
+                    .unwrap();
+            }
 
             _ => println!("inumplmented"),
         }
@@ -249,10 +278,15 @@ impl Application for App {
                     .on_press(ProgramCommands::Send(PungeCommand::SkipForwards)),
                 button(text("Shuffle"))
                     .on_press(ProgramCommands::Send(PungeCommand::ToggleShuffle)),
-                slider(0..=100, self.volume, Self::Message::VolumeChange).width(150)
+                slider(0..=30, self.volume, Self::Message::VolumeChange).width(150)
             ]
             .spacing(50)
-            .padding(iced::Padding::new(10 as f32))
+            .padding(iced::Padding::new(10 as f32)),
+            row![
+                iced::widget::text_input("GoTo closest match", self.search.as_str())
+                    .on_input(ProgramCommands::UpdateSearch),
+                button(text("Confirm")).on_press(ProgramCommands::GoToSong)
+            ]
         ]);
         match self.current_view {
             // which page to display
@@ -432,8 +466,36 @@ impl Application for App {
                         PungeCommand::NewVolume(val) => {
                             music_obj.sink.set_volume((val as f32) / 80.0)
                         }
-                        PungeCommand::ChangeSong(index) => {
-                            println!("index for song: {}", index);
+                        PungeCommand::ChangeSong(uuid) => {
+                            let index = music_obj
+                                .list
+                                .iter()
+                                .position(|r| r.clone().uniqueid == uuid)
+                                .unwrap();
+
+                            music_obj.sink.stop();
+                            music_obj.count = index as isize;
+                            music_obj.current_object =
+                                music_obj.list[music_obj.count as usize].clone();
+                            music_obj.sink.append(read_file_from_beginning(
+                                music_obj.list[music_obj.count as usize]
+                                    .savelocationmp3
+                                    .clone(),
+                            ));
+                            music_obj.to_play = true;
+                            music_obj.sink.play();
+                            sender
+                                .send(ProgramCommands::NewData(MusicData {
+                                    title: music_obj.current_object.title.clone(),
+                                    author: music_obj.current_object.author.clone(),
+                                    album: music_obj.current_object.author.clone(),
+                                    song_id: music_obj.current_object.uniqueid.clone(),
+                                    volume: music_obj.sink.volume(),
+                                    shuffle: music_obj.shuffle,
+                                    playlist: "main".to_string(),
+                                }))
+                                .await
+                                .unwrap();
                             // also change music_obj.current_object
                         }
                         PungeCommand::StaticVolumeUp => {
@@ -473,7 +535,13 @@ impl Application for App {
                             }
                         }
                         PungeCommand::ChangePlaylist(name) => {
-                            println!("changing name!!");
+                            if name == "main".to_string() {
+                                music_obj.list = fetch::get_all_main().unwrap();
+                            } else {
+                                let playlist_uuid = fetch::get_uuid_from_name(name);
+                                music_obj.list =
+                                    fetch::get_all_from_playlist(&playlist_uuid).unwrap();
+                            }
                         }
                         PungeCommand::None => {
                             println!("is this even used?")
@@ -689,6 +757,45 @@ impl Application for App {
                                             music_obj
                                                 .sink
                                                 .set_volume(music_obj.sink.volume() - 0.005);
+                                        }
+                                        PungeCommand::ChangeSong(uuid) => {
+                                            let index = music_obj
+                                                .list
+                                                .iter()
+                                                .position(|r| r.clone().uniqueid == uuid)
+                                                .unwrap();
+
+                                            music_obj.count = index as isize;
+                                            music_obj.current_object =
+                                                music_obj.list[music_obj.count as usize].clone();
+                                            if !music_obj.sink.is_paused() {
+                                                // so this if stmt was on the upper match stmt, but kept causing problems with skipping and clearing the sink (even tho
+                                                // the if occurs before the sink.append() ). so it only is down here, and seems to work just fine
+                                                music_obj.sink.stop();
+                                                music_obj.sink.clear()
+                                            }
+                                            music_obj.sink.append(read_file_from_beginning(
+                                                music_obj.list[music_obj.count as usize]
+                                                    .savelocationmp3
+                                                    .clone(),
+                                            ));
+                                            music_obj.to_play = true;
+                                            music_obj.sink.play();
+                                            sender
+                                                .send(ProgramCommands::NewData(MusicData {
+                                                    title: music_obj.current_object.title.clone(),
+                                                    author: music_obj.current_object.author.clone(),
+                                                    album: music_obj.current_object.album.clone(),
+                                                    song_id: music_obj
+                                                        .current_object
+                                                        .uniqueid
+                                                        .clone(),
+                                                    volume: music_obj.sink.volume(),
+                                                    shuffle: music_obj.shuffle.clone(),
+                                                    playlist: "main".to_string(),
+                                                }))
+                                                .await
+                                                .unwrap();
                                         }
                                         _ => {
                                             println!("yeah, other stuff... {:?}", cmd)

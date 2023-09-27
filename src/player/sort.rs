@@ -7,11 +7,6 @@ use fancy_regex::Regex;
 
 fn search_string(to_search: String, letters: String, pattern: String) -> bool {
     let regex = Regex::new(&pattern).unwrap();
-    println!(
-        "searching: {} | match: {}",
-        &to_search,
-        regex.is_match(to_search.as_str()).unwrap()
-    );
     regex.is_match(to_search.as_str()).unwrap()
 }
 
@@ -32,7 +27,7 @@ fn create_pattern(input: String) -> String {
 }
 
 fn get_value_of_found(mut search_string: String, letters: String) -> u8 {
-    // this algo sucks lol
+    // should probably divide total chars in search string, so you can actually find kendrick lamar - i through search
     // only does title + author rn
     let search_string = search_string.to_lowercase();
     let search_letters: Vec<char> = letters.chars().collect();
