@@ -7,8 +7,8 @@ use tokio::sync::mpsc as async_sender;
 #[derive(Debug, Clone)]
 pub enum PungeCommand {
     PlayOrPause,
-    ChangeSong(usize), // play this song at this index in the list. also, do we need this as &str for thread safety?
-    NewVolume(u8),     // change volume to this amount (processed beforehand I think)
+    ChangeSong(String), // play this song's uuid, loop will find the index and swap to it
+    NewVolume(u8),      // change volume to this amount (processed beforehand I think)
     SkipToSeconds(usize), // intends to play current song from this time (bcs only active song can be target of this operation)
     SkipForwards,
     SkipBackwards,
@@ -34,6 +34,8 @@ pub enum ProgramCommands {
     Debug, // a message that has its associated action changed with the debug in question
     AddToDownloadFeedback(Option<Vec<Result<(String, String), AppError>>>), // only called from the subscription,
     InAppEvent(crate::gui::start::AppEvent),
+    UpdateSearch(String), // for updating the string that is used in the regex search
+    GoToSong, // uses the regex search to take user input and skip to nearest search for user. input derives from self.search
 }
 
 #[derive(Debug, Clone, Copy)]
