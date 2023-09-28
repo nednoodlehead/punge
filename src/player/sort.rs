@@ -26,6 +26,16 @@ fn create_pattern(input: String) -> String {
     pattern
 }
 
+fn create_alt_pattern(input: String) -> String {
+    // if works,
+    let escaped_regex = regex::escape(input.as_str());
+    let mut pattern = String::from(r"(?i)");
+    for letter in escaped_regex.chars() {
+        pattern.push_str(&format!(".*{}.*", letter));
+    }
+    pattern
+}
+
 fn get_value_of_found(mut search_string: String, letters: String) -> u8 {
     // should probably divide total chars in search string, so you can actually find kendrick lamar - i through search
     // only does title + author rn
@@ -65,7 +75,7 @@ pub fn get_values_from_db(playlist: String, user_string: String) -> Vec<(u8, Pun
     } else {
         get_all_from_playlist(get_uuid_from_name(playlist).as_str()).unwrap()
     };
-    let regex_patt = create_pattern(user_string.clone());
+    let regex_patt = create_alt_pattern(user_string.clone());
     println!("pattern: {}", &regex_patt);
     let mut found_values: Vec<(u8, PungeMusicObject)> = Vec::new();
     for music_entry in playlist_values {
@@ -75,6 +85,7 @@ pub fn get_values_from_db(playlist: String, user_string: String) -> Vec<(u8, Pun
             music_entry.author.clone(),
             music_entry.title.clone()
         );
+        println!("searching: {}", &to_search_string);
         if search_string(
             to_search_string.clone(),
             user_string.clone(),

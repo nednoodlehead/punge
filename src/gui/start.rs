@@ -242,13 +242,19 @@ impl Application for App {
                 let val =
                     get_values_from_db(self.current_song.playlist.clone(), self.search.clone());
                 println!("GoToSong: {:?}", val);
-                self.sender
-                    .as_ref()
-                    .unwrap()
-                    .send(PungeCommand::ChangeSong(
-                        val[val.len() - 1].clone().1.uniqueid,
-                    ))
-                    .unwrap();
+                if val.is_empty() {
+                    // if the user's search gives no results, tell them in the search box
+                    self.search = format!("{} returned no results", self.search);
+                } else {
+                    self.sender
+                        .as_ref()
+                        .unwrap()
+                        .send(PungeCommand::ChangeSong(
+                            val[val.len() - 1].clone().1.uniqueid,
+                        ))
+                        .unwrap();
+                    self.search = "".to_string()
+                }
             }
 
             _ => println!("inumplmented"),
