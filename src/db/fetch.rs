@@ -100,3 +100,30 @@ pub fn get_uuid_from_name(playlist_name: String) -> String {
 //     // field and operator are from a preselected set of values
 //     // operator: < > == !=
 // }
+
+use crate::playliststructs::UserPlaylist;
+
+pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    let mut stmt = conn.prepare("SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, playlist_id
+        FROM metadata")?;
+    let playlist_obj_iter = stmt.query_map([], |row| {
+        Ok(UserPlaylist {
+            title: row.get(0)?,
+            description: row.get(1)?,
+            thumbnail: row.get(2)?,
+            datecreated: row.get(3)?,
+            songcount: row.get(4)?,
+            totaltime: row.get(5)?,
+            isautogen: row.get(6)?,
+            uniqueid: row.get(7)?,
+        })
+    })?;
+    let mut ret_vec = Vec::new();
+    for item in playlist_obj_iter {
+        ret_vec.push(item?)
+    }
+    drop(stmt);
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(ret_vec)
+}

@@ -4,7 +4,9 @@ use crate::gui::subscription as sub;
 use crate::player::cache;
 use crate::player::interface;
 use crate::{gui, playliststructs};
-use iced::widget::{button, column, container, row, slider, text};
+use iced::widget::{
+    button, column, container, horizontal_space, row, slider, text, vertical_space,
+};
 use iced::Command;
 use iced::{
     executor, Alignment, Application, Color, Element, Error, Event, Length, Settings, Theme,
@@ -276,15 +278,20 @@ impl Application for App {
             button(text("Download!")).on_press(ProgramCommands::ChangePage(Page::Download)),
         ]
         .spacing(50);
-
-        let main_page = container(column![
-            page_buttons,
+        let main_page_2 = container(row![column![
+            row![
+                row![text("main area content?"), text("tabs should be here?"),],
+                horizontal_space(Length::Fill),
+                self.render_sidebar()
+            ],
+            vertical_space(Length::Fill), // puts space between the main content (inc. sidebar) and the bottom controls
             row![
                 column![
                     text(self.current_song.title.clone()),
                     text(self.current_song.author.clone()),
                     text(self.current_song.album.clone())
-                ],
+                ]
+                .width(300.0),
                 button(text("Go back"))
                     .on_press(ProgramCommands::Send(PungeCommand::SkipBackwards)),
                 button(text("Play / Pause"))
@@ -295,6 +302,18 @@ impl Application for App {
                     .on_press(ProgramCommands::Send(PungeCommand::ToggleShuffle)),
                 slider(0..=30, self.volume, Self::Message::VolumeChange).width(150)
             ]
+            .width(Length::Fill)
+            .align_items(Alignment::Center)
+            .spacing(50.0),
+            vertical_space(Length::Fixed(30.0))
+        ],]);
+        let main_page = container(column![
+            page_buttons,
+            row![column![
+                text(self.current_song.title.clone()),
+                text(self.current_song.author.clone()),
+                text(self.current_song.album.clone())
+            ],]
             .spacing(50)
             .padding(iced::Padding::new(10.0)),
             row![
@@ -306,7 +325,8 @@ impl Application for App {
         ]);
         match self.current_view {
             // which page to display
-            Page::Main => row![main_page, self.render_sidebar()].into(), // this format makes it a bit easier to deal with all contents
+            // Page::Main => row![main_page, self.render_sidebar()].into(), // this format makes it a bit easier to deal with all contents
+            Page::Main => main_page_2.into(),
             Page::Download => self.download_page.view(),
             Page::Settings => self.setting_page.view(),
         }
