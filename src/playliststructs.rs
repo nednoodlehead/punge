@@ -31,15 +31,28 @@ pub struct Playlist {
 }
 
 // this is the struct for making a playlist within the app. Not to be confused with playlist from youtube
+#[derive(Clone)]
 pub struct UserPlaylist {
     pub title: String,
     pub description: String,
     pub thumbnail: String, // path to thumbnail
     pub datecreated: NaiveDate,
     pub songcount: u16,
-    pub totaltime: usize, // updated each time a song is added or removed. in seconds
+    pub totaltime: String, // updated each time a song is added or removed. in seconds
     pub isautogen: bool,
     pub uniqueid: String,
+}
+
+impl std::fmt::Display for UserPlaylist {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.title)
+    }
+}
+
+impl std::fmt::Debug for UserPlaylist {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "title:{} | id: {}", self.title, self.uniqueid)
+    }
 }
 
 impl UserPlaylist {
@@ -55,7 +68,7 @@ impl UserPlaylist {
             thumbnail,
             datecreated: Local::now().date_naive(),
             songcount: 0,
-            totaltime: 0,
+            totaltime: "0".to_string(),
             isautogen,
             uniqueid: Uuid::new_v4().to_string(),
         }
@@ -90,7 +103,7 @@ pub enum DatabaseErrors {
     #[error("UniqueID Already Present in DB")]
     DatabaseEntryExistsError, // used when the unique id is already present in the database
     #[error("Error inserting")]
-    FromSqlError,
+    FromSqlError(String),
 }
 
 #[derive(Debug, Clone)]
@@ -125,18 +138,18 @@ impl From<TubeError> for AppError {
 
 impl From<FromSqlError> for AppError {
     fn from(e: FromSqlError) -> Self {
-        AppError::DatabaseError(DatabaseErrors::FromSqlError)
+        AppError::DatabaseError(DatabaseErrors::FromSqlError(e.to_string()))
     }
 }
 
 impl From<rusqlite::Error> for AppError {
     fn from(e: Error) -> Self {
-        AppError::DatabaseError(DatabaseErrors::FromSqlError)
+        AppError::DatabaseError(DatabaseErrors::FromSqlError(e.to_string()))
     }
 }
 
 impl From<rusqlite::Error> for DatabaseErrors {
     fn from(e: Error) -> Self {
-        DatabaseErrors::FromSqlError
+        DatabaseErrors::FromSqlError(e.to_string())
     }
 }

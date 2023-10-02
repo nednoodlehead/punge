@@ -256,6 +256,14 @@ impl Application for App {
                     self.search = "".to_string()
                 }
             }
+            Self::Message::ChangeViewingPlaylist(playlist) => {
+                // we will change the current view to the playlist view, and pass in the playlist to fill the content
+                println!("received msg for playlist: {}", &playlist.title);
+            }
+            Self::Message::ChangeActivePlaylist(playlist) => {
+                println!("changed active playlist! {}", &playlist.title);
+                // so we will self.sender.send(PungeCommand::UpdateList()) or whatever. will try to search
+            }
 
             _ => println!("inumplmented"),
         }
@@ -263,11 +271,12 @@ impl Application for App {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        let page_buttons = row![
+        let page_buttons: iced::widget::Row<'_, ProgramCommands> = row![
             button(text("Settings")).on_press(ProgramCommands::ChangePage(Page::Settings)),
             button(text("Download!")).on_press(ProgramCommands::ChangePage(Page::Download)),
         ]
         .spacing(50);
+
         let main_page = container(column![
             page_buttons,
             row![
@@ -287,16 +296,17 @@ impl Application for App {
                 slider(0..=30, self.volume, Self::Message::VolumeChange).width(150)
             ]
             .spacing(50)
-            .padding(iced::Padding::new(10 as f32)),
+            .padding(iced::Padding::new(10.0)),
             row![
                 iced::widget::text_input("GoTo closest match", self.search.as_str())
-                    .on_input(ProgramCommands::UpdateSearch),
+                    .on_input(ProgramCommands::UpdateSearch)
+                    .width(Length::Fixed(250.0)),
                 button(text("Confirm")).on_press(ProgramCommands::GoToSong)
             ]
         ]);
         match self.current_view {
             // which page to display
-            Page::Main => main_page.into(),
+            Page::Main => row![main_page, self.render_sidebar()].into(), // this format makes it a bit easier to deal with all contents
             Page::Download => self.download_page.view(),
             Page::Settings => self.setting_page.view(),
         }

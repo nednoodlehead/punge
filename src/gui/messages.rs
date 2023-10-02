@@ -2,7 +2,7 @@
 // as well as the actual music-playing portion of the app
 
 use crate::gui::start::MusicData;
-use crate::playliststructs::AppError;
+use crate::playliststructs::{AppError, UserPlaylist};
 use tokio::sync::mpsc as async_sender;
 #[derive(Debug, Clone)]
 pub enum PungeCommand {
@@ -36,6 +36,8 @@ pub enum ProgramCommands {
     InAppEvent(crate::gui::start::AppEvent),
     UpdateSearch(String), // for updating the string that is used in the regex search
     GoToSong, // uses the regex search to take user input and skip to nearest search for user. input derives from self.search
+    ChangeViewingPlaylist(UserPlaylist), // pass whole playlist in.
+    ChangeActivePlaylist(UserPlaylist),
 }
 
 #[derive(Debug, Clone, Copy)]
