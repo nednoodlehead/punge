@@ -4,6 +4,7 @@ use crate::gui::subscription as sub;
 use crate::player::cache;
 use crate::player::interface;
 use crate::{gui, playliststructs};
+use async_std::task;
 use iced::widget::{
     button, column, container, horizontal_space, row, slider, text, vertical_space,
 };
@@ -11,7 +12,6 @@ use iced::Command;
 use iced::{
     executor, Alignment, Application, Color, Element, Error, Event, Length, Settings, Theme,
 };
-use std::thread;
 
 use crate::db::{fetch, metadata};
 use crate::player::interface::{read_file_from_beginning, MusicPlayer};
@@ -462,6 +462,14 @@ impl Application for App {
                         }
                         PungeCommand::SkipForwards => {
                             println!("skip forards, top!!");
+                            // metadata::skipped_song(music_obj.current_object.uniqueid)
+                            //     .await
+                            //     .unwrap();
+                            task::spawn(async {
+                                metadata::skipped_song(music_obj.current_object.uniqueid)
+                                    .await
+                                    .unwrap();
+                            });
                             music_obj.sink.stop();
                             music_obj.count =
                                 change_count(true, music_obj.count.clone(), music_obj.list.len());
@@ -702,6 +710,19 @@ impl Application for App {
                                         }
                                         PungeCommand::SkipForwards => {
                                             println!("skippin forrards");
+                                            task::spawn(async {
+                                                // spawn a task to insert the data to the database
+                                                metadata::skipped_song(
+                                                    music_obj.current_object.uniqueid,
+                                                )
+                                                .await
+                                                .unwrap();
+                                            });
+                                            // metadata::skipped_song(
+                                            //     music_obj.current_object.uniqueid,
+                                            // )
+                                            // .await
+                                            // .unwrap();
                                             music_obj.count = change_count(
                                                 true,
                                                 music_obj.count.clone(),

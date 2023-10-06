@@ -15,7 +15,9 @@ song is played fully and naturally transposes to the next song
 // bcs there is nothing to do with the result (like returning info to user) and if it fails, the program should panic
 // something something best practise (i also like using ? :3)
 
-// for times when the player just autoplays to the next song
+// yeah on debug mode, this is reallllllly slow (like 0.5seconds)
+
+// for times when the player just autoplays to the next song, user liked it enough to let it play
 pub fn on_passive_play(uniqueid: String) -> Result<(), AppError> {
     let conn = Connection::open("main.db")?;
     let stmt = "UPDATE main SET plays = plays +1, weight = weight + 2 WHERE uniqueid = ?";
@@ -27,6 +29,15 @@ pub fn on_passive_play(uniqueid: String) -> Result<(), AppError> {
 pub fn on_seek(uniqueid: String) -> Result<(), AppError> {
     let conn = Connection::open("main.db")?;
     let stmt = "UPDATE main SET weight = weight + 5 WHERE uniqueid = ?";
+    conn.execute(stmt, params![uniqueid])?;
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}
+
+// i think it makes sense if this is only for forward skips. so its like "no i dont want that one", backwards skip is more like "i know what song i want and am going back to it"
+pub async fn skipped_song(uniqueid: String) -> Result<(), AppError> {
+    let conn = Connection::open("main.db")?;
+    let stmt = "UPDATE main SET weight = weight -1 WHERE uniqueid =?";
     conn.execute(stmt, params![uniqueid])?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
