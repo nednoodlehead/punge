@@ -85,7 +85,7 @@ pub fn playlist_parse(playlist_link: String) -> Result<Playlist, AppError> {
         crate::utils::playlist::get_playlist(playlist_link.as_str());
     match playlist {
         Ok(good_playlist) => Ok(good_playlist),
-        Err(e) => Err(AppError::InvalidUrlError),
+        Err(e) => Err(AppError::InvalidUrlError(format!("{:?}", e))),
     }
 }
 
@@ -97,6 +97,6 @@ pub fn single_parse(single_link: String) -> Result<rustube::blocking::video::Vid
             let vid = rustube::blocking::Video::from_url(&good_url)?; // fails here if video is unavailable
             Ok(vid)
         }
-        Err(e) => Err(AppError::InvalidUrlError),
+        Err(e) => Err(AppError::InvalidUrlError(e.to_string())),
     }
 }

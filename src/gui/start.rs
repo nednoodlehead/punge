@@ -13,7 +13,7 @@ use iced::{
 };
 use std::thread;
 
-use crate::db::fetch;
+use crate::db::{fetch, metadata};
 use crate::player::interface::{read_file_from_beginning, MusicPlayer};
 use crate::player::sort::get_values_from_db;
 use crate::playliststructs::PungeMusicObject;
@@ -30,7 +30,22 @@ pub fn begin() -> iced::Result {
     App::run(Settings {
         id: None,
         flags: (),
-        window: Default::default(),
+        window: iced::window::Settings {
+            size: (1150, 700),
+            position: iced::window::Position::Default,
+            min_size: Some((1150, 700)),
+            max_size: Some((2920, 2080)),
+            visible: true,
+            resizable: true,
+            decorations: true,
+            transparent: false,
+            level: iced::window::Level::Normal,
+            icon: None, // will add soon i think
+            platform_specific: iced::window::PlatformSpecific {
+                parent: None,
+                drag_and_drop: false,
+            },
+        },
         default_font: Default::default(),
         default_text_size: 16.0,
         antialiasing: false,
@@ -53,6 +68,7 @@ pub struct App {
     current_view: Page,
     download_page: crate::gui::download_page::DownloadPage,
     setting_page: setting_page::SettingPage,
+    media_page: crate::gui::media_page::MediaPage,
     download_list: Vec<types::Download>, // should also include the link somewhere to check for
     last_id: usize,
     manager: GlobalHotKeyManager,
@@ -90,6 +106,7 @@ impl Application for App {
                 current_view: Page::Main,
                 download_page: download_page::DownloadPage::new(),
                 setting_page: setting_page::SettingPage::new(),
+                media_page: crate::gui::media_page::MediaPage::new(),
                 download_list: vec![],
                 last_id: 0,
                 manager,
@@ -278,9 +295,15 @@ impl Application for App {
             button(text("Download!")).on_press(ProgramCommands::ChangePage(Page::Download)),
         ]
         .spacing(50);
+        let search_container = container(row![
+            iced::widget::text_input("GoTo closest match", self.search.as_str())
+                .on_input(ProgramCommands::UpdateSearch)
+                .width(Length::Fixed(250.0)),
+            button(text("Confirm")).on_press(ProgramCommands::GoToSong)
+        ]);
         let main_page_2 = container(row![column![
             row![
-                row![text("main area content?"), text("tabs should be here?"),],
+                row![text("main area content?"), page_buttons],
                 horizontal_space(Length::Fill),
                 self.render_sidebar()
             ],
@@ -291,7 +314,8 @@ impl Application for App {
                     text(self.current_song.author.clone()),
                     text(self.current_song.album.clone())
                 ]
-                .width(300.0),
+                .padding(2.5)
+                .width(225.0),
                 button(text("Go back"))
                     .on_press(ProgramCommands::Send(PungeCommand::SkipBackwards)),
                 button(text("Play / Pause"))
@@ -300,35 +324,25 @@ impl Application for App {
                     .on_press(ProgramCommands::Send(PungeCommand::SkipForwards)),
                 button(text("Shuffle"))
                     .on_press(ProgramCommands::Send(PungeCommand::ToggleShuffle)),
-                slider(0..=30, self.volume, Self::Message::VolumeChange).width(150)
+                column![
+                    slider(0..=30, self.volume, Self::Message::VolumeChange).width(150),
+                    search_container
+                ]
+                .align_items(Alignment::Center)
+                .spacing(5.0)
             ]
             .width(Length::Fill)
             .align_items(Alignment::Center)
             .spacing(50.0),
             vertical_space(Length::Fixed(30.0))
         ],]);
-        let main_page = container(column![
-            page_buttons,
-            row![column![
-                text(self.current_song.title.clone()),
-                text(self.current_song.author.clone()),
-                text(self.current_song.album.clone())
-            ],]
-            .spacing(50)
-            .padding(iced::Padding::new(10.0)),
-            row![
-                iced::widget::text_input("GoTo closest match", self.search.as_str())
-                    .on_input(ProgramCommands::UpdateSearch)
-                    .width(Length::Fixed(250.0)),
-                button(text("Confirm")).on_press(ProgramCommands::GoToSong)
-            ]
-        ]);
         match self.current_view {
             // which page to display
             // Page::Main => row![main_page, self.render_sidebar()].into(), // this format makes it a bit easier to deal with all contents
             Page::Main => main_page_2.into(),
             Page::Download => self.download_page.view(),
             Page::Settings => self.setting_page.view(),
+            Page::Media => self.media_page.view(),
         }
     }
 
@@ -532,7 +546,7 @@ impl Application for App {
                                 }))
                                 .await
                                 .unwrap();
-                            // also change music_obj.current_object
+                            metadata::on_seek(music_obj.current_object.uniqueid.clone()).unwrap();
                         }
                         PungeCommand::StaticVolumeUp => {
                             music_obj.sink.set_volume(music_obj.sink.volume() + 0.005);
@@ -832,6 +846,10 @@ impl Application for App {
                                                 }))
                                                 .await
                                                 .unwrap();
+                                            metadata::on_seek(
+                                                music_obj.current_object.uniqueid.clone(),
+                                            )
+                                            .unwrap();
                                         }
                                         _ => {
                                             println!("yeah, other stuff... {:?}", cmd)
@@ -872,6 +890,8 @@ impl Application for App {
                                     playlist: "main".to_string(),
                                 }))
                                 .await
+                                .unwrap();
+                            metadata::on_passive_play(music_obj.current_object.uniqueid.clone())
                                 .unwrap();
                         }
                     }

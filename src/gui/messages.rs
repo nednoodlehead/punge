@@ -45,4 +45,5 @@ pub enum Page {
     Main,
     Settings,
     Download,
+    Media,
 }

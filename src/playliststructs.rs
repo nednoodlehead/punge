@@ -112,7 +112,7 @@ pub enum AppError {
     YoutubeError(String), // url, what went wrong
     FfmpegError,
     FileError(String),
-    InvalidUrlError,
+    InvalidUrlError(String),
     RustubeVideoError(String),
 }
 
@@ -125,7 +125,7 @@ impl From<DatabaseErrors> for AppError {
 use rustube::url::ParseError;
 impl From<ParseError> for AppError {
     fn from(e: ParseError) -> Self {
-        AppError::InvalidUrlError
+        AppError::InvalidUrlError(e.to_string())
     }
 }
 
