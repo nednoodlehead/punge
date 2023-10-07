@@ -47,3 +47,11 @@ pub enum Page {
     Download,
     Media,
 }
+
+#[derive(Debug, Clone)]
+// these are all the actions the user can perform that can change the weight / plays of a song
+pub enum DatabaseMessages {
+    Played(String), // uuid passed in
+    Skipped(String),
+    Seeked(String),
+}
