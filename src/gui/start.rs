@@ -1,5 +1,5 @@
 // can we rename this to lib.rs at some point maybe??
-use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
+use crate::gui::messages::{DatabaseMessages, Page, ProgramCommands, PungeCommand};
 use crate::gui::subscription as sub;
 use crate::player::cache;
 use crate::player::interface;
@@ -18,13 +18,11 @@ use crate::player::interface::{read_file_from_beginning, MusicPlayer};
 use crate::player::sort::get_values_from_db;
 use crate::playliststructs::PungeMusicObject;
 use crate::utils::{types, youtube_interface};
-use iced::futures::channel::mpsc::Sender;
+use iced::futures::channel::mpsc::{Sender, UnboundedReceiver, UnboundedSender};
 use iced::futures::sink::SinkExt;
 use iced::subscription::{self, Subscription};
 use rand::seq::SliceRandom;
-use std::sync::mpsc;
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
-use tokio::sync::mpsc::UnboundedReceiver; // allow the playlist to be shuffled
 
 pub fn begin() -> iced::Result {
     App::run(Settings {
@@ -348,6 +346,11 @@ impl Application for App {
 
     fn subscription(&self) -> Subscription<Self::Message> {
         let close_event_loop = subscription::events_with(handle_app_events);
+        let (database_sender, database_receiver): (
+            async_sender::UnboundedSender<DatabaseMessages>,
+            async_sender::UnboundedReceiver<DatabaseMessages>,
+        ) = tokio::sync::mpsc::unbounded_channel();
+        // let database_loop = self.database_sub(database_receiver);
         let hotkey_loop = iced::subscription::channel(5, 32, |mut sender| async move {
             use iced::futures::sink::SinkExt;
             loop {
@@ -462,15 +465,21 @@ impl Application for App {
                         }
                         PungeCommand::SkipForwards => {
                             println!("skip forards, top!!");
+                            database_sender
+                                .send(DatabaseMessages::Skipped(
+                                    music_obj.current_object.uniqueid.clone(),
+                                ))
+                                .unwrap();
                             // metadata::skipped_song(music_obj.current_object.uniqueid)
                             //     .await
                             //     .unwrap();
-                            task::spawn(async {
-                                metadata::skipped_song(music_obj.current_object.uniqueid)
-                                    .await
-                                    .unwrap();
-                            });
-                            music_obj.sink.stop();
+                            // idk if im geeking but its feels slow still
+                            // task::spawn(async {
+                            //     metadata::skipped_song(music_obj.current_object.uniqueid)
+                            //         .await
+                            //         .unwrap();
+                            // });
+                            // music_obj.sink.stop();
                             music_obj.count =
                                 change_count(true, music_obj.count.clone(), music_obj.list.len());
                             music_obj.current_object =
@@ -554,7 +563,11 @@ impl Application for App {
                                 }))
                                 .await
                                 .unwrap();
-                            metadata::on_seek(music_obj.current_object.uniqueid.clone()).unwrap();
+                            database_sender
+                                .send(DatabaseMessages::Seeked(
+                                    music_obj.current_object.uniqueid.clone(),
+                                ))
+                                .unwrap();
                         }
                         PungeCommand::StaticVolumeUp => {
                             music_obj.sink.set_volume(music_obj.sink.volume() + 0.005);
@@ -710,14 +723,19 @@ impl Application for App {
                                         }
                                         PungeCommand::SkipForwards => {
                                             println!("skippin forrards");
-                                            task::spawn(async {
-                                                // spawn a task to insert the data to the database
-                                                metadata::skipped_song(
+                                            database_sender
+                                                .send(DatabaseMessages::Skipped(
                                                     music_obj.current_object.uniqueid,
-                                                )
-                                                .await
+                                                ))
                                                 .unwrap();
-                                            });
+                                            // task::spawn(async {
+                                            //     // spawn a task to insert the data to the database
+                                            //     metadata::skipped_song(
+                                            //         music_obj.current_object.uniqueid,
+                                            //     )
+                                            //     .await
+                                            //     .unwrap();
+                                            // });
                                             // metadata::skipped_song(
                                             //     music_obj.current_object.uniqueid,
                                             // )
@@ -867,10 +885,11 @@ impl Application for App {
                                                 }))
                                                 .await
                                                 .unwrap();
-                                            metadata::on_seek(
-                                                music_obj.current_object.uniqueid.clone(),
-                                            )
-                                            .unwrap();
+                                            database_sender
+                                                .send(DatabaseMessages::Seeked(
+                                                    music_obj.current_object.uniqueid.clone(),
+                                                ))
+                                                .unwrap();
                                         }
                                         _ => {
                                             println!("yeah, other stuff... {:?}", cmd)
@@ -896,7 +915,7 @@ impl Application for App {
                         } else {
                             println!("default counter!");
                             music_obj.count =
-                                change_count(true, music_obj.count.clone(), music_obj.list.len());
+                                change_count(true, music_obj.count, music_obj.list.len());
                             music_obj.current_object =
                                 music_obj.list[music_obj.count as usize].clone();
                             // new info :P
@@ -912,8 +931,11 @@ impl Application for App {
                                 }))
                                 .await
                                 .unwrap();
-                            metadata::on_passive_play(music_obj.current_object.uniqueid.clone())
-                                .unwrap();
+                            database_sender
+                                .send(DatabaseMessages::Played(
+                                    music_obj.current_object.uniqueid.clone(),
+                                ))
+                                .unwrap()
                         }
                     }
                 }
@@ -928,6 +950,7 @@ impl Application for App {
         iced::subscription::Subscription::batch(vec![
             music_loop,
             hotkey_loop,
+            self.database_sub(database_receiver),
             Subscription::batch(self.download_list.iter().map(types::Download::subscription)),
             close_event_loop,
         ]) // is two batches required?? prolly not
