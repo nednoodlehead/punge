@@ -464,9 +464,8 @@ impl Application for App {
                             }
                         }
                         PungeCommand::SkipForwards => {
-                            music_obj.sink.clear(); // i genuinely dont know why, but if you move this .clear() to somewhere else,
-                                                    // the app will keep skipping forward, it gets lost, because it repeatedly clears and readds the new song to the sink
-                                                    // but if you move it to the top, it works perfectly !?!
+                            // so i guess the answer is doing .stop()? not .clear(). ig cause .stop() also clears the queue
+                            music_obj.sink.stop();
                             println!("skip forards, top!!");
                             database_sender
                                 .send(DatabaseMessages::Skipped(
@@ -511,7 +510,7 @@ impl Application for App {
                         PungeCommand::SkipBackwards => {
                             music_obj.sink.stop();
                             music_obj.count =
-                                change_count(false, music_obj.count.clone(), music_obj.list.len());
+                                change_count(false, music_obj.count, music_obj.list.len());
                             music_obj.current_object =
                                 music_obj.list[music_obj.count as usize].clone();
                             music_obj.sink.append(read_file_from_beginning(
@@ -745,19 +744,14 @@ impl Application for App {
                                             // )
                                             // .await
                                             // .unwrap();
+                                            music_obj.sink.stop();
                                             music_obj.count = change_count(
                                                 true,
-                                                music_obj.count.clone(),
+                                                music_obj.count,
                                                 music_obj.list.len(),
                                             );
                                             music_obj.current_object =
                                                 music_obj.list[music_obj.count as usize].clone();
-                                            if !music_obj.sink.is_paused() {
-                                                println!("is this ever hit LOWER");
-                                                // wait is this even required cause this can only be hit in the 'active palying' loop?
-                                                music_obj.sink.stop(); // stop
-                                                music_obj.sink.clear() // clear the sink of current song
-                                            }
                                             music_obj.sink.append(read_file_from_beginning(
                                                 music_obj.list[music_obj.count as usize]
                                                     .savelocationmp3
