@@ -16,6 +16,7 @@ song is played fully and naturally transposes to the next song
 // something something best practise (i also like using ? :3)
 
 // yeah on debug mode, this is reallllllly slow (like 0.5seconds)
+// edit: now runs on a subscription, it is much faster :D
 
 // for times when the player just autoplays to the next song, user liked it enough to let it play
 pub fn on_passive_play(uniqueid: String) -> Result<(), AppError> {
