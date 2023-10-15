@@ -32,10 +32,11 @@ impl MusicPlayer {
             let mut rng = rand::thread_rng();
             list.shuffle(&mut rng);
         }
+
         let count = list
             .iter()
             .position(|r| r.clone().uniqueid == cache.song_id)
-            .unwrap();
+            .unwrap_or(0);
         let current_object = list[count as usize].clone();
         // list should inherite from cache at some point. not worried now tho
         MusicPlayer {

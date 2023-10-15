@@ -262,12 +262,13 @@ fn create_punge_obj(
         mp3_name.clone(),
         jpg_name.clone(),
     )?;
+    let len = sep_video::int_to_timestamp(vid.video_details().length_seconds as usize);
     Ok(PungeMusicObject {
         title,
         author,
         album,
         features,
-        length: sep_video::int_to_timestamp(vid.video_details().length_seconds as usize),
+        length: len.clone(),
         savelocationmp3: mp3_name,
         savelocationjpg: jpg_name,
         datedownloaded: chrono::Local::now().date_naive(),
@@ -276,6 +277,7 @@ fn create_punge_obj(
         uniqueid: vid.video_details().video_id.to_string(),
         plays: 0,
         weight: 0,
+        threshold: crate::db::utilities::calc_thres(len),
     })
 }
 

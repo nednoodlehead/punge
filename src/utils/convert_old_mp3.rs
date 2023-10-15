@@ -52,6 +52,7 @@ pub fn convert_mp3_to_mp3(old_obj: OldData, new_path_base: String) -> PungeMusic
         uniqueid: old_obj.uniqueid,
         plays: 0,
         weight: 0,
+        threshold: 0, // idc this wont be used anymore
     }
 }
 

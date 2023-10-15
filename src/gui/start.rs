@@ -1,10 +1,19 @@
 // can we rename this to lib.rs at some point maybe??
+use crate::db::{fetch, metadata};
+use crate::gui::messages::AppEvent;
 use crate::gui::messages::{DatabaseMessages, Page, ProgramCommands, PungeCommand};
 use crate::gui::subscription as sub;
 use crate::player::cache;
 use crate::player::interface;
+use crate::player::interface::{read_file_from_beginning, MusicPlayer};
+use crate::player::sort::get_values_from_db;
+use crate::playliststructs::PungeMusicObject;
+use crate::utils::{types, youtube_interface};
 use crate::{gui, playliststructs};
 use async_std::task;
+use iced::futures::channel::mpsc::{Sender, UnboundedReceiver, UnboundedSender};
+use iced::futures::sink::SinkExt;
+use iced::subscription::{self, Subscription};
 use iced::widget::{
     button, column, container, horizontal_space, row, slider, text, vertical_space,
 };
@@ -12,15 +21,6 @@ use iced::Command;
 use iced::{
     executor, Alignment, Application, Color, Element, Error, Event, Length, Settings, Theme,
 };
-
-use crate::db::{fetch, metadata};
-use crate::player::interface::{read_file_from_beginning, MusicPlayer};
-use crate::player::sort::get_values_from_db;
-use crate::playliststructs::PungeMusicObject;
-use crate::utils::{types, youtube_interface};
-use iced::futures::channel::mpsc::{Sender, UnboundedReceiver, UnboundedSender};
-use iced::futures::sink::SinkExt;
-use iced::subscription::{self, Subscription};
 use rand::seq::SliceRandom;
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
@@ -59,8 +59,8 @@ use global_hotkey::{
 
 pub struct App {
     theme: Theme,
-    is_paused: bool,
-    current_song: MusicData, // represents title, auth, album, song_id, volume, shuffle, playlist
+    pub is_paused: bool,
+    pub current_song: MusicData, // represents title, auth, album, song_id, volume, shuffle, playlist
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
     volume: u8,
     current_view: Page,
@@ -256,6 +256,7 @@ impl Application for App {
             }
 
             Self::Message::GoToSong => {
+                // TODO update db weight !?
                 let val =
                     get_values_from_db(self.current_song.playlist.clone(), self.search.clone());
                 println!("GoToSong: {:?}", val);
@@ -345,651 +346,27 @@ impl Application for App {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        let close_event_loop = subscription::events_with(handle_app_events);
         let (database_sender, database_receiver): (
-            async_sender::UnboundedSender<DatabaseMessages>,
-            async_sender::UnboundedReceiver<DatabaseMessages>,
+            async_sender::UnboundedSender<MusicData>,
+            async_sender::UnboundedReceiver<MusicData>,
         ) = tokio::sync::mpsc::unbounded_channel();
-        // let database_loop = self.database_sub(database_receiver);
-        let hotkey_loop = iced::subscription::channel(5, 32, |mut sender| async move {
-            use iced::futures::sink::SinkExt;
-            loop {
-                match GlobalHotKeyEvent::receiver().try_recv() {
-                    Ok(hotkey) => {
-                        // handle global keybinds
-                        println!("new keybind incming: {:?}", hotkey);
-                        match hotkey {
-                            GlobalHotKeyEvent { id: 4121890298 } => {
-                                // right arrow
-                                sender
-                                    .send(Self::Message::Send(PungeCommand::SkipForwards))
-                                    .await
-                                    .unwrap();
-                            }
-                            GlobalHotKeyEvent { id: 2037224482 } => {
-                                // up arrow
-                                sender
-                                    .send(Self::Message::Send(PungeCommand::StaticVolumeUp))
-                                    .await
-                                    .unwrap();
-                            }
-                            GlobalHotKeyEvent { id: 1912779161 } => {
-                                // left arrow??
-                                sender
-                                    .send(Self::Message::Send(PungeCommand::SkipBackwards))
-                                    .await
-                                    .unwrap();
-                            }
-                            GlobalHotKeyEvent { id: 4174001518 } => {
-                                // down arrow!
-                                sender
-                                    .send(Self::Message::Send(PungeCommand::StaticVolumeDown))
-                                    .await
-                                    .unwrap();
-                            }
-                            GlobalHotKeyEvent { id: 3520754938 } => {
-                                // page down (shuffle)
-                                sender
-                                    .send(Self::Message::Send(PungeCommand::ToggleShuffle))
-                                    .await
-                                    .unwrap();
-                            }
-                            GlobalHotKeyEvent { id: 3009842507 } => {
-                                // end (pause)
-                                sender
-                                    .send(Self::Message::Send(PungeCommand::PlayOrPause))
-                                    .await
-                                    .unwrap()
-                            }
+        use crate::gui::messages::Context;
 
-                            _ => {
-                                println!("anything else")
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        // erm, ignore
-                    }
-                }
-                async_std::task::sleep(std::time::Duration::from_millis(50)).await;
-                // required for the stuff to work
-            }
-        });
-        use iced::futures::SinkExt;
-        let music_loop = iced::subscription::channel(0, 32, |mut sender| async move {
-            let (gui_send, mut gui_rec) = tokio::sync::mpsc::unbounded_channel();
-            sender
-                .send(Self::Message::UpdateSender(Some(gui_send)))
-                .await
-                .unwrap(); // send the sender to the gui !!
-            let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
-            // maybe here  we need to get index of last song that was on?
-            // send the data to the program
-            let mut music_obj = interface::MusicPlayer::new(items);
-            sender
-                .send(Self::Message::NewData(MusicData {
-                    title: music_obj.current_object.title.clone(),
-                    author: music_obj.current_object.author.clone(),
-                    album: music_obj.current_object.album.clone(),
-                    song_id: music_obj.current_object.uniqueid.clone(),
-                    volume: music_obj.sink.volume(),
-                    shuffle: music_obj.shuffle,
-                    playlist: "main".to_string(),
-                }))
-                .await
-                .unwrap();
-
-            // main music loop!
-            println!("starting main loop");
-            loop {
-                match gui_rec.try_recv() {
-                    Ok(cmd) => match cmd {
-                        PungeCommand::PlayOrPause => {
-                            if music_obj.sink.is_paused() || music_obj.sink.empty() {
-                                if music_obj.sink.empty() {
-                                    let song = interface::read_file_from_beginning(
-                                        music_obj.list[music_obj.count as usize]
-                                            .savelocationmp3
-                                            .clone(),
-                                    );
-                                    music_obj.sink.append(song);
-                                }
-                                music_obj.to_play = true;
-                                music_obj.sink.play();
-                                println!("playing here... {}", music_obj.count);
-                            } else {
-                                println!("stooping here! (top)");
-                                music_obj.sink.pause();
-                                music_obj.to_play = false
-                            }
-                        }
-                        PungeCommand::SkipForwards => {
-                            // so i guess the answer is doing .stop()? not .clear(). ig cause .stop() also clears the queue
-                            music_obj.sink.stop();
-                            println!("skip forards, top!!");
-                            database_sender
-                                .send(DatabaseMessages::Skipped(
-                                    music_obj.current_object.uniqueid.clone(),
-                                ))
-                                .unwrap();
-                            // metadata::skipped_song(music_obj.current_object.uniqueid)
-                            //     .await
-                            //     .unwrap();
-                            // idk if im geeking but its feels slow still
-                            // task::spawn(async {
-                            //     metadata::skipped_song(music_obj.current_object.uniqueid)
-                            //         .await
-                            //         .unwrap();
-                            // });
-                            // music_obj.sink.stop();
-                            music_obj.count =
-                                change_count(true, music_obj.count, music_obj.list.len());
-                            music_obj.current_object =
-                                music_obj.list[music_obj.count as usize].clone();
-
-                            music_obj.sink.append(read_file_from_beginning(
-                                music_obj.list[music_obj.count as usize]
-                                    .savelocationmp3
-                                    .clone(),
-                            ));
-                            music_obj.to_play = true;
-                            music_obj.sink.play();
-                            sender
-                                .send(ProgramCommands::NewData(MusicData {
-                                    title: music_obj.current_object.title.clone(),
-                                    author: music_obj.current_object.author.clone(),
-                                    album: music_obj.current_object.author.clone(),
-                                    song_id: music_obj.current_object.uniqueid.clone(),
-                                    volume: music_obj.sink.volume(),
-                                    shuffle: music_obj.shuffle,
-                                    playlist: "main".to_string(),
-                                }))
-                                .await
-                                .unwrap();
-                        }
-                        PungeCommand::SkipBackwards => {
-                            music_obj.sink.stop();
-                            music_obj.count =
-                                change_count(false, music_obj.count, music_obj.list.len());
-                            music_obj.current_object =
-                                music_obj.list[music_obj.count as usize].clone();
-                            music_obj.sink.append(read_file_from_beginning(
-                                music_obj.list[music_obj.count as usize]
-                                    .savelocationmp3
-                                    .clone(),
-                            ));
-                            music_obj.to_play = true;
-                            music_obj.sink.play();
-                            sender
-                                .send(ProgramCommands::NewData(MusicData {
-                                    title: music_obj.current_object.title.clone(),
-                                    author: music_obj.current_object.author.clone(),
-                                    album: music_obj.current_object.album.clone(),
-                                    song_id: music_obj.current_object.uniqueid.clone(),
-                                    volume: music_obj.sink.volume(),
-                                    shuffle: music_obj.shuffle,
-                                    playlist: "main".to_string(),
-                                }))
-                                .await
-                                .unwrap();
-                        }
-                        PungeCommand::NewVolume(val) => {
-                            music_obj.sink.set_volume((val as f32) / 80.0)
-                        }
-                        PungeCommand::ChangeSong(uuid) => {
-                            let index = music_obj
-                                .list
-                                .iter()
-                                .position(|r| r.clone().uniqueid == uuid)
-                                .unwrap();
-
-                            music_obj.sink.stop();
-                            music_obj.count = index as isize;
-                            music_obj.current_object =
-                                music_obj.list[music_obj.count as usize].clone();
-                            music_obj.sink.append(read_file_from_beginning(
-                                music_obj.list[music_obj.count as usize]
-                                    .savelocationmp3
-                                    .clone(),
-                            ));
-                            music_obj.to_play = true;
-                            music_obj.sink.play();
-                            sender
-                                .send(ProgramCommands::NewData(MusicData {
-                                    title: music_obj.current_object.title.clone(),
-                                    author: music_obj.current_object.author.clone(),
-                                    album: music_obj.current_object.author.clone(),
-                                    song_id: music_obj.current_object.uniqueid.clone(),
-                                    volume: music_obj.sink.volume(),
-                                    shuffle: music_obj.shuffle,
-                                    playlist: "main".to_string(),
-                                }))
-                                .await
-                                .unwrap();
-                            database_sender
-                                .send(DatabaseMessages::Seeked(
-                                    music_obj.current_object.uniqueid.clone(),
-                                ))
-                                .unwrap();
-                        }
-                        PungeCommand::StaticVolumeUp => {
-                            music_obj.sink.set_volume(music_obj.sink.volume() + 0.005);
-                        }
-                        PungeCommand::StaticVolumeDown => {
-                            music_obj.sink.set_volume(music_obj.sink.volume() - 0.005);
-                        }
-                        PungeCommand::GoToAlbum => {
-                            println!("going 2 album!")
-                        }
-                        PungeCommand::SkipToSeconds(val) => {
-                            println!("skipping to seconds")
-                        }
-                        PungeCommand::ToggleShuffle => {
-                            println!(
-                                "imagine we are chaning shuffle status: {}",
-                                &music_obj.current_object.title
-                            );
-                            if music_obj.shuffle {
-                                music_obj.list = fetch::get_all_main().unwrap();
-                                // it is shuffled, lets re-order
-                                let index = music_obj // todo ok, need to put back in order
-                                    .list
-                                    .iter()
-                                    .position(|r| {
-                                        r.clone().uniqueid == music_obj.current_object.uniqueid
-                                    })
-                                    .unwrap();
-                                println!("at inddex: {}", index);
-                                music_obj.count = index as isize;
-                                music_obj.shuffle = false;
-                            } else {
-                                let mut rng = rand::thread_rng();
-                                music_obj.list.shuffle(&mut rng);
-                                music_obj.shuffle = true;
-                            }
-                        }
-                        PungeCommand::ChangePlaylist(name) => {
-                            if name == "main".to_string() {
-                                music_obj.list = fetch::get_all_main().unwrap();
-                            } else {
-                                let playlist_uuid = fetch::get_uuid_from_name(name);
-                                music_obj.list =
-                                    fetch::get_all_from_playlist(&playlist_uuid).unwrap();
-                            }
-                        }
-                        PungeCommand::None => {
-                            println!("is this even used?")
-                        }
-                    },
-                    _ => {
-                        // what gets hit when nothing happens
-                    }
-                }
-                if music_obj.to_play {
-                    // if we are playing, we want to loop and keep playing !!
-                    loop {
-                        // i think most of the count checks are depciated
-                        println!("inside our palying loop!");
-                        // process commands (maybe turn it into a function i guess?, would sort of suck to copy and paste to make work)
-                        if music_obj.count < 0 {
-                            music_obj.count =
-                                (music_obj.list.len() as isize + music_obj.count) as isize;
-                        }
-                        if music_obj.count >= (music_obj.list.len() as isize) {
-                            music_obj.count = 0;
-                        }
-                        if music_obj.sink.empty() {
-                            println!("default appending!");
-                            music_obj.sink.append(read_file_from_beginning(
-                                music_obj.list[music_obj.count as usize]
-                                    .savelocationmp3
-                                    .clone(),
-                            ));
-                        }
-                        println!("playing, in theory");
-                        music_obj.sink.play();
-                        while !music_obj.sink.is_paused() {
-                            // process again !?
-                            match gui_rec.try_recv() {
-                                Ok(cmd) => {
-                                    match cmd {
-                                        PungeCommand::PlayOrPause => {
-                                            if music_obj.sink.is_paused() || music_obj.sink.empty()
-                                            {
-                                                // we are going to play
-                                                if !music_obj.sink.is_paused()
-                                                    && music_obj.sink.empty()
-                                                {
-                                                    let song = interface::read_file_from_beginning(
-                                                        music_obj.list[music_obj.count as usize]
-                                                            .savelocationmp3
-                                                            .clone(),
-                                                    );
-                                                    sender
-                                                        .send(ProgramCommands::NewData(MusicData {
-                                                            title: music_obj
-                                                                .current_object
-                                                                .title
-                                                                .clone(),
-                                                            author: music_obj
-                                                                .current_object
-                                                                .author
-                                                                .clone(),
-                                                            album: music_obj
-                                                                .current_object
-                                                                .album
-                                                                .clone(),
-                                                            song_id: music_obj
-                                                                .current_object
-                                                                .uniqueid
-                                                                .clone(),
-                                                            volume: music_obj.sink.volume(),
-                                                            shuffle: music_obj.shuffle,
-                                                            playlist: "main".to_string(),
-                                                        }))
-                                                        .await
-                                                        .unwrap();
-                                                    music_obj.sink.append(song);
-                                                }
-
-                                                music_obj.to_play = true;
-                                                music_obj.sink.play();
-                                                sender
-                                                    .send(ProgramCommands::NewData(MusicData {
-                                                        title: music_obj
-                                                            .current_object
-                                                            .title
-                                                            .clone(),
-                                                        author: music_obj
-                                                            .current_object
-                                                            .author
-                                                            .clone(),
-                                                        album: music_obj
-                                                            .current_object
-                                                            .album
-                                                            .clone(),
-                                                        song_id: music_obj
-                                                            .current_object
-                                                            .uniqueid
-                                                            .clone(),
-                                                        volume: music_obj.sink.volume(),
-                                                        shuffle: music_obj.shuffle,
-                                                        playlist: "main".to_string(),
-                                                    }))
-                                                    .await
-                                                    .unwrap();
-                                            } else {
-                                                println!("stooping here! (bottom)");
-                                                music_obj.sink.pause();
-                                                music_obj.to_play = false
-                                            }
-                                        }
-                                        PungeCommand::SkipForwards => {
-                                            println!("skippin forrards");
-                                            database_sender
-                                                .send(DatabaseMessages::Skipped(
-                                                    music_obj.current_object.uniqueid,
-                                                ))
-                                                .unwrap();
-                                            // task::spawn(async {
-                                            //     // spawn a task to insert the data to the database
-                                            //     metadata::skipped_song(
-                                            //         music_obj.current_object.uniqueid,
-                                            //     )
-                                            //     .await
-                                            //     .unwrap();
-                                            // });
-                                            // metadata::skipped_song(
-                                            //     music_obj.current_object.uniqueid,
-                                            // )
-                                            // .await
-                                            // .unwrap();
-                                            music_obj.sink.stop();
-                                            music_obj.count = change_count(
-                                                true,
-                                                music_obj.count,
-                                                music_obj.list.len(),
-                                            );
-                                            music_obj.current_object =
-                                                music_obj.list[music_obj.count as usize].clone();
-                                            music_obj.sink.append(read_file_from_beginning(
-                                                music_obj.list[music_obj.count as usize]
-                                                    .savelocationmp3
-                                                    .clone(),
-                                            ));
-                                            music_obj.to_play = true;
-                                            music_obj.sink.play();
-                                            sender
-                                                .send(ProgramCommands::NewData(MusicData {
-                                                    title: music_obj.current_object.title.clone(),
-                                                    author: music_obj.current_object.author.clone(),
-                                                    album: music_obj.current_object.album.clone(),
-                                                    song_id: music_obj
-                                                        .current_object
-                                                        .uniqueid
-                                                        .clone(),
-                                                    volume: music_obj.sink.volume(),
-                                                    shuffle: music_obj.shuffle,
-                                                    playlist: "main".to_string(),
-                                                }))
-                                                .await
-                                                .unwrap();
-                                        }
-                                        PungeCommand::SkipBackwards => {
-                                            // music_obj.count -= 1; // do check for smaller than music_obj.len()?
-                                            music_obj.count = change_count(
-                                                false,
-                                                music_obj.count.clone(),
-                                                music_obj.list.len(),
-                                            );
-                                            music_obj.current_object =
-                                                music_obj.list[music_obj.count as usize].clone();
-                                            if !music_obj.sink.is_paused() {
-                                                // so this if stmt was on the upper match stmt, but kept causing problems with skipping and clearing the sink (even tho
-                                                // the if occurs before the sink.append() ). so it only is down here, and seems to work just fine
-                                                music_obj.sink.stop();
-                                                music_obj.sink.clear()
-                                            }
-                                            music_obj.sink.append(read_file_from_beginning(
-                                                music_obj.list[music_obj.count as usize]
-                                                    .savelocationmp3
-                                                    .clone(),
-                                            ));
-                                            music_obj.to_play = true;
-                                            music_obj.sink.play();
-                                            sender
-                                                .send(ProgramCommands::NewData(MusicData {
-                                                    title: music_obj.current_object.title.clone(),
-                                                    author: music_obj.current_object.author.clone(),
-                                                    album: music_obj.current_object.album.clone(),
-                                                    song_id: music_obj
-                                                        .current_object
-                                                        .uniqueid
-                                                        .clone(),
-                                                    volume: music_obj.sink.volume(),
-                                                    shuffle: music_obj.shuffle.clone(),
-                                                    playlist: "main".to_string(),
-                                                }))
-                                                .await
-                                                .unwrap();
-                                        }
-                                        PungeCommand::NewVolume(val) => {
-                                            music_obj.sink.set_volume((val as f32) / 80.0)
-                                        }
-                                        PungeCommand::ToggleShuffle => {
-                                            if music_obj.shuffle {
-                                                music_obj.list = fetch::get_all_main().unwrap();
-                                                let index = music_obj
-                                                    .list
-                                                    .iter()
-                                                    .position(|r| {
-                                                        r.clone().uniqueid
-                                                            == music_obj.current_object.uniqueid
-                                                    })
-                                                    .unwrap();
-                                                println!("indexing: {}", index);
-                                                music_obj.count = index as isize;
-                                                music_obj.shuffle = false;
-                                            } else {
-                                                let mut rng = rand::thread_rng();
-                                                music_obj.list.shuffle(&mut rng);
-                                                music_obj.shuffle = true;
-                                            }
-                                        }
-                                        PungeCommand::StaticVolumeUp => {
-                                            music_obj
-                                                .sink
-                                                .set_volume(music_obj.sink.volume() + 0.005);
-                                        }
-                                        PungeCommand::StaticVolumeDown => {
-                                            music_obj
-                                                .sink
-                                                .set_volume(music_obj.sink.volume() - 0.005);
-                                        }
-                                        PungeCommand::ChangeSong(uuid) => {
-                                            let index = music_obj
-                                                .list
-                                                .iter()
-                                                .position(|r| r.clone().uniqueid == uuid)
-                                                .unwrap();
-
-                                            music_obj.count = index as isize;
-                                            music_obj.current_object =
-                                                music_obj.list[music_obj.count as usize].clone();
-                                            if !music_obj.sink.is_paused() {
-                                                // so this if stmt was on the upper match stmt, but kept causing problems with skipping and clearing the sink (even tho
-                                                // the if occurs before the sink.append() ). so it only is down here, and seems to work just fine
-                                                music_obj.sink.stop();
-                                                music_obj.sink.clear()
-                                            }
-                                            music_obj.sink.append(read_file_from_beginning(
-                                                music_obj.list[music_obj.count as usize]
-                                                    .savelocationmp3
-                                                    .clone(),
-                                            ));
-                                            music_obj.to_play = true;
-                                            music_obj.sink.play();
-                                            sender
-                                                .send(ProgramCommands::NewData(MusicData {
-                                                    title: music_obj.current_object.title.clone(),
-                                                    author: music_obj.current_object.author.clone(),
-                                                    album: music_obj.current_object.album.clone(),
-                                                    song_id: music_obj
-                                                        .current_object
-                                                        .uniqueid
-                                                        .clone(),
-                                                    volume: music_obj.sink.volume(),
-                                                    shuffle: music_obj.shuffle.clone(),
-                                                    playlist: "main".to_string(),
-                                                }))
-                                                .await
-                                                .unwrap();
-                                            database_sender
-                                                .send(DatabaseMessages::Seeked(
-                                                    music_obj.current_object.uniqueid.clone(),
-                                                ))
-                                                .unwrap();
-                                        }
-                                        _ => {
-                                            println!("yeah, other stuff... {:?}", cmd)
-                                        }
-                                    }
-                                }
-                                _ => {
-                                    // what gets hit when nothing happens
-                                }
-                            }
-                            if music_obj.sink.is_paused() {
-                                println!("is paused break!");
-                                break;
-                            } else if music_obj.sink.empty() {
-                                println!("empty break!! ");
-                                break;
-                            } else {
-                                async_std::task::sleep(std::time::Duration::from_millis(50)).await;
-                            }
-                        }
-                        if music_obj.sink.is_paused() {
-                            break;
-                        } else {
-                            println!("default counter!");
-                            music_obj.count =
-                                change_count(true, music_obj.count, music_obj.list.len());
-                            music_obj.current_object =
-                                music_obj.list[music_obj.count as usize].clone();
-                            // new info :P
-                            sender
-                                .send(ProgramCommands::NewData(MusicData {
-                                    title: music_obj.current_object.title.clone(),
-                                    author: music_obj.current_object.author.clone(),
-                                    album: music_obj.current_object.album.clone(),
-                                    song_id: music_obj.current_object.uniqueid.clone(),
-                                    volume: music_obj.sink.volume(),
-                                    shuffle: music_obj.shuffle,
-                                    playlist: "main".to_string(),
-                                }))
-                                .await
-                                .unwrap();
-                            database_sender
-                                .send(DatabaseMessages::Played(
-                                    music_obj.current_object.uniqueid.clone(),
-                                ))
-                                .unwrap()
-                        }
-                    }
-                }
-                async_std::task::sleep(std::time::Duration::from_millis(50)).await;
-            }
-        });
         // so this could eventually mimic the iced-rs/iced/blob/0.10/examples/download_progress, but i dont want to impl that, it would take so long
         // and im pretty sure that rustube has async callback for download progress, so it should be possible.
 
         // will also need to implement keybinds here. will do at another time though
 
         iced::subscription::Subscription::batch(vec![
-            music_loop,
-            hotkey_loop,
-            self.database_sub(database_receiver),
+            self.music_loop(),
+            self.hotkey_loop(),
+            self.database_sub_2(database_receiver),
             Subscription::batch(self.download_list.iter().map(types::Download::subscription)),
-            close_event_loop,
+            self.close_app_sub(),
         ]) // is two batches required?? prolly not
     }
 }
 
-pub fn change_count(incrementing: bool, count: isize, vec_len: usize) -> isize {
-    // change the count without worrying about index errors
-    let new_count: isize = if count == 0 && !incrementing {
-        // if removing and count =0 (would make it -1)
-        // going below the limit
-        (vec_len as isize) - 1
-    } else if (count == (vec_len - 1) as isize) && incrementing {
-        0 as isize // going above or equal the limit
-    } else {
-        if incrementing {
-            // all other cases!
-            count + 1
-        } else {
-            count - 1
-        }
-    };
-    new_count
-}
-
-#[derive(Clone, Debug)]
-pub enum AppEvent {
-    // will include in-app keybinds at some point...
-    CloseRequested,
-}
-
-// handles app events, right now,
-fn handle_app_events(event: iced::Event, _status: iced::event::Status) -> Option<ProgramCommands> {
-    match &event {
-        iced::Event::Window(iced::window::Event::CloseRequested) => {
-            Some(ProgramCommands::InAppEvent(AppEvent::CloseRequested))
-        }
-        _ => None,
-    }
-}
 #[derive(Clone, Debug)]
 pub struct MusicData {
     // passed from music subscription -> main thread
@@ -998,8 +375,11 @@ pub struct MusicData {
     pub album: String,
     pub song_id: String,
     pub volume: f32,
+    pub is_playing: bool,
     pub shuffle: bool,
     pub playlist: String,
+    pub threshold: u16,
+    pub context: gui::messages::Context, // the context of the message being sent
 }
 
 impl MusicData {
@@ -1010,8 +390,11 @@ impl MusicData {
             album: "".to_string(),
             song_id: "".to_string(),
             volume: 0.0,
+            is_playing: false,
             shuffle: false,
             playlist: "main".to_string(),
+            threshold: 0,
+            context: gui::messages::Context::Default,
         }
     }
 }

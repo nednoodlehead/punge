@@ -21,6 +21,7 @@ pub struct PungeMusicObject {
     pub uniqueid: String,
     pub plays: u16,
     pub weight: i16,
+    pub threshold: u16,
 }
 
 pub struct Playlist {

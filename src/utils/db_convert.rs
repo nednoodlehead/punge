@@ -74,6 +74,9 @@ pub fn convert_and_insert(old_db_path: String) -> Result<(), DatabaseErrors> {
             uniqueid: old_obj.uniqueid,
             plays: 0,
             weight: 0,
+            threshold: crate::db::utilities::calc_thres(convert_duration_format(
+                old_obj.savelocation.clone(),
+            )),
         };
         println!("OBJECT: {:?}", new_obj);
     }

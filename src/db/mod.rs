@@ -3,3 +3,4 @@ pub mod fetch;
 pub mod insert;
 pub mod metadata;
 pub mod update;
+pub mod utilities;

@@ -33,7 +33,7 @@ pub enum ProgramCommands {
     Download(String),
     Debug, // a message that has its associated action changed with the debug in question
     AddToDownloadFeedback(Option<Vec<Result<(String, String), AppError>>>), // only called from the subscription,
-    InAppEvent(crate::gui::start::AppEvent),
+    InAppEvent(AppEvent),
     UpdateSearch(String), // for updating the string that is used in the regex search
     GoToSong, // uses the regex search to take user input and skip to nearest search for user. input derives from self.search
     ChangeViewingPlaylist(UserPlaylist), // pass whole playlist in.
@@ -54,4 +54,20 @@ pub enum DatabaseMessages {
     Played(String), // uuid passed in
     Skipped(String),
     Seeked(String),
+}
+
+#[derive(Debug, Clone)]
+pub enum Context {
+    Default, // when the app starts
+    PlayPause,
+    SkippedForward,
+    SkippedBackwards,
+    Seeked,
+    AutoPlay,
+}
+
+#[derive(Clone, Debug)]
+pub enum AppEvent {
+    // will include in-app keybinds at some point...
+    CloseRequested,
 }

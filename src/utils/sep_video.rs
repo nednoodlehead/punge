@@ -11,7 +11,12 @@ use std::fs;
 use std::hash::Hash;
 use std::process::Command;
 
-pub fn seperate(description: String, obj: PungeMusicObject, mp3_dir: String, length: usize) -> Vec<PungeMusicObject> {
+pub fn seperate(
+    description: String,
+    obj: PungeMusicObject,
+    mp3_dir: String,
+    length: usize,
+) -> Vec<PungeMusicObject> {
     // vec of paths to files
     // path: path to the modified mp3 file. the files will be placed in the dir, and this file removed
     // timestamps: timestamps in <seconds song begins at, title of song>
@@ -22,7 +27,10 @@ pub fn seperate(description: String, obj: PungeMusicObject, mp3_dir: String, len
     let length_map = get_length_from_timestamp(timestamp_map.clone());
     println!("Seperating!!. {}", &obj.savelocationmp3);
     for (count, (start_time, end_time, title)) in timestamp_map.iter().enumerate() {
-        let out_path = format!("{}{} - {}{}.mp3", mp3_dir, &obj.author, &title, &obj.uniqueid);
+        let out_path = format!(
+            "{}{} - {}{}.mp3",
+            mp3_dir, &obj.author, &title, &obj.uniqueid
+        );
         println!("exporting to {}", &out_path);
         let args = if end_time != "end" {
             vec![
@@ -33,7 +41,10 @@ pub fn seperate(description: String, obj: PungeMusicObject, mp3_dir: String, len
                 out_path.as_str(),
             ]
         } else {
-            println!("hit the else?: {}\n{}\n{}\n", &obj.savelocationmp3, &start_time, &out_path);
+            println!(
+                "hit the else?: {}\n{}\n{}\n",
+                &obj.savelocationmp3, &start_time, &out_path
+            );
             vec![
                 "-i",
                 &obj.savelocationmp3.as_str(),
@@ -58,6 +69,7 @@ pub fn seperate(description: String, obj: PungeMusicObject, mp3_dir: String, len
             uniqueid: format!("{}{}", obj.uniqueid, count.to_string()),
             plays: 0,
             weight: 0,
+            threshold: crate::db::utilities::calc_thres(length_map[count].clone()),
         };
         ret_vec.push(new_obj)
     }
@@ -66,8 +78,10 @@ pub fn seperate(description: String, obj: PungeMusicObject, mp3_dir: String, len
     ret_vec
 }
 
-
-pub fn hash_to_vec_ordered(map: HashMap<String, String>, total_len: usize) -> Vec<(String, String, String)> {
+pub fn hash_to_vec_ordered(
+    map: HashMap<String, String>,
+    total_len: usize,
+) -> Vec<(String, String, String)> {
     // point of this function is to turn the start time and name into start time, end time, title, length
     let mut key_order: Vec<&String> = map.keys().collect();
     key_order.sort();
@@ -127,14 +141,13 @@ fn fix_timestamp(timestamp: &str) -> String {
 
 // pass in the two timestamps (starts at, ends at, and title). title is just not used
 pub fn get_length_from_timestamp(timestamp: Vec<(String, String, String)>) -> Vec<String> {
-    let mut total_length_seconds = 0;  // total seconds of the song. used when the final end time is unknown (last song)
+    let mut total_length_seconds = 0; // total seconds of the song. used when the final end time is unknown (last song)
     let mut length_vec: Vec<String> = Vec::new();
     for (start, end, _title) in timestamp {
         let start = timestamp_to_int(start);
         let end = if end == "end" {
             total_length_seconds + start.clone()
-        }
-        else {
+        } else {
             timestamp_to_int(end)
         };
         let val = end - start;
@@ -147,8 +160,17 @@ pub fn get_length_from_timestamp(timestamp: Vec<(String, String, String)>) -> Ve
 
 fn timestamp_to_int(timestamp: String) -> usize {
     let mut val = 0;
-    let bruh: Vec<String> = timestamp.split(":").collect_vec().iter().map(|item| item.to_string()).collect();
-    let (mut hour, mut minute, mut second): (usize, usize, usize) = (bruh[0].parse().unwrap(), bruh[1].parse().unwrap(), bruh[2].parse().unwrap());
+    let bruh: Vec<String> = timestamp
+        .split(":")
+        .collect_vec()
+        .iter()
+        .map(|item| item.to_string())
+        .collect();
+    let (mut hour, mut minute, mut second): (usize, usize, usize) = (
+        bruh[0].parse().unwrap(),
+        bruh[1].parse().unwrap(),
+        bruh[2].parse().unwrap(),
+    );
     while hour != 0 {
         hour -= 1;
         val += 3600
@@ -159,10 +181,10 @@ fn timestamp_to_int(timestamp: String) -> usize {
     }
     val += second;
     val
-
 }
 
-pub fn int_to_timestamp(mut seconds: usize) -> String {  // used in decide_youtube as well
+pub fn int_to_timestamp(mut seconds: usize) -> String {
+    // used in decide_youtube as well
     let mut hrs = 0;
     let mut minutes = 0;
     while seconds >= 3600 {

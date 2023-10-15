@@ -43,3 +43,20 @@ pub fn skipped_song(uniqueid: String) -> Result<(), AppError> {
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
+
+// new ones for new data collection
+
+pub fn add_one_weight(uniqueid: String) -> Result<(), AppError> {
+    let conn = Connection::open("main.db")?;
+    let stmt = "UPDATE main SET weight = weight +1 WHERE uniqueid = ?";
+    conn.execute(stmt, params![uniqueid])?;
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}
+pub fn add_one_play(uniqueid: String) -> Result<(), AppError> {
+    let conn = Connection::open("main.db")?;
+    let stmt = "UPDATE main SET play = play +1 WHERE uniqueid = ?";
+    conn.execute(stmt, params![uniqueid])?;
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}

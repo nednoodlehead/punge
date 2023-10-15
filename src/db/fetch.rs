@@ -7,7 +7,7 @@ pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject
     let conn = Connection::open("main.db")?;
     let mut stmt = conn.prepare("SELECT title, author, album, features,
     length, savelocationmp3, savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays,
-    weight FROM main
+    weight, threshold FROM main
     JOIN playlist_relations ON uniqueid = song_id
     WHERE playlist_id = ?")?;
     let punge_obj_iter = stmt.query_map([playlist_uuid], |row| {
@@ -25,6 +25,7 @@ pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject
             uniqueid: row.get(10)?,
             plays: row.get(11)?,
             weight: row.get(12)?,
+            threshold: row.get(13)?,
         })
     })?;
     let mut ret_vec = Vec::new();
@@ -43,7 +44,7 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     let mut ret_vec: Vec<PungeMusicObject> = Vec::new();
     let mut stmt = conn.prepare("SELECT title, author, album, features,
     length, savelocationmp3, savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays,
-    weight FROM main")?;
+    weight, threshold FROM main")?;
     let song_iter = stmt.query_map(params![], |row| {
         Ok(PungeMusicObject {
             title: row.get(0)?,
@@ -59,6 +60,7 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
             uniqueid: row.get(10)?,
             plays: row.get(11)?,
             weight: row.get(12)?,
+            threshold: row.get(13)?,
         })
     })?;
     for obj in song_iter {
