@@ -122,6 +122,7 @@ impl Application for App {
     }
 
     fn update(&mut self, msg: Self::Message) -> iced::Command<ProgramCommands> {
+        println!("MATCHING MSG: {:?}", &msg);
         match msg {
             Self::Message::Test => {
                 println!("doing play, here?");
@@ -350,19 +351,13 @@ impl Application for App {
             async_sender::UnboundedSender<MusicData>,
             async_sender::UnboundedReceiver<MusicData>,
         ) = tokio::sync::mpsc::unbounded_channel();
-        use crate::gui::messages::Context;
-
-        // so this could eventually mimic the iced-rs/iced/blob/0.10/examples/download_progress, but i dont want to impl that, it would take so long
-        // and im pretty sure that rustube has async callback for download progress, so it should be possible.
-
-        // will also need to implement keybinds here. will do at another time though
 
         iced::subscription::Subscription::batch(vec![
-            self.music_loop(),
+            self.music_loop(database_sender),
             self.hotkey_loop(),
-            self.database_sub_2(database_receiver),
             Subscription::batch(self.download_list.iter().map(types::Download::subscription)),
             self.close_app_sub(),
+            self.database_sub(database_receiver),
         ]) // is two batches required?? prolly not
     }
 }
