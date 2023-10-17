@@ -1,7 +1,7 @@
 // these are the messages sent around the program. This is divded up here because start.rs imports this
 // as well as the actual music-playing portion of the app
 
-use crate::gui::start::MusicData;
+use crate::playliststructs::MusicData;
 use crate::playliststructs::{AppError, UserPlaylist};
 use tokio::sync::mpsc as async_sender;
 #[derive(Debug, Clone)]

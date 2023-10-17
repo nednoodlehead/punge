@@ -2,9 +2,10 @@ use crate::db::fetch;
 use crate::db::metadata::{add_one_play, add_one_weight, on_passive_play, on_seek, skipped_song};
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Context, DatabaseMessages, ProgramCommands, PungeCommand};
-use crate::gui::start::{App, MusicData};
+use crate::gui::start::App;
 use crate::player::interface;
 use crate::player::interface::{read_file_from_beginning, read_from_time};
+use crate::playliststructs::MusicData;
 use crate::playliststructs::PungeMusicObject;
 use async_std::task::sleep;
 use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager};
@@ -27,13 +28,11 @@ impl App {
         mut receiver: tokio::sync::mpsc::UnboundedReceiver<MusicData>,
     ) -> Subscription<ProgramCommands> {
         iced::subscription::channel(8, 32, |mut sender| async move {
-            let mut current_streak = 0;
             println!("SENT TO MAIN ThrEAD");
             loop {
                 match receiver.try_recv() {
                     Ok(t) => match t.context {
                         Context::Default => {
-                            println!("DOES THIS GET HIT db sub2?!? {:?}", &t);
                             sender.send(ProgramCommands::NewData(t)).await.unwrap();
                             //as dasd
                         }
@@ -42,7 +41,8 @@ impl App {
                             // asd
                         }
                         Context::SkippedForward => {
-                            skipped_song(t.song_id.clone()).unwrap();
+                            // wrong songid, need one prior, adding
+                            skipped_song(t.previous_id.clone().unwrap()).unwrap();
                             let x = sender.send(ProgramCommands::NewData(t)).await;
                             println!("erm, sent??: {:?}", x);
                         }
@@ -50,10 +50,12 @@ impl App {
                             sender.send(ProgramCommands::NewData(t)).await.unwrap();
                         }
                         Context::Seeked => {
+                            on_seek(t.song_id.clone()).unwrap();
                             sender.send(ProgramCommands::NewData(t)).await.unwrap();
                             // db weight += 4 idk
                         }
                         Context::AutoPlay => {
+                            on_passive_play(t.song_id.clone()).unwrap();
                             sender.send(ProgramCommands::NewData(t)).await.unwrap();
                             // db play += 1
                         }
@@ -156,6 +158,7 @@ impl App {
                     author: music_obj.current_object.author.clone(),
                     album: music_obj.current_object.album.clone(),
                     song_id: music_obj.current_object.uniqueid.clone(),
+                    previous_id: None, // doesnt matter unless we are on skip_forward
                     volume: music_obj.sink.volume(),
                     is_playing: false,
                     shuffle: music_obj.shuffle,
@@ -208,6 +211,7 @@ impl App {
                             //         .unwrap();
                             // });
                             // music_obj.sink.stop();
+                            let old_id = music_obj.current_object.uniqueid.clone();
                             music_obj.count =
                                 change_count(true, music_obj.count, music_obj.list.len());
                             music_obj.current_object =
@@ -226,6 +230,7 @@ impl App {
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.author.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
+                                    previous_id: Some(old_id),
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
@@ -254,6 +259,7 @@ impl App {
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
+                                    previous_id: None,
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
@@ -290,6 +296,7 @@ impl App {
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.author.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
+                                    previous_id: None,
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
@@ -415,6 +422,7 @@ impl App {
                                                                 .current_object
                                                                 .uniqueid
                                                                 .clone(),
+                                                            previous_id: None,
                                                             volume: music_obj.sink.volume(),
                                                             is_playing: true, // im not sure...
                                                             shuffle: music_obj.shuffle,
@@ -448,6 +456,7 @@ impl App {
                                                             .current_object
                                                             .uniqueid
                                                             .clone(),
+                                                        previous_id: None,
                                                         volume: music_obj.sink.volume(),
                                                         is_playing: false,
                                                         shuffle: music_obj.shuffle,
@@ -466,25 +475,9 @@ impl App {
                                         }
                                         PungeCommand::SkipForwards => {
                                             println!("skippin forrards");
-                                            // database_sender
-                                            //     .send(DatabaseMessages::Skipped(
-                                            //         music_obj.current_object.uniqueid,
-                                            //     ))
-                                            //     .unwrap();
-                                            // task::spawn(async {
-                                            //     // spawn a task to insert the data to the database
-                                            //     metadata::skipped_song(
-                                            //         music_obj.current_object.uniqueid,
-                                            //     )
-                                            //     .await
-                                            //     .unwrap();
-                                            // });
-                                            // metadata::skipped_song(
-                                            //     music_obj.current_object.uniqueid,
-                                            // )
-                                            // .await
-                                            // .unwrap();
+
                                             music_obj.sink.stop(); // why was this not here before and how did it even work !?
+                                            let old_id = music_obj.current_object.uniqueid.clone();
                                             music_obj.count = change_count(
                                                 true,
                                                 music_obj.count,
@@ -508,6 +501,7 @@ impl App {
                                                         .current_object
                                                         .uniqueid
                                                         .clone(),
+                                                    previous_id: Some(old_id),
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle,
@@ -548,6 +542,7 @@ impl App {
                                                         .current_object
                                                         .uniqueid
                                                         .clone(),
+                                                    previous_id: None,
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle.clone(),
@@ -622,6 +617,7 @@ impl App {
                                                         .current_object
                                                         .uniqueid
                                                         .clone(),
+                                                    previous_id: None,
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle.clone(),
@@ -670,6 +666,7 @@ impl App {
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
+                                    previous_id: None,
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,

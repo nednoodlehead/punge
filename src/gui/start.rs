@@ -7,6 +7,7 @@ use crate::player::cache;
 use crate::player::interface;
 use crate::player::interface::{read_file_from_beginning, MusicPlayer};
 use crate::player::sort::get_values_from_db;
+use crate::playliststructs::MusicData;
 use crate::playliststructs::PungeMusicObject;
 use crate::utils::{types, youtube_interface};
 use crate::{gui, playliststructs};
@@ -219,10 +220,11 @@ impl Application for App {
                                 Err(error) => {
                                     self.download_page.download_feedback.push(format!(
                                         "Error downloading {}: {:?}",
-                                        self.download_list[self.download_list.len() - 1]
-                                            .link
-                                            .clone()
-                                            .unwrap(),
+                                        self.download_list
+                                            [self.download_list.len().saturating_sub(1)]
+                                        .link
+                                        .clone()
+                                        .unwrap(),
                                         error
                                     ))
                                     // add to some list ? like failed downloads
@@ -257,7 +259,6 @@ impl Application for App {
             }
 
             Self::Message::GoToSong => {
-                // TODO update db weight !?
                 let val =
                     get_values_from_db(self.current_song.playlist.clone(), self.search.clone());
                 println!("GoToSong: {:?}", val);
@@ -359,37 +360,5 @@ impl Application for App {
             self.close_app_sub(),
             self.database_sub(database_receiver),
         ]) // is two batches required?? prolly not
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct MusicData {
-    // passed from music subscription -> main thread
-    pub title: String, // used to updated active songs and whatnot
-    pub author: String,
-    pub album: String,
-    pub song_id: String,
-    pub volume: f32,
-    pub is_playing: bool,
-    pub shuffle: bool,
-    pub playlist: String,
-    pub threshold: u16,
-    pub context: gui::messages::Context, // the context of the message being sent
-}
-
-impl MusicData {
-    fn default() -> Self {
-        MusicData {
-            title: "".to_string(),
-            author: "".to_string(),
-            album: "".to_string(),
-            song_id: "".to_string(),
-            volume: 0.0,
-            is_playing: false,
-            shuffle: false,
-            playlist: "main".to_string(),
-            threshold: 0,
-            context: gui::messages::Context::Default,
-        }
     }
 }

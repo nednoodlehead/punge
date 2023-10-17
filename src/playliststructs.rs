@@ -154,3 +154,37 @@ impl From<rusqlite::Error> for DatabaseErrors {
         DatabaseErrors::FromSqlError(e.to_string())
     }
 }
+use crate::gui::messages::Context;
+#[derive(Clone, Debug)]
+pub struct MusicData {
+    // passed from music subscription -> main thread
+    pub title: String, // used to updated active songs and whatnot
+    pub author: String,
+    pub album: String,
+    pub song_id: String,
+    pub previous_id: Option<String>, // used only inside of skip_forward database subscription, None otherwise.
+    pub volume: f32,
+    pub is_playing: bool,
+    pub shuffle: bool,
+    pub playlist: String,
+    pub threshold: u16,
+    pub context: Context, // the context of the message being sent
+}
+
+impl MusicData {
+    pub fn default() -> Self {
+        MusicData {
+            title: "".to_string(),
+            author: "".to_string(),
+            album: "".to_string(),
+            song_id: "".to_string(),
+            previous_id: None,
+            volume: 0.0,
+            is_playing: false,
+            shuffle: false,
+            playlist: "main".to_string(),
+            threshold: 0,
+            context: Context::Default,
+        }
+    }
+}
