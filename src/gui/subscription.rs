@@ -42,9 +42,8 @@ impl App {
                         }
                         Context::SkippedForward => {
                             // wrong songid, need one prior, adding
-                            skipped_song(t.previous_id.clone().unwrap()).unwrap();
-                            let x = sender.send(ProgramCommands::NewData(t)).await;
-                            println!("erm, sent??: {:?}", x);
+                            // skipped_song(t.previous_id.clone().unwrap()).unwrap();
+                            sender.send(ProgramCommands::NewData(t)).await.unwrap();
                         }
                         Context::SkippedBackwards => {
                             sender.send(ProgramCommands::NewData(t)).await.unwrap();
@@ -140,11 +139,11 @@ impl App {
         iced::subscription::events_with(handle_app_events)
     }
 
-    pub fn music_loop(&self, sender: UnboundedSender<MusicData>) -> Subscription<ProgramCommands> {
-        iced::subscription::channel(0, 32, |mut gui_sender| async move {
+    pub fn music_loop(&self) -> Subscription<ProgramCommands> {
+        iced::subscription::channel(0, 32, |mut sender| async move {
             // sender to give to the gui, and the receiver is used here to listen for clicking of buttons
             let (gui_send, mut gui_rec) = tokio::sync::mpsc::unbounded_channel();
-            gui_sender
+            sender
                 .send(ProgramCommands::UpdateSender(Some(gui_send)))
                 .await
                 .unwrap(); // send the sender to the gui !!
@@ -153,7 +152,7 @@ impl App {
             // send the data to the program
             let mut music_obj = interface::MusicPlayer::new(items);
             sender
-                .send(MusicData {
+                .send(ProgramCommands::NewData(MusicData {
                     title: music_obj.current_object.title.clone(),
                     author: music_obj.current_object.author.clone(),
                     album: music_obj.current_object.album.clone(),
@@ -165,7 +164,8 @@ impl App {
                     playlist: "main".to_string(),
                     threshold: music_obj.current_object.threshold,
                     context: Context::Default,
-                })
+                }))
+                .await
                 .unwrap();
 
             // main music loop!
@@ -225,7 +225,7 @@ impl App {
                             music_obj.to_play = true;
                             music_obj.sink.play();
                             sender
-                                .send(MusicData {
+                                .send(ProgramCommands::NewData(MusicData {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.author.clone(),
@@ -237,7 +237,8 @@ impl App {
                                     playlist: "main".to_string(),
                                     threshold: music_obj.current_object.threshold.clone(),
                                     context: Context::SkippedForward,
-                                })
+                                }))
+                                .await
                                 .unwrap();
                         }
                         PungeCommand::SkipBackwards => {
@@ -254,7 +255,7 @@ impl App {
                             music_obj.to_play = true;
                             music_obj.sink.play();
                             sender
-                                .send(MusicData {
+                                .send(ProgramCommands::NewData(MusicData {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
@@ -266,7 +267,8 @@ impl App {
                                     playlist: "main".to_string(),
                                     threshold: music_obj.current_object.threshold.clone(),
                                     context: Context::SkippedBackwards,
-                                })
+                                }))
+                                .await
                                 .unwrap();
                         }
                         PungeCommand::NewVolume(val) => {
@@ -291,7 +293,7 @@ impl App {
                             music_obj.to_play = true;
                             music_obj.sink.play();
                             sender
-                                .send(MusicData {
+                                .send(ProgramCommands::NewData(MusicData {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.author.clone(),
@@ -303,7 +305,8 @@ impl App {
                                     playlist: "main".to_string(),
                                     threshold: music_obj.current_object.threshold.clone(),
                                     context: Context::Seeked,
-                                })
+                                }))
+                                .await
                                 .unwrap();
                             // database_sender
                             //     .send(DatabaseMessages::Seeked(
@@ -405,7 +408,7 @@ impl App {
                                                             .clone(),
                                                     );
                                                     sender
-                                                        .send(MusicData {
+                                                        .send(ProgramCommands::NewData(MusicData {
                                                             title: music_obj
                                                                 .current_object
                                                                 .title
@@ -431,7 +434,8 @@ impl App {
                                                                 .current_object
                                                                 .threshold,
                                                             context: Context::PlayPause,
-                                                        })
+                                                        }))
+                                                        .await
                                                         .unwrap();
                                                     music_obj.sink.append(song);
                                                 }
@@ -439,7 +443,7 @@ impl App {
                                                 music_obj.to_play = true;
                                                 music_obj.sink.play();
                                                 sender
-                                                    .send(MusicData {
+                                                    .send(ProgramCommands::NewData(MusicData {
                                                         title: music_obj
                                                             .current_object
                                                             .title
@@ -465,7 +469,8 @@ impl App {
                                                             .current_object
                                                             .threshold,
                                                         context: Context::PlayPause,
-                                                    })
+                                                    }))
+                                                    .await
                                                     .unwrap();
                                             } else {
                                                 println!("stooping here! (bottom)");
@@ -493,7 +498,7 @@ impl App {
                                             music_obj.to_play = true;
                                             music_obj.sink.play();
                                             sender
-                                                .send(MusicData {
+                                                .send(ProgramCommands::NewData(MusicData {
                                                     title: music_obj.current_object.title.clone(),
                                                     author: music_obj.current_object.author.clone(),
                                                     album: music_obj.current_object.album.clone(),
@@ -508,7 +513,8 @@ impl App {
                                                     playlist: "main".to_string(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::Seeked,
-                                                })
+                                                }))
+                                                .await
                                                 .unwrap();
                                         }
                                         PungeCommand::SkipBackwards => {
@@ -534,7 +540,7 @@ impl App {
                                             music_obj.to_play = true;
                                             music_obj.sink.play();
                                             sender
-                                                .send(MusicData {
+                                                .send(ProgramCommands::NewData(MusicData {
                                                     title: music_obj.current_object.title.clone(),
                                                     author: music_obj.current_object.author.clone(),
                                                     album: music_obj.current_object.album.clone(),
@@ -549,7 +555,8 @@ impl App {
                                                     playlist: "main".to_string(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::SkippedBackwards,
-                                                })
+                                                }))
+                                                .await
                                                 .unwrap();
                                         }
                                         PungeCommand::NewVolume(val) => {
@@ -609,7 +616,7 @@ impl App {
                                             music_obj.to_play = true;
                                             music_obj.sink.play();
                                             sender
-                                                .send(MusicData {
+                                                .send(ProgramCommands::NewData(MusicData {
                                                     title: music_obj.current_object.title.clone(),
                                                     author: music_obj.current_object.author.clone(),
                                                     album: music_obj.current_object.album.clone(),
@@ -624,7 +631,8 @@ impl App {
                                                     playlist: "main".to_string(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::Seeked,
-                                                })
+                                                }))
+                                                .await
                                                 .unwrap();
                                             // database_sender
                                             //     .send(DatabaseMessages::Seeked(
@@ -661,7 +669,7 @@ impl App {
                                 music_obj.list[music_obj.count as usize].clone();
                             // new info :P
                             sender
-                                .send(MusicData {
+                                .send(ProgramCommands::NewData(MusicData {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
@@ -673,7 +681,8 @@ impl App {
                                     playlist: "main".to_string(),
                                     threshold: music_obj.current_object.threshold,
                                     context: Context::AutoPlay,
-                                })
+                                }))
+                                .await
                                 .unwrap();
                             // database_sender
                             //     .send(DatabaseMessages::Played(

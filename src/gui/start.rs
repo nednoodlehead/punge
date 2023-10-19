@@ -348,17 +348,17 @@ impl Application for App {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        let (database_sender, database_receiver): (
-            async_sender::UnboundedSender<MusicData>,
-            async_sender::UnboundedReceiver<MusicData>,
-        ) = tokio::sync::mpsc::unbounded_channel();
+        // let (database_sender, database_receiver): (
+        //     async_sender::UnboundedSender<ProgramCommands>,
+        //     async_sender::UnboundedReceiver<ProgramCommands>,
+        // ) = tokio::sync::mpsc::unbounded_channel();
 
         iced::subscription::Subscription::batch(vec![
-            self.music_loop(database_sender),
+            self.music_loop(),
             self.hotkey_loop(),
             Subscription::batch(self.download_list.iter().map(types::Download::subscription)),
             self.close_app_sub(),
-            self.database_sub(database_receiver),
+            // self.database_sub(database_receiver),
         ]) // is two batches required?? prolly not
     }
 }
