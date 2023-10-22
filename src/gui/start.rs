@@ -53,15 +53,16 @@ pub fn begin() -> iced::Result {
 }
 // pages for the gui
 use crate::gui::{download_page, setting_page};
+use arc_swap::{ArcSwap, ArcSwapAny};
 use global_hotkey::{
     hotkey::{Code, HotKey, Modifiers},
     GlobalHotKeyEvent, GlobalHotKeyManager,
 };
-
+use std::sync::Arc;
 pub struct App {
     theme: Theme,
     pub is_paused: bool,
-    pub current_song: MusicData, // represents title, auth, album, song_id, volume, shuffle, playlist
+    pub current_song: Arc<ArcSwap<Arc<MusicData>>>, // represents title, auth, album, song_id, volume, shuffle, playlist
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
     volume: u8,
     current_view: Page,
@@ -99,7 +100,7 @@ impl Application for App {
             App {
                 theme: Default::default(),
                 is_paused: true,
-                current_song: MusicData::default(),
+                current_song: Arc::new(ArcSwap::new(Arc::new(Arc::new(MusicData::default())))),
                 sender: None,
                 volume: 25,
                 current_view: Page::Main,
@@ -147,7 +148,7 @@ impl Application for App {
                     "The new information given to update: {} {} {}",
                     data.author, data.title, data.album
                 );
-                self.current_song = data
+                self.current_song.store(Arc::new(Arc::new(data)));
             }
             Self::Message::VolumeChange(val) => {
                 self.volume = val;
@@ -207,7 +208,7 @@ impl Application for App {
                                         }
                                     }
                                     self.download_list.remove(ind);
-                                    if self.current_song.playlist == "main".to_string() {
+                                    if self.current_song.load().playlist == "main".to_string() {
                                         println!("sender status?: {:?}", self.sender);
                                         // if main is the current playlist, refresh it so the new song shows up
                                         self.sender
@@ -242,11 +243,12 @@ impl Application for App {
             }
             Self::Message::InAppEvent(t) => match t {
                 AppEvent::CloseRequested => {
+                    let lcl = self.current_song.load();
                     let cache = cache::Cache {
-                        song_id: self.current_song.song_id.clone(),
-                        volume: self.current_song.volume,
-                        shuffle: self.current_song.shuffle,
-                        playlist: self.current_song.playlist.clone(),
+                        song_id: lcl.song_id.clone(),
+                        volume: lcl.volume,
+                        shuffle: lcl.shuffle,
+                        playlist: lcl.playlist.clone(),
                     };
                     cache::dump_cache(cache); // dumps user cache
                     println!("dumpepd cache!");
@@ -259,8 +261,10 @@ impl Application for App {
             }
 
             Self::Message::GoToSong => {
-                let val =
-                    get_values_from_db(self.current_song.playlist.clone(), self.search.clone());
+                let val = get_values_from_db(
+                    self.current_song.load().playlist.clone(),
+                    self.search.clone(),
+                );
                 println!("GoToSong: {:?}", val);
                 if val.is_empty() {
                     // if the user's search gives no results, tell them in the search box
@@ -302,6 +306,7 @@ impl Application for App {
                 .width(Length::Fixed(250.0)),
             button(text("Confirm")).on_press(ProgramCommands::GoToSong)
         ]);
+        let curr_song = self.current_song.load();
         let main_page_2 = container(row![column![
             row![
                 row![text("main area content?"), page_buttons],
@@ -311,9 +316,9 @@ impl Application for App {
             vertical_space(Length::Fill), // puts space between the main content (inc. sidebar) and the bottom controls
             row![
                 column![
-                    text(self.current_song.title.clone()),
-                    text(self.current_song.author.clone()),
-                    text(self.current_song.album.clone())
+                    text(curr_song.title.clone()),
+                    text(curr_song.author.clone()),
+                    text(curr_song.album.clone())
                 ]
                 .padding(2.5)
                 .width(225.0),
