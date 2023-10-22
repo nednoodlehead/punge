@@ -1,8 +1,7 @@
 // can we rename this to lib.rs at some point maybe??
-use crate::db::{fetch, metadata};
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{DatabaseMessages, Page, ProgramCommands, PungeCommand};
-use crate::gui::subscription as sub;
+use crate::gui::{download_page, setting_page};
 use crate::player::cache;
 use crate::player::interface;
 use crate::player::interface::{read_file_from_beginning, MusicPlayer};
@@ -11,7 +10,12 @@ use crate::playliststructs::MusicData;
 use crate::playliststructs::PungeMusicObject;
 use crate::utils::{types, youtube_interface};
 use crate::{gui, playliststructs};
+use arc_swap::{ArcSwap, ArcSwapAny};
 use async_std::task;
+use global_hotkey::{
+    hotkey::{Code, HotKey, Modifiers},
+    GlobalHotKeyEvent, GlobalHotKeyManager,
+};
 use iced::futures::channel::mpsc::{Sender, UnboundedReceiver, UnboundedSender};
 use iced::futures::sink::SinkExt;
 use iced::subscription::{self, Subscription};
@@ -23,6 +27,7 @@ use iced::{
     executor, Alignment, Application, Color, Element, Error, Event, Length, Settings, Theme,
 };
 use rand::seq::SliceRandom;
+use std::sync::Arc;
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
 pub fn begin() -> iced::Result {
@@ -52,13 +57,7 @@ pub fn begin() -> iced::Result {
     })
 }
 // pages for the gui
-use crate::gui::{download_page, setting_page};
-use arc_swap::{ArcSwap, ArcSwapAny};
-use global_hotkey::{
-    hotkey::{Code, HotKey, Modifiers},
-    GlobalHotKeyEvent, GlobalHotKeyManager,
-};
-use std::sync::Arc;
+
 pub struct App {
     theme: Theme,
     pub is_paused: bool,

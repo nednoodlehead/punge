@@ -15,7 +15,6 @@ use iced::futures::sink::SinkExt;
 use iced::subscription::{self, Subscription};
 use rand::seq::SliceRandom;
 use std::sync::Arc;
-use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::{self, runtime}; // for benchmarking the skip function
