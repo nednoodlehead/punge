@@ -147,7 +147,7 @@ impl Application for App {
                     "The new information given to update: {} {} {}",
                     data.author, data.title, data.album
                 );
-                self.current_song = (data)
+                self.current_song = data
             }
             Self::Message::VolumeChange(val) => {
                 self.volume = val;

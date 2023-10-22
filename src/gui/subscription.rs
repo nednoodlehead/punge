@@ -13,8 +13,10 @@ use iced::futures::channel::mpsc;
 use iced::futures::sink::SinkExt;
 use iced::subscription::{self, Subscription};
 use rand::seq::SliceRandom;
+use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::mpsc::UnboundedSender;
-use tokio::{self, runtime};
+use tokio::{self, runtime}; // for benchmarking the skip function
 impl App {
     // requires a listener. this will be a tokio::UnboundedReceiver<PungeCommand>
     // does not need 2 way communication, as this subscription just listens and inserts into the database
@@ -67,6 +69,10 @@ impl App {
                 async_std::task::sleep(std::time::Duration::from_millis(50)).await;
             }
         })
+    }
+
+    pub fn new_db_sub(&self, music_obj: Arc<MusicData>) -> iced::Subscription<ProgramCommands> {
+        iced::subscription::channel(10, 32, |mut _sender| async move { loop {} })
     }
 
     pub fn hotkey_loop(&self) -> Subscription<ProgramCommands> {
@@ -194,23 +200,9 @@ impl App {
                         }
                         PungeCommand::SkipForwards => {
                             // so i guess the answer is doing .stop()? not .clear(). ig cause .stop() also clears the queue
+                            let start = Instant::now();
                             music_obj.sink.stop();
                             println!("skip forards, top!!");
-                            // database_sender
-                            //     .send(DatabaseMessages::Skipped(
-                            //         music_obj.current_object.uniqueid.clone(),
-                            //     ))
-                            //     .unwrap();
-                            // metadata::skipped_song(music_obj.current_object.uniqueid)
-                            //     .await
-                            //     .unwrap();
-                            // idk if im geeking but its feels slow still
-                            // task::spawn(async {
-                            //     metadata::skipped_song(music_obj.current_object.uniqueid)
-                            //         .await
-                            //         .unwrap();
-                            // });
-                            // music_obj.sink.stop();
                             let old_id = music_obj.current_object.uniqueid.clone();
                             music_obj.count =
                                 change_count(true, music_obj.count, music_obj.list.len());
@@ -240,6 +232,8 @@ impl App {
                                 }))
                                 .await
                                 .unwrap();
+                            let end = Instant::now();
+                            println!("time elapsed: {:?}", end.duration_since(start));
                         }
                         PungeCommand::SkipBackwards => {
                             music_obj.sink.stop();
@@ -479,6 +473,7 @@ impl App {
                                             }
                                         }
                                         PungeCommand::SkipForwards => {
+                                            let start = Instant::now();
                                             println!("skippin forrards");
 
                                             music_obj.sink.stop(); // why was this not here before and how did it even work !?
@@ -516,6 +511,11 @@ impl App {
                                                 }))
                                                 .await
                                                 .unwrap();
+                                            let end = Instant::now();
+                                            println!(
+                                                "time elapsed (lower) {:?}",
+                                                end.duration_since(start)
+                                            )
                                         }
                                         PungeCommand::SkipBackwards => {
                                             // music_obj.count -= 1; // do check for smaller than music_obj.len()?
