@@ -18,7 +18,8 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
             ischild BOOL,
             uniqueid TEXT PRIMARY KEY,
             plays SMALLINT,
-            weight SMALLINT
+            weight SMALLINT,
+        threshold SMALLINT
             )",
         params![],
     )?;
