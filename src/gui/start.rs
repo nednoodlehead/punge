@@ -46,8 +46,7 @@ pub fn begin() -> iced::Result {
             level: iced::window::Level::Normal,
             icon: None, // will add soon i think
             platform_specific: iced::window::PlatformSpecific {
-                parent: None,
-                drag_and_drop: false,
+                application_id: "punge".to_string(),
             },
         },
         default_font: Default::default(),
