@@ -3,7 +3,7 @@ use crate::db::metadata::{add_one_play, add_one_weight, on_passive_play, on_seek
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Context, DatabaseMessages, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
-use crate::player::interface;
+use crate::player::interface::{self, MusicPlayer};
 use crate::player::interface::{read_file_from_beginning, read_from_time};
 use crate::playliststructs::MusicData;
 use crate::playliststructs::PungeMusicObject;
@@ -72,8 +72,74 @@ impl App {
         })
     }
 
-    pub fn new_db_sub(&self, music_obj: Arc<MusicData>) -> iced::Subscription<ProgramCommands> {
-        iced::subscription::channel(10, 32, |mut _sender| async move { loop {} })
+    // pub fn new_db_sub(
+    //     &self,
+    //     music_obj: Arc<ArcSwap<Arc<MusicData>>>,
+    // ) -> iced::Subscription<ProgramCommands> {
+    //     iced::subscription::channel(10, 32, |mut _sender| async move {
+    //         let mut cycle = 0;
+    //         let mut last_obj = **music_obj.load();
+    //         let mut old_id: String = String::default();
+    //         loop {
+    //             if !last_obj.is_playing {
+    //                 loop {
+    //                     async_std::task::sleep(std::time::Duration::from_secs(1)).await;
+    //                     if last_obj.is_playing {
+    //                         break;
+    //                     }
+    //                 }
+    //             }
+    //             async_std::task::sleep(std::time::Duration::from_secs(15)).await;
+    //             if last_obj.song_id == old_id {
+    //                 // add to weight
+    //                 println!("Add to weight!!!");
+    //                 cycle += 1; // add one to cycle, so we can keep track of
+    //             } else {
+    //                 // a new song is playing!
+    //                 if cycle == last_obj.threshold {
+    //                     old_id = last_obj.song_id.clone();
+    //                     // threshold has been met for one to count towards playing. if we do >= instead, all above threshold will be added as a play
+    //                     // so for example, if we listen to a song the entire way, that requirement may be met multiple times, but we did not listen multiple times...
+    //                     // add one play, and weight or whatever from crate::db::metadata
+    //                     println!("add one to metadata!!");
+    //                 }
+    //                 // then, bcs we are on a new song, reset the data
+    //                 last_obj = **music_obj.load();
+    //                 cycle = 0;
+    //             }
+    //         }
+    //     })
+    // }
+    pub fn testing_db(&self, obj: Arc<ArcSwap<Arc<MusicData>>>) -> Subscription<ProgramCommands> {
+        iced::subscription::channel(11, 32, |mut _sender| async move {
+            async_std::task::sleep(std::time::Duration::from_secs(4)).await; // give the id time to init properly, no real rush to have the subscription start right away anyways...
+            let mut id = obj.load().song_id.clone(); // hopfully initialized in time
+            let mut cycle = 0;
+            loop {
+                if !obj.load().is_playing {
+                    loop {
+                        async_std::task::sleep(std::time::Duration::from_secs(1)).await;
+                        if obj.load().is_playing {
+                            break;
+                        }
+                    }
+                }
+                async_std::task::sleep(std::time::Duration::from_secs(15)).await;
+                if id == obj.load().song_id {
+                    cycle += 1;
+                    println!("add one to weight!! cycle: {}", cycle);
+                } else {
+                    //song has changed, was the threshold met?
+                    if cycle >= obj.load().threshold {
+                        println!("add one to play!");
+                    }
+                    id = obj.load().song_id.clone();
+                    cycle = 0;
+                }
+                println!("value inside sub: {:?}", **obj.load());
+                println!("\n\n last song: {:?}", id);
+            }
+        })
     }
 
     pub fn hotkey_loop(&self) -> Subscription<ProgramCommands> {
@@ -181,23 +247,33 @@ impl App {
                 match gui_rec.try_recv() {
                     Ok(cmd) => match cmd {
                         PungeCommand::PlayOrPause => {
-                            if music_obj.sink.is_paused() || music_obj.sink.empty() {
-                                if music_obj.sink.empty() {
-                                    let song = interface::read_file_from_beginning(
-                                        music_obj.list[music_obj.count as usize]
-                                            .savelocationmp3
-                                            .clone(),
-                                    );
-                                    music_obj.sink.append(song);
-                                }
-                                music_obj.to_play = true;
-                                music_obj.sink.play();
-                                println!("playing here... {}", music_obj.count);
-                            } else {
-                                println!("stooping here! (top)");
-                                music_obj.sink.pause();
-                                music_obj.to_play = false
+                            if music_obj.sink.empty() {
+                                let song = interface::read_file_from_beginning(
+                                    music_obj.list[music_obj.count as usize]
+                                        .savelocationmp3
+                                        .clone(),
+                                );
+                                music_obj.sink.append(song);
                             }
+                            music_obj.to_play = true;
+                            music_obj.sink.play();
+                            println!("playing here... {}", music_obj.count);
+                            sender
+                                .send(ProgramCommands::NewData(MusicData {
+                                    title: music_obj.current_object.title.clone(),
+                                    author: music_obj.current_object.author.clone(),
+                                    album: music_obj.current_object.album.clone(),
+                                    song_id: music_obj.current_object.uniqueid.clone(),
+                                    previous_id: None, // i dont think we can know this here?
+                                    volume: music_obj.sink.volume(),
+                                    is_playing: true,
+                                    shuffle: music_obj.shuffle,
+                                    playlist: "main".to_string(),
+                                    threshold: music_obj.current_object.threshold.clone(),
+                                    context: Context::PlayPause,
+                                }))
+                                .await
+                                .unwrap();
                         }
                         PungeCommand::SkipForwards => {
                             // so i guess the answer is doing .stop()? not .clear(). ig cause .stop() also clears the queue
@@ -391,87 +467,29 @@ impl App {
                                 Ok(cmd) => {
                                     match cmd {
                                         PungeCommand::PlayOrPause => {
-                                            if music_obj.sink.is_paused() || music_obj.sink.empty()
-                                            {
-                                                // we are going to play
-                                                if !music_obj.sink.is_paused()
-                                                    && music_obj.sink.empty()
-                                                {
-                                                    let song = interface::read_file_from_beginning(
-                                                        music_obj.list[music_obj.count as usize]
-                                                            .savelocationmp3
-                                                            .clone(),
-                                                    );
-                                                    sender
-                                                        .send(ProgramCommands::NewData(MusicData {
-                                                            title: music_obj
-                                                                .current_object
-                                                                .title
-                                                                .clone(),
-                                                            author: music_obj
-                                                                .current_object
-                                                                .author
-                                                                .clone(),
-                                                            album: music_obj
-                                                                .current_object
-                                                                .album
-                                                                .clone(),
-                                                            song_id: music_obj
-                                                                .current_object
-                                                                .uniqueid
-                                                                .clone(),
-                                                            previous_id: None,
-                                                            volume: music_obj.sink.volume(),
-                                                            is_playing: true, // im not sure...
-                                                            shuffle: music_obj.shuffle,
-                                                            playlist: "main".to_string(),
-                                                            threshold: music_obj
-                                                                .current_object
-                                                                .threshold,
-                                                            context: Context::PlayPause,
-                                                        }))
-                                                        .await
-                                                        .unwrap();
-                                                    music_obj.sink.append(song);
-                                                }
-
-                                                music_obj.to_play = true;
-                                                music_obj.sink.play();
-                                                sender
-                                                    .send(ProgramCommands::NewData(MusicData {
-                                                        title: music_obj
-                                                            .current_object
-                                                            .title
-                                                            .clone(),
-                                                        author: music_obj
-                                                            .current_object
-                                                            .author
-                                                            .clone(),
-                                                        album: music_obj
-                                                            .current_object
-                                                            .album
-                                                            .clone(),
-                                                        song_id: music_obj
-                                                            .current_object
-                                                            .uniqueid
-                                                            .clone(),
-                                                        previous_id: None,
-                                                        volume: music_obj.sink.volume(),
-                                                        is_playing: false,
-                                                        shuffle: music_obj.shuffle,
-                                                        playlist: "main".to_string(),
-                                                        threshold: music_obj
-                                                            .current_object
-                                                            .threshold,
-                                                        context: Context::PlayPause,
-                                                    }))
-                                                    .await
-                                                    .unwrap();
-                                            } else {
-                                                println!("stooping here! (bottom)");
-                                                music_obj.sink.pause();
-                                                music_obj.to_play = false
-                                            }
+                                            // so the logic here, is that the only command issued here is pause, play cannot occur from this location. (cause the loop ends and we are in the top area)
+                                            println!("stooping here! (bottom)");
+                                            sender
+                                                .send(ProgramCommands::NewData(MusicData {
+                                                    title: music_obj.current_object.title.clone(),
+                                                    author: music_obj.current_object.author.clone(),
+                                                    album: music_obj.current_object.album.clone(),
+                                                    song_id: music_obj
+                                                        .current_object
+                                                        .uniqueid
+                                                        .clone(),
+                                                    previous_id: None, // not known.
+                                                    volume: music_obj.sink.volume(),
+                                                    is_playing: false, // we can only pause...
+                                                    shuffle: music_obj.shuffle,
+                                                    playlist: "main".to_string(),
+                                                    threshold: music_obj.current_object.threshold,
+                                                    context: Context::SkippedForward,
+                                                }))
+                                                .await
+                                                .unwrap();
+                                            music_obj.sink.pause();
+                                            music_obj.to_play = false
                                         }
                                         PungeCommand::SkipForwards => {
                                             let start = Instant::now();
@@ -508,7 +526,7 @@ impl App {
                                                     shuffle: music_obj.shuffle,
                                                     playlist: "main".to_string(),
                                                     threshold: music_obj.current_object.threshold,
-                                                    context: Context::Seeked,
+                                                    context: Context::SkippedForward,
                                                 }))
                                                 .await
                                                 .unwrap();
@@ -552,7 +570,7 @@ impl App {
                                                     previous_id: None,
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
-                                                    shuffle: music_obj.shuffle.clone(),
+                                                    shuffle: music_obj.shuffle,
                                                     playlist: "main".to_string(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::SkippedBackwards,

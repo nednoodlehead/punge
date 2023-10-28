@@ -356,11 +356,11 @@ impl Application for App {
         //     async_sender::UnboundedSender<ProgramCommands>,
         //     async_sender::UnboundedReceiver<ProgramCommands>,
         // ) = tokio::sync::mpsc::unbounded_channel();
-
         iced::subscription::Subscription::batch(vec![
             self.music_loop(),
             self.hotkey_loop(),
             Subscription::batch(self.download_list.iter().map(types::Download::subscription)),
+            self.testing_db(self.current_song.clone()),
             self.close_app_sub(),
             // self.database_sub(database_receiver),
         ]) // is two batches required?? prolly not
