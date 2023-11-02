@@ -110,7 +110,10 @@ impl App {
     //         }
     //     })
     // }
-    pub fn testing_db(&self, obj: Arc<ArcSwap<Arc<MusicData>>>) -> Subscription<ProgramCommands> {
+    pub fn database_subscription(
+        &self,
+        obj: Arc<ArcSwap<Arc<MusicData>>>,
+    ) -> Subscription<ProgramCommands> {
         iced::subscription::channel(11, 32, |mut _sender| async move {
             async_std::task::sleep(std::time::Duration::from_secs(4)).await; // give the id time to init properly, no real rush to have the subscription start right away anyways...
             let mut id = obj.load().song_id.clone(); // hopfully initialized in time
@@ -124,15 +127,23 @@ impl App {
                         }
                     }
                 }
-                async_std::task::sleep(std::time::Duration::from_secs(15)).await;
+                async_std::task::sleep(std::time::Duration::from_secs(10)).await;
                 if id == obj.load().song_id {
                     cycle += 1;
-                    println!("add one to weight!! cycle: {}", cycle);
+                    println!(
+                        "add one to weight!! cycle: {} vs {}",
+                        cycle,
+                        obj.load().threshold
+                    );
+                    crate::db::metadata::add_one_weight(obj.load().song_id.clone()).unwrap();
+                    if cycle == obj.load().threshold {
+                        // so doing it this way gets rid of the need to hold onto the last id, since midway through (~2/3rd way) +1 play will occur
+                        println!("added one to play");
+                        crate::db::metadata::add_one_play(obj.load().song_id.clone()).unwrap();
+                    }
                 } else {
                     //song has changed, was the threshold met?
-                    if cycle >= obj.load().threshold {
-                        println!("add one to play!");
-                    }
+                    println!("song changed");
                     id = obj.load().song_id.clone();
                     cycle = 0;
                 }
@@ -269,7 +280,7 @@ impl App {
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
                                     playlist: "main".to_string(),
-                                    threshold: music_obj.current_object.threshold.clone(),
+                                    threshold: music_obj.current_object.threshold,
                                     context: Context::PlayPause,
                                 }))
                                 .await
@@ -304,7 +315,7 @@ impl App {
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
                                     playlist: "main".to_string(),
-                                    threshold: music_obj.current_object.threshold.clone(),
+                                    threshold: music_obj.current_object.threshold,
                                     context: Context::SkippedForward,
                                 }))
                                 .await

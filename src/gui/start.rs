@@ -360,7 +360,7 @@ impl Application for App {
             self.music_loop(),
             self.hotkey_loop(),
             Subscription::batch(self.download_list.iter().map(types::Download::subscription)),
-            self.testing_db(self.current_song.clone()),
+            self.database_subscription(self.current_song.clone()),
             self.close_app_sub(),
             // self.database_sub(database_receiver),
         ]) // is two batches required?? prolly not
