@@ -206,7 +206,11 @@ impl Application for App {
                                             ind = index;
                                         }
                                     }
-                                    self.download_list.remove(ind);
+                                    // not sure why this can be 0?
+                                    if ind != 0 {
+                                        self.download_list.remove(ind);
+                                    }
+
                                     if self.current_song.load().playlist == "main".to_string() {
                                         println!("sender status?: {:?}", self.sender);
                                         // if main is the current playlist, refresh it so the new song shows up
@@ -218,15 +222,19 @@ impl Application for App {
                                     }
                                 }
                                 Err(error) => {
-                                    self.download_page.download_feedback.push(format!(
-                                        "Error downloading {}: {:?}",
-                                        self.download_list
-                                            [self.download_list.len().saturating_sub(1)]
-                                        .link
-                                        .clone()
-                                        .unwrap(),
-                                        error
-                                    ))
+                                    if self.download_list.len() == 0 {
+                                        self.download_page.download_feedback.push("Unexpected error (start.rs 222, download_list.len() == 0?)".to_string());
+                                    } else {
+                                        self.download_page.download_feedback.push(format!(
+                                            "Error downloading {}: {:?}",
+                                            self.download_list
+                                                [self.download_list.len().saturating_sub(1)]
+                                            .link
+                                            .clone()
+                                            .unwrap(),
+                                            error
+                                        ))
+                                    }
                                     // add to some list ? like failed downloads
                                 }
                             }

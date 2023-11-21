@@ -28,13 +28,13 @@ pub async fn download(link: String) -> Vec<Result<(String, String), AppError>> {
         match vid {
             Ok(ok_list) => {
                 //  match begin_playlist(ok_list) {
-                for item in begin_playlist(ok_list) {
+                for item in begin_playlist(ok_list).await {
                     match item {
                         Ok(good_vid) => {
                             values.push(Ok((link_clone.clone(), good_vid)));
                         }
                         Err(e) => {
-                            values.push(Err((e)));
+                            values.push(Err(e));
                         }
                     }
                 }
@@ -48,7 +48,7 @@ pub async fn download(link: String) -> Vec<Result<(String, String), AppError>> {
         let vid = single_parse(link);
         match vid {
             Ok(video) => {
-                for item in begin_single(video) {
+                for item in begin_single(video).await {
                     match item {
                         Ok(good_vid) => {
                             values.push(Ok((link_clone.clone(), good_vid)));

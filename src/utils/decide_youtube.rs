@@ -36,7 +36,7 @@ pub struct Straggler {
     pub jpg_path: String,
 }
 
-pub fn begin_playlist(playlist: Playlist) -> Vec<Result<String, AppError>> {
+pub async fn begin_playlist(playlist: Playlist) -> Vec<Result<String, AppError>> {
     let mut results: Vec<Result<String, AppError>> = vec![];
     // the dir should be derived from a ./cache/downloadlocation.json["punge_downloads"] this for test
     // if the title of the playlist has the dash then it is: <artist> - <album>
@@ -45,6 +45,31 @@ pub fn begin_playlist(playlist: Playlist) -> Vec<Result<String, AppError>> {
     if playlist.title.contains(" - ") {
         let (author, album): (&str, &str) = playlist.title.split(" - ").collect_tuple().unwrap();
         for song in playlist.links {
+            loop {
+                match loop_handle_playlist(
+                    song.clone(),
+                    album.to_string(),
+                    Some(author.to_string()),
+                    jpg.clone(),
+                    mp3.clone(),
+                ) {
+                    Ok(t) => results.push(Ok(t)),
+                    Err(e) => {
+                        // if 403 error, try again until not 403, await(15)
+                        match e {
+                            AppError::YoutubeError(e) => {
+                                // this should be the case where a 403 error occurs (from too many requests too frequently)
+                                println!("403! sleeping"); // would be nice if we could push this in real-time to the user... maybe a subscription restructure at some point..?
+                                async_std::task::sleep(std::time::Duration::from_secs(20)).await;
+                            }
+                            _ => {
+                                results.push(Err(e));
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
             match loop_handle_playlist(
                 song,
                 album.to_string(),
@@ -108,7 +133,7 @@ fn loop_handle_playlist(
     }
 }
 
-pub fn begin_single(video: Video) -> Vec<Result<String, AppError>> {
+pub async fn begin_single(video: Video) -> Vec<Result<String, AppError>> {
     // can only create one item inside a vec, but done this way so the branches return the same type
     let (mp3, jpg) = fetch_json();
     // need to have the arms of the if statement handle the videos seperately since one of than can
@@ -196,9 +221,10 @@ pub fn begin_single(video: Video) -> Vec<Result<String, AppError>> {
             // edge case where description is not more than 4 lines
             String::from("Single")
         } else if &desc[4] == &video.title() {
+            // if the 5th line == title, it is a single (because of "provided by: " standards)
             String::from("Single")
         } else {
-            desc[2].to_string()
+            desc[4].to_string() // remember the space between the lines also count, 5th line is album!
         };
         let auth = clean_author(video.video_details().author.to_owned());
         let title = clean_inputs_for_win_saving(video.title().to_string());
