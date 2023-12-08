@@ -5,25 +5,9 @@ use crate::db::fetch::{get_all_from_playlist, get_all_main, get_uuid_from_name};
 use crate::playliststructs::PungeMusicObject;
 use fancy_regex::Regex;
 
-fn search_string(to_search: String, letters: String, pattern: String) -> bool {
+fn search_string(to_search: String, pattern: String) -> bool {
     let regex = Regex::new(&pattern).unwrap();
     regex.is_match(to_search.as_str()).unwrap()
-}
-
-fn create_pattern(input: String) -> String {
-    let mut pattern = String::from("(?i)");
-    let mut end_patt = String::from("");
-    let mut first_letter_to_end = String::from("");
-    for (count, letter) in input.chars().enumerate() {
-        pattern.push_str(&format!("(?=.*{})", letter.clone()));
-        end_patt.push_str(&format!("[^{}]*{}", letter.clone(), letter.clone()));
-        if count == 0 {
-            first_letter_to_end.push_str(&format!("[^{}]*$", letter.clone()));
-        }
-    }
-    end_patt.push_str(&first_letter_to_end);
-    pattern.push_str(&end_patt);
-    pattern
 }
 
 fn create_alt_pattern(input: String) -> String {
@@ -36,7 +20,7 @@ fn create_alt_pattern(input: String) -> String {
     pattern
 }
 
-fn get_value_of_found(mut search_string: String, letters: String) -> u8 {
+fn get_value_of_found(search_string: String, letters: String) -> u8 {
     // should probably divide total chars in search string, so you can actually find kendrick lamar - i through search
     // only does title + author rn
     let search_string = search_string.to_lowercase();
@@ -86,11 +70,7 @@ pub fn get_values_from_db(playlist: String, user_string: String) -> Vec<(u8, Pun
             music_entry.title.clone()
         );
         println!("searching: {}", &to_search_string);
-        if search_string(
-            to_search_string.clone(),
-            user_string.clone(),
-            regex_patt.clone(),
-        ) {
+        if search_string(to_search_string.clone(), regex_patt.clone()) {
             found_values.push((
                 get_value_of_found(to_search_string, user_string.clone()),
                 music_entry,

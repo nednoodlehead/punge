@@ -111,7 +111,7 @@ pub enum DatabaseErrors {
 pub enum AppError {
     DatabaseError(DatabaseErrors),
     YoutubeError(String), // url, what went wrong
-    FfmpegError,
+    FfmpegError(String),
     FileError(String),
     InvalidUrlError(String),
     RustubeVideoError(String),

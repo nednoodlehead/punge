@@ -1,24 +1,17 @@
-use std::collections::HashMap;
-use std::env::args;
-use std::fmt::{format, Pointer};
 use std::path::Path;
 // purpose of this file is to have ./youtube_interface.rs pass this file data about the song, and this
 // file will decide what is the artist / album / song title
 use crate::playliststructs::{AppError, DatabaseErrors, Playlist, PungeMusicObject};
-use itertools::{min, Itertools};
+use itertools::Itertools;
 use regex::Regex;
 use rustube::blocking::Video;
 use rustube::url::Url;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use serde_json::{json, to_string, Value};
+use serde_json::{json, Value};
 use std::fs;
-use std::hash::Hash;
-use std::io::{BufReader, Read};
+use std::io::BufReader;
 use std::process::Command;
-
-use std::slice::RSplit;
-use std::{thread, time::Duration}; // for sleeping when retrying download
 
 // calls the file that <turns one video & timestamps -> multiple videos> into scope
 use crate::utils::sep_video;
@@ -57,7 +50,7 @@ pub async fn begin_playlist(playlist: Playlist) -> Vec<Result<String, AppError>>
                     Err(e) => {
                         // if 403 error, try again until not 403, await(15)
                         match e {
-                            AppError::YoutubeError(e) => {
+                            AppError::YoutubeError(_e) => {
                                 // this should be the case where a 403 error occurs (from too many requests too frequently)
                                 println!("403! sleeping"); // would be nice if we could push this in real-time to the user... maybe a subscription restructure at some point..?
                                 async_std::task::sleep(std::time::Duration::from_secs(20)).await;
@@ -310,7 +303,7 @@ fn create_punge_obj(
 fn fetch_json() -> (String, String) {
     // reason we fetch the json each time instead of having it be a static value is because when the app is open
     // the user can change the json value. So we should probably fetch it each time
-    let mut raw_json = fs::File::open("./cache/locations.json").unwrap();
+    let raw_json = fs::File::open("./cache/locations.json").unwrap();
     let json: serde_json::Value = serde_json::from_reader(raw_json).unwrap();
     let mp3 = json.get("mp3_path").unwrap();
     let jpg = json.get("jpg_path").unwrap();
@@ -359,9 +352,9 @@ pub fn handle_single_vid_album(video: &Video) -> (String, String) {
 fn download_to_punge(
     vid: Video,
     mp3_path: String,
-    jpg_path: String,
+    _jpg_path: String,
     new_mp3_name: String,
-    new_jpg_name: String, // unused rn
+    _new_jpg_name: String, // unused rn
 ) -> Result<(), AppError> {
     // let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
     let mp4_name = format!("{}{}.mp4", mp3_path.clone(), vid.video_details().video_id); // can sometimes be .webm??
@@ -385,7 +378,7 @@ fn download_to_punge(
         .unwrap()
         .blocking_download_to_dir(mp3_path.clone())
     {
-        Ok(t) => {
+        Ok(_t) => {
             // convert the old file to (webm) to mp3 and rename
             let x = Command::new("ffmpeg.exe")
                 .args([
@@ -400,9 +393,9 @@ fn download_to_punge(
                 ])
                 .output();
             match x {
-                Ok(t) => {
+                Ok(_t) => {
                     match fs::remove_file(old_name.clone()) {
-                        Ok(t) => {
+                        Ok(_t) => {
                             Ok(()) // if the ffmpeg operation goes well and he file is removed
                         }
                         Err(e) => {
@@ -412,7 +405,7 @@ fn download_to_punge(
                     }
                 }
                 Err(e) => {
-                    Err(AppError::FfmpegError) // if the ffmpeg operation fails
+                    Err(AppError::FfmpegError(e.to_string())) // if the ffmpeg operation fails
                 }
             }
         }
@@ -425,83 +418,6 @@ fn download_to_punge(
             e
         ))),
     }
-}
-
-// this function deals with the case that the original title of the video contains the author and
-// title. So like: "Kendrick Lamar - Real". Where splitting by "-": [0] = auth. [1] = title
-// sometimes people will do <title> - <artist>. In those cases, we cannot do much besides have a function
-// within the app to swap the two.
-fn title_auth_in_org_title(org_title: &str, org_author: &str, org_desc: &str) {
-    // split the string in half. We know it will only contain one "-"
-    let temp: Vec<&str> = org_title.split(" - ").collect();
-    // author can be the start-side of the "-". We strip the end of any whitespace
-    let author: &str = temp[0];
-    // title can be the end-side of the "-". We strip the beginning of any whitespace
-    let title: &str = temp[1];
-    println!("//{}// & //{}//", title, author)
-}
-
-fn album_auth_in_org_title(org_title: &str, org_author: &str, org_desc: &str) {
-    let temp: Vec<&str> = org_title.split("-").collect();
-    let author: &str = temp[0].strip_prefix(" ").unwrap();
-    let album: &str = temp[1].strip_suffix(" ").unwrap();
-}
-
-fn flush_forbidden(string: String) -> String {
-    let mut res = String::new();
-    let forbidden = vec!['<', '>', ':', '"', '\\', '/', '|', '?', '*'];
-    let x: Vec<char> = string.chars().collect();
-    for letter in x {
-        if forbidden.contains(&letter) {
-            res.push(' ');
-        } else {
-            res.push(letter)
-        }
-    }
-    res
-}
-
-// returns the path for the file to be renamed, and the path & name to rename to (2 Strings)
-fn resolve_dir_name(dir: &str, name: &str, id: &str) -> (String, String) {
-    // create new strings that will be the target file, and target filename
-    let mut dir: String = String::from(dir);
-    let mut path_1: String = String::new();
-    let mut path_2: String = String::new();
-    let ext: &str = ".webm";
-    // making sure that the path ends with a /. If it doesn't, string concat will make it look like:
-    // c:/pathmy_file_name.webm | which we don't want
-    if !dir.ends_with('\\') {
-        dir.push('\\')
-    }
-    path_1.push_str(&dir);
-    path_1.push_str(&id);
-    path_1.push_str(&ext);
-
-    path_2.push_str(&dir);
-    path_2.push_str(name);
-    path_2.push_str(&ext);
-    return (path_1, path_2);
-}
-
-pub fn opus_to_mp3(old_file: String, new_file: String) -> String {
-    // file: name given by rustube <uniqueid>.webm i believe
-    // name = new naming convention for the file
-    // will also return the new name
-    // call ffmpeg to turn the old webm file into an mp3 file
-    Command::new("ffmpeg.exe")
-        .args(&[
-            "-i",
-            old_file.as_str(),
-            "-vn",
-            "-c:a",
-            "libmp3lame",
-            "-b:a",
-            "192k",
-            new_file.as_str(),
-        ])
-        .output()
-        .unwrap();
-    new_file.to_owned()
 }
 
 fn clean_author(author: String) -> String {
@@ -526,10 +442,21 @@ fn clean_author(author: String) -> String {
     x
 }
 
-//                                      title   features
-fn check_for_features(title: String) -> (String, String) {
-    // checks the title of a song and attempts to parse out who the features are. returns both title and features
-    return ("".to_string(), "".to_string()); // unimplemented lol
+fn check_for_features(title: String, author: String, description: String, ordered: bool) -> String {
+    // delimeter of each feature should be a comma
+    // param: ordered = is the description of the video ordered as auto-gen videos? where the features
+    // are always on the same line
+    if ordered {
+        // gets the third line of the description, splits all of the artists by the · delimeter and joins them into a string
+        // for returning
+        description.split("\n").collect::<Vec<&str>>()[2]
+            .split("·") // this is not a period, it is a special character
+            .collect::<Vec<&str>>()
+            .join(",")
+    } else {
+        // attempt to parse features here
+        return "".to_string(); // unimplemented lol
+    }
 }
 
 fn description_timestamp_check(desc: &str) -> bool {
@@ -542,7 +469,7 @@ fn description_timestamp_check(desc: &str) -> bool {
         // if the caught list it empty, meaning that there are no timestamps
         return false;
     } else {
-        let init_catch = caught_list[0].clone();
+        let init_catch = caught_list[0];
         for catch in &mut caught_list[1..] {
             if init_catch == *catch {
                 // (after wrote) i think this is to check each one to see if it matches the first one, so songs that have timestamp in name are not caught

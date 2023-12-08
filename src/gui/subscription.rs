@@ -1,7 +1,7 @@
 use crate::db::fetch;
 use crate::db::metadata::{add_one_play, add_one_weight, on_passive_play, on_seek, skipped_song};
 use crate::gui::messages::AppEvent;
-use crate::gui::messages::{Context, DatabaseMessages, ProgramCommands, PungeCommand};
+use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
 use crate::player::interface::{self, MusicPlayer};
 use crate::player::interface::{read_file_from_beginning, read_from_time};
@@ -19,97 +19,10 @@ use std::time::Instant;
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::{self, runtime}; // for benchmarking the skip function
 impl App {
-    // requires a listener. this will be a tokio::UnboundedReceiver<PungeCommand>
-    // does not need 2 way communication, as this subscription just listens and inserts into the database
-
     // difference between this database subscription is that no sender and receiver is needed, instead we check the status of self.current_obj every 20 seconds or so and do some calculations for inserting into db
     // now the question you may have is, "ok, i see how this can work for weight, but how for plays?", because the weight can be adjusted maybe += 1 for each 20 seconds its listened
     // well, to answer the question of "how do we calculate plays", is we can divide the video up by the increment value, and if it reaches that value, add +1 play
     // also, in the other download function , we divide the len by 25 to see how many times it fits,  we will have the db check every 15 seconds,
-    pub fn database_sub(
-        &self,
-        mut receiver: tokio::sync::mpsc::UnboundedReceiver<MusicData>,
-    ) -> Subscription<ProgramCommands> {
-        iced::subscription::channel(8, 32, |mut sender| async move {
-            println!("SENT TO MAIN ThrEAD");
-            loop {
-                match receiver.try_recv() {
-                    Ok(t) => match t.context {
-                        Context::Default => {
-                            sender.send(ProgramCommands::NewData(t)).await.unwrap();
-                            //as dasd
-                        }
-                        Context::PlayPause => {
-                            sender.send(ProgramCommands::NewData(t)).await.unwrap();
-                            // asd
-                        }
-                        Context::SkippedForward => {
-                            // wrong songid, need one prior, adding
-                            // skipped_song(t.previous_id.clone().unwrap()).unwrap();
-                            sender.send(ProgramCommands::NewData(t)).await.unwrap();
-                        }
-                        Context::SkippedBackwards => {
-                            sender.send(ProgramCommands::NewData(t)).await.unwrap();
-                        }
-                        Context::Seeked => {
-                            on_seek(t.song_id.clone()).unwrap();
-                            sender.send(ProgramCommands::NewData(t)).await.unwrap();
-                            // db weight += 4 idk
-                        }
-                        Context::AutoPlay => {
-                            on_passive_play(t.song_id.clone()).unwrap();
-                            sender.send(ProgramCommands::NewData(t)).await.unwrap();
-                            // db play += 1
-                        }
-                    },
-                    Err(_e) => {
-                        // ignore !!
-                    }
-                }
-
-                async_std::task::sleep(std::time::Duration::from_millis(50)).await;
-            }
-        })
-    }
-
-    // pub fn new_db_sub(
-    //     &self,
-    //     music_obj: Arc<ArcSwap<Arc<MusicData>>>,
-    // ) -> iced::Subscription<ProgramCommands> {
-    //     iced::subscription::channel(10, 32, |mut _sender| async move {
-    //         let mut cycle = 0;
-    //         let mut last_obj = **music_obj.load();
-    //         let mut old_id: String = String::default();
-    //         loop {
-    //             if !last_obj.is_playing {
-    //                 loop {
-    //                     async_std::task::sleep(std::time::Duration::from_secs(1)).await;
-    //                     if last_obj.is_playing {
-    //                         break;
-    //                     }
-    //                 }
-    //             }
-    //             async_std::task::sleep(std::time::Duration::from_secs(15)).await;
-    //             if last_obj.song_id == old_id {
-    //                 // add to weight
-    //                 println!("Add to weight!!!");
-    //                 cycle += 1; // add one to cycle, so we can keep track of
-    //             } else {
-    //                 // a new song is playing!
-    //                 if cycle == last_obj.threshold {
-    //                     old_id = last_obj.song_id.clone();
-    //                     // threshold has been met for one to count towards playing. if we do >= instead, all above threshold will be added as a play
-    //                     // so for example, if we listen to a song the entire way, that requirement may be met multiple times, but we did not listen multiple times...
-    //                     // add one play, and weight or whatever from crate::db::metadata
-    //                     println!("add one to metadata!!");
-    //                 }
-    //                 // then, bcs we are on a new song, reset the data
-    //                 last_obj = **music_obj.load();
-    //                 cycle = 0;
-    //             }
-    //         }
-    //     })
-    // }
     pub fn database_subscription(
         &self,
         obj: Arc<ArcSwap<Arc<MusicData>>>,
@@ -209,7 +122,7 @@ impl App {
                             }
                         }
                     }
-                    Err(e) => {
+                    Err(_e) => {
                         // erm, ignore
                     }
                 }
@@ -390,11 +303,6 @@ impl App {
                                 }))
                                 .await
                                 .unwrap();
-                            // database_sender
-                            //     .send(DatabaseMessages::Seeked(
-                            //         music_obj.current_object.uniqueid.clone(),
-                            //     ))
-                            //     .unwrap();
                         }
                         PungeCommand::StaticVolumeUp => {
                             music_obj.sink.set_volume(music_obj.sink.volume() + 0.005);
@@ -440,9 +348,6 @@ impl App {
                                 music_obj.list =
                                     fetch::get_all_from_playlist(&playlist_uuid).unwrap();
                             }
-                        }
-                        PungeCommand::None => {
-                            println!("is this even used?")
                         }
                     },
                     _ => {
@@ -664,11 +569,6 @@ impl App {
                                                 }))
                                                 .await
                                                 .unwrap();
-                                            // database_sender
-                                            //     .send(DatabaseMessages::Seeked(
-                                            //         music_obj.current_object.uniqueid.clone(),
-                                            //     ))
-                                            //     .unwrap();
                                         }
                                         _ => {
                                             println!("yeah, other stuff... {:?}", cmd)
@@ -714,11 +614,6 @@ impl App {
                                 }))
                                 .await
                                 .unwrap();
-                            // database_sender
-                            //     .send(DatabaseMessages::Played(
-                            //         music_obj.current_object.uniqueid.clone(),
-                            //     ))
-                            //     .unwrap()
                         }
                     }
                 }

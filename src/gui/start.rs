@@ -1,6 +1,6 @@
 // can we rename this to lib.rs at some point maybe??
 use crate::gui::messages::AppEvent;
-use crate::gui::messages::{DatabaseMessages, Page, ProgramCommands, PungeCommand};
+use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
 use crate::gui::{download_page, setting_page};
 use crate::player::cache;
 use crate::player::interface;
@@ -26,7 +26,6 @@ use iced::Command;
 use iced::{
     executor, Alignment, Application, Color, Element, Error, Event, Length, Settings, Theme,
 };
-use rand::seq::SliceRandom;
 use std::sync::Arc;
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
@@ -59,7 +58,7 @@ pub fn begin() -> iced::Result {
 // pages for the gui
 
 pub struct App {
-    theme: Theme,
+    theme: Theme, // for changing the theme at a later time
     pub is_paused: bool,
     pub current_song: Arc<ArcSwap<Arc<MusicData>>>, // represents title, auth, album, song_id, volume, shuffle, playlist
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
@@ -70,7 +69,7 @@ pub struct App {
     media_page: crate::gui::media_page::MediaPage,
     download_list: Vec<types::Download>, // should also include the link somewhere to check for
     last_id: usize,
-    manager: GlobalHotKeyManager,
+    manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
     search: String,
 }
 
@@ -125,11 +124,6 @@ impl Application for App {
     fn update(&mut self, msg: Self::Message) -> iced::Command<ProgramCommands> {
         println!("MATCHING MSG: {:?}", &msg);
         match msg {
-            Self::Message::Test => {
-                println!("doing play, here?");
-                //self.sender.as_mut().unwrap().send(PungeCommand::Play);  // does it work?
-                // self.sender.send(Command::Play).unwrap();  // i dont think this unwrap() can fail ..
-            }
             Self::Message::Send(cmd) => {
                 println!("sending punge cmd: {:?}", &cmd);
                 self.sender
@@ -156,11 +150,6 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::NewVolume(val))
                     .expect("failure sending msg");
-            }
-            Self::Message::DownloadLink(link) => {
-                // remove at some point? post done optimziing i guess
-                println!("imagine we download {} here", &link);
-                // from here, we will match and add the result into a 'feedback box'
             }
             Self::Message::ChangePage(page) => self.current_view = page,
             Self::Message::UpdateDownloadEntry(string) => {
@@ -360,10 +349,6 @@ impl Application for App {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        // let (database_sender, database_receiver): (
-        //     async_sender::UnboundedSender<ProgramCommands>,
-        //     async_sender::UnboundedReceiver<ProgramCommands>,
-        // ) = tokio::sync::mpsc::unbounded_channel();
         iced::subscription::Subscription::batch(vec![
             self.music_loop(),
             self.hotkey_loop(),

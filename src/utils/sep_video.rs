@@ -4,11 +4,8 @@ use crate::playliststructs::PungeMusicObject;
 use chrono::Local;
 use itertools::Itertools;
 use regex::Regex;
-use rustube::Video;
 use std::collections::HashMap;
-use std::fmt::format;
 use std::fs;
-use std::hash::Hash;
 use std::process::Command;
 
 pub fn seperate(
@@ -166,7 +163,7 @@ fn timestamp_to_int(timestamp: String) -> usize {
         .iter()
         .map(|item| item.to_string())
         .collect();
-    let (mut hour, mut minute, mut second): (usize, usize, usize) = (
+    let (mut hour, mut minute, second): (usize, usize, usize) = (
         bruh[0].parse().unwrap(),
         bruh[1].parse().unwrap(),
         bruh[2].parse().unwrap(),
