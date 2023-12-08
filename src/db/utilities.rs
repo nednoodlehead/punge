@@ -29,14 +29,14 @@ pub fn convert() {
             })
         })
         .unwrap();
-    // let mut stmt2 = "ALTER TABLE main ADD threshold SMALLINT";
-    // conn.execute(stmt2, []).unwrap();
-    let mut stmt_3 = "UPDATE main SET threshold = ?1 WHERE uniqueid = ?";
+    let stmt2 = "ALTER TABLE main ADD threshold SMALLINT";
+    conn.execute(stmt2, []).unwrap();
+    let stmt_3 = "UPDATE main SET threshold = ?1 WHERE uniqueid = ?";
     for item in obj_iter {
         let new_item = item.unwrap();
         println!("updating: {}", &new_item.title);
         conn.execute(
-            stmt_3.clone(),
+            stmt_3,
             params![calc_thres(new_item.length), new_item.uniqueid],
         )
         .unwrap();

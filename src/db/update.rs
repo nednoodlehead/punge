@@ -2,9 +2,9 @@ use crate::playliststructs::DatabaseErrors;
 use rusqlite::{params, Connection, Error};
 
 pub fn update_playlist(
-    old_title: &str,
-    new_title: &str,
-    description: &str,
+    old_title: String,
+    new_title: String,
+    description: String,
     image: &str,
 ) -> Result<(), DatabaseErrors> {
     // updates the title, description and image
@@ -19,11 +19,11 @@ pub fn update_playlist(
 }
 
 pub fn update_song(
-    author: &str,
-    title: &str,
-    album: &str,
-    features: &str,
-    unique: &str,
+    author: String,
+    title: String,
+    album: String,
+    features: String,
+    unique: String,
 ) -> Result<(), DatabaseErrors> {
     let conn: Connection = rusqlite::Connection::open("main.db")?;
     let statement: &str =
@@ -34,9 +34,9 @@ pub fn update_song(
 }
 
 pub fn quick_swap_title_author(
-    author: &str,
-    title: &str,
-    uniqueid: &str,
+    author: String,
+    title: String,
+    uniqueid: String,
 ) -> Result<(), DatabaseErrors> {
     let conn: Connection = rusqlite::Connection::open("main.db")?;
     let statement: &str = "UPDATE main author = ?, title = ? WHERE uniqueid = ?";
