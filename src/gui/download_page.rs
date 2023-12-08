@@ -1,7 +1,7 @@
-use iced::widget::{Container, text, button, column, vertical_space, text_input, row, horizontal_space, scrollable, Scrollable, Column, container, Text};
+use iced::widget::{Container, text, button, column, text_input, row, horizontal_space, scrollable, Column, container};
 use iced::{Element, Length, Alignment};
-use crate::gui::messages::{PungeCommand, ProgramCommands, Page};
-use crate::gui::start::App;
+use crate::gui::messages::{ProgramCommands, Page};
+
 use crate::gui::scroller;
 
 pub struct DownloadPage {

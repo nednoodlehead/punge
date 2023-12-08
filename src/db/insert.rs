@@ -1,6 +1,6 @@
 use crate::playliststructs::{DatabaseErrors, PungeMusicObject, UserPlaylist};
-use rusqlite::{params, Connection, Row};
-use uuid::Uuid;
+use rusqlite::{params, Connection};
+
 
 pub fn add_to_main(music_obj: PungeMusicObject) -> Result<String, DatabaseErrors> {
     let conn = Connection::open("main.db")?;
@@ -14,7 +14,7 @@ pub fn add_to_main(music_obj: PungeMusicObject) -> Result<String, DatabaseErrors
     Ok(format!("{} - {}", &music_obj.title, &music_obj.author))
 }
 
-pub fn create_playlist(mut new_playlist: UserPlaylist) -> Result<(), DatabaseErrors> {
+pub fn create_playlist(new_playlist: UserPlaylist) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
     // check if that table already exists
     println!("inserting, playlist does not exist");

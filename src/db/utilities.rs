@@ -2,13 +2,13 @@
 // the purpose is for our src\gui\subscription.rs database subscription to read a value from db (instead of doing an unneeded calculation to get it)
 
 use crate::playliststructs::PungeMusicObject;
-use chrono::NaiveDate;
+
 use rusqlite::{params, Connection};
 
 pub fn convert() {
     let conn = Connection::open("main.db").unwrap();
     let mut stmt = conn.prepare("SELECT * FROM main").unwrap();
-    let new_items: Vec<PungeMusicObject> = Vec::new();
+    let _new_items: Vec<PungeMusicObject> = Vec::new();
     let obj_iter = stmt
         .query_map([], |row| {
             Ok(PungeMusicObject {

@@ -23,7 +23,7 @@ pub fn update_song(
     title: String,
     album: String,
     features: String,
-    unique: String,
+    _unique: String,
 ) -> Result<(), DatabaseErrors> {
     let conn: Connection = rusqlite::Connection::open("main.db")?;
     let statement: &str =

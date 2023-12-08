@@ -1,4 +1,4 @@
-use core::fmt;
+
 use std::fmt::Formatter;
 // types for the 'download' struct. Only used in the gui for sending back data
 // in theory, this should allow for multiple downloads at the same time ?
@@ -33,7 +33,7 @@ pub fn subscription_convert(
 }
 
 pub async fn download_int(
-    id: usize,
+    _id: usize,
     state: DownloadState,
 ) -> (
     Option<Vec<Result<(String, String), AppError>>>,

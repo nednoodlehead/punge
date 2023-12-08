@@ -1,19 +1,19 @@
 // purpose of this file is to download youtube videos and name them appropriately. it calls
 // various functions from "decide_youtube.rs" to determine the title, author and album
 
-use crate::gui::start::App;
+
 use rusqlite;
 use rusqlite::params;
-use rustube::Video;
-use std::fs;
-use std::process::Command;
-use std::thread;
+
+
+
+
 
 // #[path = "./decide_youtube.rs"]
 // mod decide;
 // use decide::entry;
 
-use crate::playliststructs::{AppError, Playlist, PungeMusicObject};
+use crate::playliststructs::{AppError, Playlist};
 use crate::utils::decide_youtube::{begin_playlist, begin_single};
 
 // this is the function exposed to the rest of the app. It takes in the youtube link

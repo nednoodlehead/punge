@@ -3,28 +3,27 @@ use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
 use crate::gui::{download_page, setting_page};
 use crate::player::cache;
-use crate::player::interface;
-use crate::player::interface::{read_file_from_beginning, MusicPlayer};
+
+
 use crate::player::sort::get_values_from_db;
 use crate::playliststructs::MusicData;
-use crate::playliststructs::PungeMusicObject;
-use crate::utils::{types, youtube_interface};
-use crate::{gui, playliststructs};
-use arc_swap::{ArcSwap, ArcSwapAny};
-use async_std::task;
+
+use crate::utils::{types};
+
+use arc_swap::{ArcSwap};
+
 use global_hotkey::{
-    hotkey::{Code, HotKey, Modifiers},
-    GlobalHotKeyEvent, GlobalHotKeyManager,
+    hotkey::{Code, HotKey, Modifiers}, GlobalHotKeyManager,
 };
-use iced::futures::channel::mpsc::{Sender, UnboundedReceiver, UnboundedSender};
+
 use iced::futures::sink::SinkExt;
-use iced::subscription::{self, Subscription};
+use iced::subscription::{Subscription};
 use iced::widget::{
     button, column, container, horizontal_space, row, slider, text, vertical_space,
 };
 use iced::Command;
 use iced::{
-    executor, Alignment, Application, Color, Element, Error, Event, Length, Settings, Theme,
+    executor, Alignment, Application, Element, Length, Settings, Theme,
 };
 use std::sync::Arc;
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?

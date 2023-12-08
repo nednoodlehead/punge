@@ -1,5 +1,5 @@
 use crate::playliststructs::DatabaseErrors;
-use rusqlite::{params, Connection, Params};
+use rusqlite::{params, Connection};
 // Creates the file with the two default tables :D
 
 pub fn create_table_defaults() -> Result<(), DatabaseErrors> {

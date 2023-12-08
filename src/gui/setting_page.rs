@@ -1,7 +1,7 @@
-use iced::widget::{Container, text, button, column, vertical_space, text_input};
+use iced::widget::{Container, text, button, column};
 use iced::{Element};
-use crate::gui::messages::{PungeCommand, ProgramCommands, Page};
-use crate::gui::start::App;
+use crate::gui::messages::{ProgramCommands, Page};
+
 
 pub struct SettingPage;
 

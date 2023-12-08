@@ -1,9 +1,9 @@
-use crate::playliststructs::{Playlist, PungeMusicObject};
+use crate::playliststructs::{Playlist};
 use regex::Regex;
-use reqwest::blocking::*;
+
 use serde_json::Value;
 use std::collections::HashMap;
-use std::fmt;
+
 
 // this is a file used to get the links of each song in a playlist.
 // inspired to have the same functionality as pytube
@@ -144,6 +144,6 @@ fn find_object_from_startpoint(old_html: &str, starting: usize) -> String {
     }
     // define the json, and return it as a string !
     let full_obj: &[char] = &html[..i];
-    let ret_obj: String = full_obj.into_iter().collect();
+    let _ret_obj: String = full_obj.into_iter().collect();
     return full_obj.into_iter().collect();
 }

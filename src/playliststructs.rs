@@ -1,5 +1,5 @@
-use chrono::{DateTime, Local, NaiveDate};
-use rusqlite::{types::FromSqlError, Connection, Error};
+use chrono::{Local, NaiveDate};
+use rusqlite::{types::FromSqlError, Error};
 use std::fmt;
 use thiserror::Error as terror;
 use uuid::Uuid;

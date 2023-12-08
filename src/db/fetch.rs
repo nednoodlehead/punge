@@ -1,6 +1,6 @@
 use crate::playliststructs::{DatabaseErrors, PungeMusicObject};
 use rusqlite::{params, Connection};
-use std::fs::symlink_metadata;
+
 
 pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     // gets all songs from given table
@@ -87,7 +87,7 @@ pub fn get_uuid_from_name(playlist_name: String) -> String {
     let mut stmt = conn
         .prepare("SELECT playlist_id from metadata WHERE title = ?")
         .unwrap();
-    let mut result: String = stmt.query_row(&[&playlist_name], |row| row.get(0)).unwrap();
+    let result: String = stmt.query_row(&[&playlist_name], |row| row.get(0)).unwrap();
     drop(stmt);
     conn.close().unwrap();
     result

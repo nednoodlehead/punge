@@ -13,7 +13,7 @@ use crate::gui::start::App;
 impl App {
     pub fn render_sidebar(&self) -> Element<'_, ProgramCommands> {
         let playlists: Vec<UserPlaylist> = get_all_playlists().unwrap();
-        let to_text = playlists.iter().map(|p| text(p)).collect::<Vec<Text>>();
+        let _to_text = playlists.iter().map(|p| text(p)).collect::<Vec<Text>>();
         let scroller = Scrollable::new(playlists.iter().fold(
             Column::new().spacing(10.0),
             |item, string| {

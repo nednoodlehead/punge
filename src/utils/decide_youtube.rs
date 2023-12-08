@@ -442,7 +442,7 @@ fn clean_author(author: String) -> String {
     x
 }
 
-fn check_for_features(title: String, author: String, description: String, ordered: bool) -> String {
+fn check_for_features(_title: String, _author: String, description: String, ordered: bool) -> String {
     // delimeter of each feature should be a comma
     // param: ordered = is the description of the video ordered as auto-gen videos? where the features
     // are always on the same line

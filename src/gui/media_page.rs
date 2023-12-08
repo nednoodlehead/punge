@@ -1,8 +1,8 @@
 use crate::gui::messages::ProgramCommands;
-use crate::playliststructs::AppError;
-use fancy_regex::Result;
+
+
 use iced::widget::{container, text};
-use iced::{Element, Length};
+use iced::{Element};
 
 pub struct MediaPage {
     pub download_input: String,
@@ -36,11 +36,11 @@ fn download_content(link: String, download_path: String) -> String {
     todo!()
 }
 
-use rustube::blocking::Video;
-use rustube::url::Url;
+
+
 // TODO (at some point), make this async and have it send o the subscription that is listening
 // for youtube events. not sure how that will be handled for instagram download...
-fn download_youtube(link: String, path: String) -> String {
+fn download_youtube(link: String, _path: String) -> String {
     let downloaded = rustube::blocking::download_best_quality(&link);
     match downloaded {
         Ok(done_path) => {

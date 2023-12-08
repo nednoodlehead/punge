@@ -1,23 +1,23 @@
 use crate::db::fetch;
-use crate::db::metadata::{add_one_play, add_one_weight, on_passive_play, on_seek, skipped_song};
+
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
-use crate::player::interface::{self, MusicPlayer};
-use crate::player::interface::{read_file_from_beginning, read_from_time};
+use crate::player::interface::{self};
+use crate::player::interface::{read_file_from_beginning};
 use crate::playliststructs::MusicData;
 use crate::playliststructs::PungeMusicObject;
-use arc_swap::{ArcSwap, ArcSwapAny};
-use async_std::task::sleep;
-use global_hotkey::{GlobalHotKeyEvent, GlobalHotKeyManager};
-use iced::futures::channel::mpsc;
+use arc_swap::{ArcSwap};
+
+use global_hotkey::{GlobalHotKeyEvent};
+
 use iced::futures::sink::SinkExt;
-use iced::subscription::{self, Subscription};
+use iced::subscription::{Subscription};
 use rand::seq::SliceRandom;
 use std::sync::Arc;
 use std::time::Instant;
-use tokio::sync::mpsc::UnboundedSender;
-use tokio::{self, runtime}; // for benchmarking the skip function
+
+use tokio::{self}; // for benchmarking the skip function
 impl App {
     // difference between this database subscription is that no sender and receiver is needed, instead we check the status of self.current_obj every 20 seconds or so and do some calculations for inserting into db
     // now the question you may have is, "ok, i see how this can work for weight, but how for plays?", because the weight can be adjusted maybe += 1 for each 20 seconds its listened
@@ -313,7 +313,7 @@ impl App {
                         PungeCommand::GoToAlbum => {
                             println!("going 2 album!")
                         }
-                        PungeCommand::SkipToSeconds(val) => {
+                        PungeCommand::SkipToSeconds(_val) => {
                             println!("skipping to seconds")
                         }
                         PungeCommand::ToggleShuffle => {
