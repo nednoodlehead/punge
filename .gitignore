@@ -5,6 +5,7 @@
 /.idea/punge.iml
 /.idea/vcs.xml
 main.db
+/cache/music.json
 
 
 # Added by cargo
