@@ -3,16 +3,16 @@ use crate::db::fetch;
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
+use crate::player::interface::read_file_from_beginning;
 use crate::player::interface::{self};
-use crate::player::interface::{read_file_from_beginning};
 use crate::playliststructs::MusicData;
 use crate::playliststructs::PungeMusicObject;
-use arc_swap::{ArcSwap};
+use arc_swap::ArcSwap;
 
-use global_hotkey::{GlobalHotKeyEvent};
+use global_hotkey::GlobalHotKeyEvent;
 
 use iced::futures::sink::SinkExt;
-use iced::subscription::{Subscription};
+use iced::subscription::Subscription;
 use rand::seq::SliceRandom;
 use std::sync::Arc;
 use std::time::Instant;
@@ -133,7 +133,9 @@ impl App {
     }
 
     pub fn close_app_sub(&self) -> Subscription<ProgramCommands> {
-        iced::subscription::events_with(handle_app_events)
+        // bro they took my events_with
+        iced::event::listen_with(handle_app_events)
+        // nvmd i got it back
     }
 
     pub fn music_loop(&self) -> Subscription<ProgramCommands> {
@@ -626,7 +628,7 @@ impl App {
 // handles app events, used for listening for the window close event (for now)
 fn handle_app_events(event: iced::Event, _status: iced::event::Status) -> Option<ProgramCommands> {
     match &event {
-        iced::Event::Window(iced::window::Event::CloseRequested) => {
+        iced::Event::Window(_, iced::window::Event::CloseRequested) => {
             Some(ProgramCommands::InAppEvent(AppEvent::CloseRequested))
         }
         _ => None,

@@ -4,27 +4,25 @@ use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
 use crate::gui::{download_page, setting_page};
 use crate::player::cache;
 
-
 use crate::player::sort::get_values_from_db;
 use crate::playliststructs::MusicData;
 
-use crate::utils::{types};
+use crate::utils::types;
 
-use arc_swap::{ArcSwap};
+use arc_swap::ArcSwap;
 
 use global_hotkey::{
-    hotkey::{Code, HotKey, Modifiers}, GlobalHotKeyManager,
+    hotkey::{Code, HotKey, Modifiers},
+    GlobalHotKeyManager,
 };
 
 use iced::futures::sink::SinkExt;
-use iced::subscription::{Subscription};
+use iced::subscription::Subscription;
 use iced::widget::{
     button, column, container, horizontal_space, row, slider, text, vertical_space,
 };
 use iced::Command;
-use iced::{
-    executor, Alignment, Application, Element, Length, Settings, Theme,
-};
+use iced::{executor, Alignment, Application, Element, Length, Settings, Theme};
 use std::sync::Arc;
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
@@ -33,25 +31,36 @@ pub fn begin() -> iced::Result {
         id: None,
         flags: (),
         window: iced::window::Settings {
-            size: (1150, 700),
+            size: iced::Size {
+                width: 1150.0,
+                height: 700.0,
+            },
             position: iced::window::Position::Default,
-            min_size: Some((1150, 700)),
-            max_size: Some((2920, 2080)),
+            min_size: Some(iced::Size {
+                width: 1150.0,
+                height: 700.0,
+            }),
+            max_size: Some(iced::Size {
+                width: 2920.0,
+                height: 2080.0,
+            }),
             visible: true,
             resizable: true,
             decorations: true,
             transparent: false,
             level: iced::window::Level::Normal,
             icon: None, // will add soon i think
-            platform_specific: iced::window::PlatformSpecific {
+            platform_specific: iced::window::settings::PlatformSpecific {
                 parent: None,
                 drag_and_drop: false,
+                skip_taskbar: false,
             },
+            exit_on_close_request: false,
         },
         default_font: Default::default(),
-        default_text_size: 16.0,
+        default_text_size: iced::Pixels { 0: 16.0 },
         antialiasing: false,
-        exit_on_close_request: false, // so we can save the data before exiting
+        fonts: Settings::<()>::default().fonts, // thanks source code?
     })
 }
 // pages for the gui
@@ -248,7 +257,7 @@ impl Application for App {
                     cache::dump_cache(cache); // dumps user cache
                     println!("dumpepd cache!");
 
-                    return iced::window::close::<Self::Message>();
+                    return iced::window::close::<Self::Message>(iced::window::Id::MAIN);
                 }
             },
             Self::Message::UpdateSearch(input) => {
@@ -305,10 +314,10 @@ impl Application for App {
         let main_page_2 = container(row![column![
             row![
                 row![text("main area content?"), page_buttons],
-                horizontal_space(Length::Fill),
+                horizontal_space(),
                 self.render_sidebar()
             ],
-            vertical_space(Length::Fill), // puts space between the main content (inc. sidebar) and the bottom controls
+            vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
             row![
                 column![
                     text(curr_song.title.clone()),
@@ -335,7 +344,7 @@ impl Application for App {
             .width(Length::Fill)
             .align_items(Alignment::Center)
             .spacing(50.0),
-            vertical_space(Length::Fixed(30.0))
+            vertical_space()
         ],]);
         match self.current_view {
             // which page to display

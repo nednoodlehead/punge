@@ -35,6 +35,8 @@ pub enum ProgramCommands {
     GoToSong, // uses the regex search to take user input and skip to nearest search for user. input derives from self.search
     ChangeViewingPlaylist(UserPlaylist), // pass whole playlist in.
     ChangeActivePlaylist(UserPlaylist),
+    PlaySong(String),   // unqiueid here :)
+    SelectSong(String), // uniqueid, used to do stuff to the current song
 }
 
 #[derive(Debug, Clone, Copy)]
