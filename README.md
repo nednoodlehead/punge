@@ -18,9 +18,11 @@ New Punge brings on multiple improvements:
 # Build Instructions
 
 Requirements:
-Cargo on path
-ffmpeg on path
-git on path (only technically needed to follow the instructions, you can still download .zip from github)
+1. Cargo on path
+
+2. ffmpeg on path
+
+3. git on path (only technically needed to follow the instructions, you can still download .zip from github)
 
 
 1. Clone the repo `git clone https://github.com/nednoodlehead/punge`
