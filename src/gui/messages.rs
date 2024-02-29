@@ -39,6 +39,7 @@ pub enum ProgramCommands {
     PlaySong(String),   // unqiueid here :)
     SelectSong(String), // uniqueid, used to do stuff to the current song
     SyncHeader(scrollable::AbsoluteOffset),
+    PlaylistSelected(String),
 }
 
 #[derive(Debug, Clone, Copy)]
