@@ -60,8 +60,10 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
             ColumnKind::Title => text(row.title.clone()).into(),
             ColumnKind::Album => text(row.album.clone()).into(),
             ColumnKind::Edit => button(text("^"))
-                .on_press(ProgramCommands::SelectSong(row.uniqueid.clone()))
-                .on_press(ProgramCommands::SelectSong(row.uniqueid.clone()))
+                .on_press(ProgramCommands::SelectSong(
+                    row.uniqueid.clone(),
+                    row.title.clone(),
+                ))
                 .into(),
         };
 
