@@ -15,16 +15,14 @@ New Punge brings on multiple improvements:
 7) Playlist metadata
 8) Better data about each individiual song
 
-# Build Instructions
-
-Requirements:
+# Requirements:
 1. Cargo on path
 
 2. ffmpeg on path
 
 3. git on path (only technically needed to follow the instructions, you can still download .zip from github)
 
-
+# Build Instructions
 1. Clone the repo `git clone https://github.com/nednoodlehead/punge`
 2. `cd punge`
 3. `cargo build --release`
