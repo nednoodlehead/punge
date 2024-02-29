@@ -1,21 +1,21 @@
 // shoutout to github.com/tarkah for this banger !!!
 // and we will sit here praying until https://github.com/iced-rs/iced/issues/160 comes out!
 use crate::gui::messages::ProgramCommands;
+use iced::widget::{button, container, horizontal_space, text};
 use iced::Element;
-use iced::{Renderer, Theme, Length};
+use iced::{Length, Renderer, Theme};
 use iced_table::table;
-use iced::widget::{text, container, horizontal_space, button};
 // also we are removing the resizing functionality on ppurpose. i dont think that would be useful for punge..
 // we are pretty much replicating the example while keeping much of the boilerplate over here
 
-struct Column {
+pub struct Column {
     kind: ColumnKind,
     width: f32,
     resize_offset: Option<f32>,
 }
 
 impl Column {
-    fn new(kind: ColumnKind) -> Self {
+    pub fn new(kind: ColumnKind) -> Self {
         let width = match kind {
             ColumnKind::PlayButton => 35.0,
             ColumnKind::Author => 250.0,
@@ -71,8 +71,12 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
             .center_y()
             .into()
     }
-    
-    fn footer(&'a self, _col_index: usize, rows: &'a [Self::Row]) -> Option<Element<'a, ProgramCommands>> {
+
+    fn footer(
+        &'a self,
+        _col_index: usize,
+        rows: &'a [Self::Row],
+    ) -> Option<Element<'a, ProgramCommands>> {
         let content = if matches!(self.kind, ColumnKind::Title) {
             let total_enabled = rows.iter().count();
 
@@ -91,10 +95,9 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
     fn resize_offset(&self) -> Option<f32> {
         self.resize_offset
     }
-    
 }
 
-enum ColumnKind {
+pub enum ColumnKind {
     PlayButton,
     Author,
     Title,
@@ -102,9 +105,9 @@ enum ColumnKind {
     Edit,
 }
 
-struct Row {
-    title: String,
-    author: String,
-    album: String,
-    uniqueid: String,
+pub struct Row {
+    pub title: String,
+    pub author: String,
+    pub album: String,
+    pub uniqueid: String,
 }
