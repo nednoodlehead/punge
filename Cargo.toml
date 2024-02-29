@@ -22,7 +22,7 @@ uuid = {features = ["v4"], version = "1.3.1" }
 lazy_static = "1.4.0"
 serde = {version ="1.0.160", features = ["derive"]}
 rodio = "0.17.1"
-iced = {version = "0.10", features = ["advanced"] }
+iced = {version = "0.12", features = ["advanced", "lazy"] }  # lazy for the iced::wid::responsive
 tokio = {version = "1.29.0", features = ["time", "sync"]}
 async-std = "1.12.0"
 global-hotkey = "0.2.4"
@@ -30,3 +30,5 @@ mp3-duration = "0.1.10"
 rand = "0.8"
 fancy-regex = "0.11.0" # used for look arounds for creating other regex for searching for songs
 arc-swap = "1.6.0"
+iced_table = {git = "https://github.com/tarkah/iced_table"}
+log = "0.4.21"  # stinky crate conflict
