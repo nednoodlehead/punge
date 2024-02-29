@@ -56,6 +56,13 @@ impl std::fmt::Debug for UserPlaylist {
     }
 }
 
+impl PartialEq for UserPlaylist {
+    fn eq(&self, other: &Self) -> bool {
+        self.uniqueid == self.uniqueid
+    }
+}
+
+
 impl UserPlaylist {
     pub fn new(
         title: String,
