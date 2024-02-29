@@ -1,12 +1,12 @@
 // can we rename this to lib.rs at some point maybe??
-use crate::db::fetch::get_all_main;
+use crate::db::fetch::{get_all_main, get_all_playlists};
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
 use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::cache;
 use crate::player::sort::get_values_from_db;
-use crate::playliststructs::MusicData;
+use crate::playliststructs::{MusicData, UserPlaylist};
 use iced_table::table;
 
 use crate::utils::types;
@@ -21,8 +21,8 @@ use global_hotkey::{
 use iced::futures::sink::SinkExt;
 use iced::subscription::Subscription;
 use iced::widget::{
-    button, column, container, horizontal_space, responsive, row, scrollable, slider, text,
-    vertical_space,
+    button, column, container, horizontal_space, pick_list, responsive, row, scrollable, slider,
+    text, vertical_space,
 };
 use iced::Command;
 use iced::{executor, Alignment, Application, Element, Length, Settings, Theme};
@@ -35,12 +35,12 @@ pub fn begin() -> iced::Result {
         flags: (),
         window: iced::window::Settings {
             size: iced::Size {
-                width: 1150.0,
+                width: 1250.0,
                 height: 700.0,
             },
             position: iced::window::Position::Default,
             min_size: Some(iced::Size {
-                width: 1150.0,
+                width: 1250.0,
                 height: 700.0,
             }),
             max_size: Some(iced::Size {
@@ -82,6 +82,9 @@ pub struct App {
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
     search: String,
+    selected_uuid: Option<String>,
+    side_menu_playlist_select: String,
+    user_playlists: Vec<UserPlaylist>,
     // tarkah table stuff
     header: scrollable::Id,
     body: scrollable::Id,
@@ -126,6 +129,9 @@ impl Application for App {
                 last_id: 0,
                 manager,
                 search: "".to_string(),
+                selected_uuid: None,
+                side_menu_playlist_select: String::from(""),
+                user_playlists: get_all_playlists().unwrap(),  // im addicted to unwraping
                 header: scrollable::Id::unique(),
                 body: scrollable::Id::unique(),
                 footer: scrollable::Id::unique(),
@@ -254,7 +260,7 @@ impl Application for App {
                                         self.download_page.download_feedback.push(format!(
                                             "Error downloading {}: {:?}",
                                             self.download_list
-                                                [self.download_list.len().saturating_sub(1)]
+                                                [self.download_list.len().saturating_sub(1)] // no underflow errors here buddy
                                             .link
                                             .clone()
                                             .unwrap(),
@@ -321,6 +327,14 @@ impl Application for App {
                 println!("changed active playlist! {}", &playlist.title);
                 // so we will self.sender.send(PungeCommand::UpdateList()) or whatever. will try to search
             }
+            Self::Message::SelectSong(song) => {
+                // when the song is selected from the table, update the song in the top right
+                self.selected_uuid = Some(song);
+                // maybe buttons should bring title with it??? idk
+            }
+            Self::Message::PlaylistSelected(playlist) => {
+                self.side_menu_playlist_select = playlist;
+            }
 
             _ => println!("inumplmented"),
         }
@@ -350,6 +364,10 @@ impl Application for App {
             table.into()
         });
 
+        let actions_cont = container(column![text(self.selected_uuid.clone().unwrap_or(String::from("None"))),
+             pick_list(self.user_playlists.iter().map(|pl| pl.title.clone()).collect::<Vec<String>>(), Some(self.side_menu_playlist_select.clone()),
+             ProgramCommands::PlaylistSelected)]).padding(15);
+
         let table_cont = container(table).height(Length::Fixed(540.0)).padding(20);
 
         let curr_song = self.current_song.load();
@@ -359,7 +377,7 @@ impl Application for App {
                 horizontal_space(),
                 // self.render_sidebar()
             ],
-            table_cont,
+            row![table_cont, actions_cont],
             // vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
             row![
                 column![
