@@ -36,10 +36,11 @@ pub enum ProgramCommands {
     GoToSong, // uses the regex search to take user input and skip to nearest search for user. input derives from self.search
     ChangeViewingPlaylist(UserPlaylist), // pass whole playlist in.
     ChangeActivePlaylist(UserPlaylist),
-    PlaySong(String),   // unqiueid here :)
-    SelectSong(String), // uniqueid, used to do stuff to the current song
+    PlaySong(String),           // unqiueid
+    SelectSong(String, String), // uniqueid and title, used to do stuff to the current song
     SyncHeader(scrollable::AbsoluteOffset),
-    PlaylistSelected(String),
+    PlaylistSelected(String), // playlist uuid, would love to also pass in title, but cannot due to pick_list restrictions :(
+    AddToPlaylist(Option<String>, Option<String>), // add song uniqueid and playlist uniqueid
 }
 
 #[derive(Debug, Clone, Copy)]
