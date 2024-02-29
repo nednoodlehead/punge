@@ -3,6 +3,7 @@
 
 use crate::playliststructs::MusicData;
 use crate::playliststructs::{AppError, UserPlaylist};
+use iced::widget::scrollable;
 use tokio::sync::mpsc as async_sender;
 #[derive(Debug, Clone)]
 pub enum PungeCommand {
@@ -37,6 +38,7 @@ pub enum ProgramCommands {
     ChangeActivePlaylist(UserPlaylist),
     PlaySong(String),   // unqiueid here :)
     SelectSong(String), // uniqueid, used to do stuff to the current song
+    SyncHeader(scrollable::AbsoluteOffset),
 }
 
 #[derive(Debug, Clone, Copy)]
