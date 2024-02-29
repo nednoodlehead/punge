@@ -1,11 +1,13 @@
 // can we rename this to lib.rs at some point maybe??
+use crate::db::fetch::get_all_main;
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
+use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::cache;
-
 use crate::player::sort::get_values_from_db;
 use crate::playliststructs::MusicData;
+use iced_table::table;
 
 use crate::utils::types;
 
@@ -19,7 +21,8 @@ use global_hotkey::{
 use iced::futures::sink::SinkExt;
 use iced::subscription::Subscription;
 use iced::widget::{
-    button, column, container, horizontal_space, row, slider, text, vertical_space,
+    button, column, container, horizontal_space, responsive, row, scrollable, slider, text,
+    vertical_space,
 };
 use iced::Command;
 use iced::{executor, Alignment, Application, Element, Length, Settings, Theme};
@@ -79,6 +82,12 @@ pub struct App {
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
     search: String,
+    // tarkah table stuff
+    header: scrollable::Id,
+    body: scrollable::Id,
+    footer: scrollable::Id,
+    columns: Vec<Column>,
+    rows: Vec<Row>,
 }
 
 impl Application for App {
@@ -117,6 +126,26 @@ impl Application for App {
                 last_id: 0,
                 manager,
                 search: "".to_string(),
+                header: scrollable::Id::unique(),
+                body: scrollable::Id::unique(),
+                footer: scrollable::Id::unique(),
+                columns: vec![
+                    Column::new(ColumnKind::PlayButton),
+                    Column::new(ColumnKind::Author),
+                    Column::new(ColumnKind::Title),
+                    Column::new(ColumnKind::Album),
+                    Column::new(ColumnKind::Edit),
+                ],
+                rows: get_all_main()
+                    .unwrap()
+                    .into_iter()
+                    .map(|item| Row {
+                        title: item.title,
+                        author: item.author,
+                        album: item.album,
+                        uniqueid: item.uniqueid,
+                    })
+                    .collect(), // get it from the other file lol
             },
             Command::none(),
         )
@@ -310,14 +339,28 @@ impl Application for App {
                 .width(Length::Fixed(250.0)),
             button(text("Confirm")).on_press(ProgramCommands::GoToSong)
         ]);
+        let table = responsive(|size| {
+            let table = iced_table::table(
+                self.header.clone(),
+                self.body.clone(),
+                &self.columns,
+                &self.rows,
+                ProgramCommands::SyncHeader,
+            );
+            table.into()
+        });
+
+        let table_cont = container(table).height(Length::Fixed(540.0)).padding(20);
+
         let curr_song = self.current_song.load();
         let main_page_2 = container(row![column![
             row![
-                row![text("main area content?"), page_buttons],
+                row![page_buttons],
                 horizontal_space(),
-                self.render_sidebar()
+                // self.render_sidebar()
             ],
-            vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
+            table_cont,
+            // vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
             row![
                 column![
                     text(curr_song.title.clone()),
