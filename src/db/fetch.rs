@@ -1,7 +1,6 @@
 use crate::playliststructs::{DatabaseErrors, PungeMusicObject};
 use rusqlite::{params, Connection};
 
-
 pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     // gets all songs from given table
     let conn = Connection::open("main.db")?;
@@ -90,6 +89,16 @@ pub fn get_uuid_from_name(playlist_name: String) -> String {
     let result: String = stmt.query_row(&[&playlist_name], |row| row.get(0)).unwrap();
     drop(stmt);
     conn.close().unwrap();
+    result
+}
+// ok i made this function misinterpreting what we have from ProgramCommands::PlaylistSelected(string)
+pub fn get_name_from_uuid(playlist_uuid: String) -> String {
+    let conn = Connection::open("main.db").unwrap();
+    println!("{}", &playlist_uuid);
+    let mut stmt = conn
+        .prepare("SELECT title from metadata WHERE playlist_id = ?")
+        .unwrap();
+    let result = stmt.query_row(&[&playlist_uuid], |row| row.get(0)).unwrap();
     result
 }
 
