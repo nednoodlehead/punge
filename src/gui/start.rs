@@ -1,5 +1,6 @@
 // can we rename this to lib.rs at some point maybe??
-use crate::db::fetch::{get_all_main, get_all_playlists};
+use crate::db::fetch::{get_all_main, get_all_playlists, get_name_from_uuid, get_uuid_from_name};
+use crate::db::insert::add_to_playlist;
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
 use crate::gui::table::{Column, ColumnKind, Row};
@@ -82,9 +83,12 @@ pub struct App {
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
     search: String,
-    selected_uuid: Option<String>,
-    side_menu_playlist_select: String,
+    selected_uuid: Option<String>,  // ok ngl there gotta be a better way to handle this..  TODO
+    playlist_uuid: Option<String>,  // like a vec that holds all song id's, that is added by checkboxes
+    side_menu_playlist_select: String,  // will refactor soon !
+    selected_song_name: String,
     user_playlists: Vec<UserPlaylist>,
+    add_to_playlist_feedback: String,
     // tarkah table stuff
     header: scrollable::Id,
     body: scrollable::Id,
@@ -130,7 +134,10 @@ impl Application for App {
                 manager,
                 search: "".to_string(),
                 selected_uuid: None,
+                playlist_uuid: None,
                 side_menu_playlist_select: String::from(""),
+                selected_song_name: String::from(""),
+                add_to_playlist_feedback: String::from(""),
                 user_playlists: get_all_playlists().unwrap(),  // im addicted to unwraping
                 header: scrollable::Id::unique(),
                 body: scrollable::Id::unique(),
@@ -327,13 +334,26 @@ impl Application for App {
                 println!("changed active playlist! {}", &playlist.title);
                 // so we will self.sender.send(PungeCommand::UpdateList()) or whatever. will try to search
             }
-            Self::Message::SelectSong(song) => {
+            Self::Message::SelectSong(uniqueid, song) => {
                 // when the song is selected from the table, update the song in the top right
-                self.selected_uuid = Some(song);
+                self.selected_uuid = Some(uniqueid);
+                self.selected_song_name = song;
                 // maybe buttons should bring title with it??? idk
             }
-            Self::Message::PlaylistSelected(playlist) => {
-                self.side_menu_playlist_select = playlist;
+            Self::Message::PlaylistSelected(name) => {
+                // set playlist uuid string to uniqueid and set side to the title of that uuid
+                let uniqueid = get_uuid_from_name(name.clone());
+                self.playlist_uuid = Some(uniqueid);
+                self.side_menu_playlist_select = name;
+                
+            }
+            Self::Message::AddToPlaylist(song_id, playlist_id) => {
+                if song_id.is_none() | playlist_id.is_none() {
+                    println!("fail!")
+                }
+                else {
+                add_to_playlist(playlist_id.unwrap(), song_id.unwrap()); // what abt duplicate addigs?
+                }
             }
 
             _ => println!("inumplmented"),
@@ -364,9 +384,9 @@ impl Application for App {
             table.into()
         });
 
-        let actions_cont = container(column![text(self.selected_uuid.clone().unwrap_or(String::from("None"))),
+        let actions_cont = container(column![text(self.selected_song_name.clone()),
              pick_list(self.user_playlists.iter().map(|pl| pl.title.clone()).collect::<Vec<String>>(), Some(self.side_menu_playlist_select.clone()),
-             ProgramCommands::PlaylistSelected)]).padding(15);
+             ProgramCommands::PlaylistSelected), button(text("Add to:")).on_press(ProgramCommands::AddToPlaylist(self.selected_uuid.clone(), self.playlist_uuid.clone()))]).padding(15);
 
         let table_cont = container(table).height(Length::Fixed(540.0)).padding(20);
 
