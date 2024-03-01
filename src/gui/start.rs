@@ -360,6 +360,27 @@ impl Application for App {
                     add_to_playlist(playlist_id.unwrap(), song_id.unwrap()); // what abt duplicate addigs?
                 }
             }
+            Self::Message::ToggleList => {
+                if self.rows.len() == 1 {
+                    self.rows = get_all_main()
+                        .unwrap()
+                        .into_iter()
+                        .map(|item| Row {
+                            title: item.title,
+                            author: item.author,
+                            album: item.album,
+                            uniqueid: item.uniqueid,
+                        })
+                        .collect();
+                } else {
+                    self.rows = vec![Row {
+                        title: "This will".to_string(),
+                        author: "Be fixed soon".to_string(),
+                        album: "I promise".to_string(),
+                        uniqueid: "".to_string(),
+                    }]
+                }
+            }
 
             _ => println!("inumplmented"),
         }
@@ -370,6 +391,7 @@ impl Application for App {
         let page_buttons: iced::widget::Row<'_, ProgramCommands> = row![
             button(text("Settings")).on_press(ProgramCommands::ChangePage(Page::Settings)),
             button(text("Download!")).on_press(ProgramCommands::ChangePage(Page::Download)),
+            button(text("Toggle table")).on_press(ProgramCommands::ToggleList),
         ]
         .spacing(50);
         let search_container = container(row![
