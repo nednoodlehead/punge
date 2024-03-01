@@ -26,5 +26,9 @@ New Punge brings on multiple improvements:
 1. Clone the repo `git clone https://github.com/nednoodlehead/punge`
 2. `cd punge`
 3. `cargo build --release`
-4. Once it is built, copy `punge.exe` from `./target/` into the project root
-5. Launch `punge.exe`
+4. Once it is built, copy `punge.exe` from `./target/release/` into the project root
+
+   # Ubuntu
+   `sudo apt-install libasound2-dev`
+   
+6. Launch `punge.exe`
