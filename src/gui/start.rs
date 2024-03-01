@@ -83,9 +83,9 @@ pub struct App {
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
     search: String,
-    selected_uuid: Option<String>,  // ok ngl there gotta be a better way to handle this..  TODO
-    playlist_uuid: Option<String>,  // like a vec that holds all song id's, that is added by checkboxes
-    side_menu_playlist_select: String,  // will refactor soon !
+    selected_uuid: Option<String>, // ok ngl there gotta be a better way to handle this..  TODO
+    playlist_uuid: Option<String>, // like a vec that holds all song id's, that is added by checkboxes
+    side_menu_playlist_select: String, // will refactor soon !
     selected_song_name: String,
     user_playlists: Vec<UserPlaylist>,
     add_to_playlist_feedback: String,
@@ -138,7 +138,7 @@ impl Application for App {
                 side_menu_playlist_select: String::from(""),
                 selected_song_name: String::from(""),
                 add_to_playlist_feedback: String::from(""),
-                user_playlists: get_all_playlists().unwrap(),  // im addicted to unwraping
+                user_playlists: get_all_playlists().unwrap(), // im addicted to unwraping
                 header: scrollable::Id::unique(),
                 body: scrollable::Id::unique(),
                 footer: scrollable::Id::unique(),
@@ -326,6 +326,13 @@ impl Application for App {
                     self.search = "".to_string()
                 }
             }
+            Self::Message::PlaySong(song) => {
+                self.sender
+                    .as_ref()
+                    .unwrap()
+                    .send(PungeCommand::ChangeSong(song))
+                    .unwrap();
+            }
             Self::Message::ChangeViewingPlaylist(playlist) => {
                 // we will change the current view to the playlist view, and pass in the playlist to fill the content
                 println!("received msg for playlist: {}", &playlist.title);
@@ -345,14 +352,12 @@ impl Application for App {
                 let uniqueid = get_uuid_from_name(name.clone());
                 self.playlist_uuid = Some(uniqueid);
                 self.side_menu_playlist_select = name;
-                
             }
             Self::Message::AddToPlaylist(song_id, playlist_id) => {
                 if song_id.is_none() | playlist_id.is_none() {
                     println!("fail!")
-                }
-                else {
-                add_to_playlist(playlist_id.unwrap(), song_id.unwrap()); // what abt duplicate addigs?
+                } else {
+                    add_to_playlist(playlist_id.unwrap(), song_id.unwrap()); // what abt duplicate addigs?
                 }
             }
 
@@ -384,9 +389,22 @@ impl Application for App {
             table.into()
         });
 
-        let actions_cont = container(column![text(self.selected_song_name.clone()),
-             pick_list(self.user_playlists.iter().map(|pl| pl.title.clone()).collect::<Vec<String>>(), Some(self.side_menu_playlist_select.clone()),
-             ProgramCommands::PlaylistSelected), button(text("Add to:")).on_press(ProgramCommands::AddToPlaylist(self.selected_uuid.clone(), self.playlist_uuid.clone()))]).padding(15);
+        let actions_cont = container(column![
+            text(self.selected_song_name.clone()),
+            pick_list(
+                self.user_playlists
+                    .iter()
+                    .map(|pl| pl.title.clone())
+                    .collect::<Vec<String>>(),
+                Some(self.side_menu_playlist_select.clone()),
+                ProgramCommands::PlaylistSelected
+            ),
+            button(text("Add to:")).on_press(ProgramCommands::AddToPlaylist(
+                self.selected_uuid.clone(),
+                self.playlist_uuid.clone()
+            ))
+        ])
+        .padding(15);
 
         let table_cont = container(table).height(Length::Fixed(540.0)).padding(20);
 
