@@ -23,8 +23,13 @@ New Punge brings on multiple improvements:
 3. git on path (only technically needed to follow the instructions, you can still download .zip from github)
 
 # Build Instructions
+
+Ubuntu specific:
+   `sudo apt-install libasound2-dev`
+
+
 1. Clone the repo `git clone https://github.com/nednoodlehead/punge`
 2. `cd punge`
 3. `cargo build --release`
-4. Once it is built, copy `punge.exe` from `./target/` into the project root
+4. Once it is built, copy `punge.exe` from `./target/release/` into the project root 
 5. Launch `punge.exe`
