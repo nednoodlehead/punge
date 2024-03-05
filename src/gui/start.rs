@@ -1,5 +1,5 @@
 // can we rename this to lib.rs at some point maybe??
-use crate::db::fetch::{get_all_main, get_all_playlists, get_name_from_uuid, get_uuid_from_name};
+use crate::db::fetch::{get_all_main, get_all_playlists, get_uuid_from_name};
 use crate::db::insert::add_to_playlist;
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
@@ -7,19 +7,17 @@ use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::cache;
 use crate::player::sort::get_values_from_db;
-use crate::playliststructs::{MusicData, UserPlaylist};
-use iced_table::table;
-
+use crate::playliststructs::{Config, MusicData, UserPlaylist};
+use crate::utils::backup::create_backup;
 use crate::utils::types;
-
 use arc_swap::ArcSwap;
+use std::sync::{Arc, Mutex};
 
 use global_hotkey::{
     hotkey::{Code, HotKey, Modifiers},
     GlobalHotKeyManager,
 };
 
-use iced::futures::sink::SinkExt;
 use iced::subscription::Subscription;
 use iced::widget::{
     button, column, container, horizontal_space, pick_list, responsive, row, scrollable, slider,
@@ -27,7 +25,6 @@ use iced::widget::{
 };
 use iced::Command;
 use iced::{executor, Alignment, Application, Element, Length, Settings, Theme};
-use std::sync::Arc;
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
 pub fn begin() -> iced::Result {
@@ -70,7 +67,6 @@ pub fn begin() -> iced::Result {
 // pages for the gui
 
 pub struct App {
-    theme: Theme, // for changing the theme at a later time
     pub is_paused: bool,
     pub current_song: Arc<ArcSwap<Arc<MusicData>>>, // represents title, auth, album, song_id, volume, shuffle, playlist
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
@@ -120,7 +116,6 @@ impl Application for App {
         manager.register(hotkey_6).unwrap();
         (
             App {
-                theme: Default::default(),
                 is_paused: true,
                 current_song: Arc::new(ArcSwap::new(Arc::new(Arc::new(MusicData::default())))),
                 sender: None,
@@ -380,6 +375,21 @@ impl Application for App {
                         uniqueid: "".to_string(),
                     }]
                 }
+            }
+            Self::Message::CreateBackup => {
+                // get backup path from config and use it :)
+
+                match create_backup(self.setting_page.backup_text.clone()) {
+                    Ok(_) => {
+                        println!("yippie!");
+                    }
+                    Err(e) => {
+                        println!("whaa {:?}", e);
+                    }
+                };
+            }
+            Self::Message::UpdateBackupText(txt) => {
+                self.setting_page.backup_text = txt;
             }
 
             _ => println!("inumplmented"),
