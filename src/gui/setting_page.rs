@@ -11,7 +11,8 @@ pub struct SettingPage {
 impl SettingPage {
     pub fn new() -> Self {
         let con = Config {
-            backup_path: String::from(r"%userprofile%/Documents/"),
+            // TODO linux version.. ughh
+            backup_path: String::from(format!("C:/Users/{}/Documents/", whoami::username())),
         };
         SettingPage {
             config: con.clone(),
