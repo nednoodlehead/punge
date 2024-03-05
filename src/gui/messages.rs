@@ -42,6 +42,8 @@ pub enum ProgramCommands {
     PlaylistSelected(String), // playlist uuid, would love to also pass in title, but cannot due to pick_list restrictions :(
     AddToPlaylist(Option<String>, Option<String>), // add song uniqueid and playlist uniqueid
     ToggleList,
+    CreateBackup,
+    UpdateBackupText(String),
 }
 
 #[derive(Debug, Clone, Copy)]
