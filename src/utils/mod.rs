@@ -1,3 +1,4 @@
+pub mod backup;
 pub mod compare_db;
 pub mod convert_old_mp3;
 pub mod db_convert;
