@@ -62,7 +62,6 @@ impl PartialEq for UserPlaylist {
     }
 }
 
-
 impl UserPlaylist {
     pub fn new(
         title: String,
@@ -194,4 +193,10 @@ impl MusicData {
             context: Context::Default,
         }
     }
+}
+#[derive(Clone)]
+pub struct Config {
+    // no light mode will be made . final decision
+    pub backup_path: String,
+    // no idea what else could be needed for settings... default playlist ?
 }
