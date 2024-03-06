@@ -1,12 +1,11 @@
 use crate::db::fetch;
-use crate::player::cache::{fetch_cache, Cache};
+use crate::player::player_cache::{fetch_cache, Cache};
 use crate::playliststructs::PungeMusicObject;
 use rand;
 use rand::seq::SliceRandom;
 use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
-
 
 pub struct MusicPlayer {
     pub list: Vec<PungeMusicObject>,
