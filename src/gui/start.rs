@@ -1,17 +1,17 @@
 // can we rename this to lib.rs at some point maybe??
 use crate::db::fetch::{get_all_main, get_all_playlists, get_uuid_from_name};
 use crate::db::insert::add_to_playlist;
-use crate::gui::messages::AppEvent;
-use crate::gui::messages::{Page, ProgramCommands, PungeCommand};
+use crate::gui::messages::{AppEvent, Page, ProgramCommands, PungeCommand, TextType};
 use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
-use crate::player::cache;
+use crate::player::player_cache;
 use crate::player::sort::get_values_from_db;
 use crate::playliststructs::{Config, MusicData, UserPlaylist};
 use crate::utils::backup::create_backup;
+use crate::utils::cache;
 use crate::utils::types;
 use arc_swap::ArcSwap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use global_hotkey::{
     hotkey::{Code, HotKey, Modifiers},
@@ -73,7 +73,7 @@ pub struct App {
     volume: u8,
     current_view: Page,
     download_page: crate::gui::download_page::DownloadPage,
-    setting_page: setting_page::SettingPage,
+    pub setting_page: setting_page::SettingPage, // pub so src\gui\subscrip can see the user choosen value increments
     media_page: crate::gui::media_page::MediaPage,
     download_list: Vec<types::Download>, // should also include the link somewhere to check for
     last_id: usize,
@@ -285,13 +285,13 @@ impl Application for App {
             Self::Message::InAppEvent(t) => match t {
                 AppEvent::CloseRequested => {
                     let lcl = self.current_song.load();
-                    let cache = cache::Cache {
+                    let cache = player_cache::Cache {
                         song_id: lcl.song_id.clone(),
                         volume: lcl.volume,
                         shuffle: lcl.shuffle,
                         playlist: lcl.playlist.clone(),
                     };
-                    cache::dump_cache(cache); // dumps user cache
+                    player_cache::dump_cache(cache); // dumps user cache
                     println!("dumpepd cache!");
 
                     return iced::window::close::<Self::Message>(iced::window::Id::MAIN);
@@ -388,8 +388,59 @@ impl Application for App {
                     }
                 };
             }
-            Self::Message::UpdateBackupText(txt) => {
-                self.setting_page.backup_text = txt;
+            Self::Message::UpdateWidgetText(text_type, txt) => match text_type {
+                TextType::BackupText => {
+                    self.setting_page.backup_text = txt;
+                }
+                TextType::Mp3Text => {
+                    self.setting_page.mp3_path_text = txt;
+                }
+                TextType::JpgText => {
+                    self.setting_page.jpg_path_text = txt;
+                }
+                TextType::StaticIncrement => {
+                    self.setting_page.static_increment = txt;
+                }
+                TextType::StaticReduction => {
+                    self.setting_page.static_reduction = txt;
+                }
+            },
+
+            Self::Message::SaveConfig => {
+                let static_increment = self
+                    .setting_page
+                    .static_increment
+                    .clone()
+                    .parse::<f32>()
+                    .unwrap();
+                let static_reduction = self
+                    .setting_page
+                    .static_reduction
+                    .clone()
+                    .parse::<f32>()
+                    .unwrap();
+
+                self.sender
+                    .as_mut()
+                    .unwrap()
+                    .send(PungeCommand::NewStatic(static_increment, static_reduction))
+                    .unwrap();
+
+                let obj = Config {
+                    backup_path: self.setting_page.backup_text.clone(),
+                    mp3_path: self.setting_page.mp3_path_text.clone(),
+                    jpg_path: self.setting_page.jpg_path_text.clone(),
+                    static_increment,
+                    static_reduction,
+                };
+                match cache::write_to_cache(obj) {
+                    Ok(t) => {
+                        println!("config written successfully")
+                    }
+                    Err(e) => {
+                        println!("Config failed! {:?}", e)
+                    }
+                }
             }
 
             _ => println!("inumplmented"),

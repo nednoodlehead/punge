@@ -1,9 +1,9 @@
 use chrono::{Local, NaiveDate};
 use rusqlite::{types::FromSqlError, Error};
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use thiserror::Error as terror;
 use uuid::Uuid;
-
 // object that will be returned, used to input into the database, this object is the
 // object that will be returned from the whole process of deciding what is title, auth, album...
 #[derive(Clone)]
@@ -194,9 +194,12 @@ impl MusicData {
         }
     }
 }
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Config {
     // no light mode will be made . final decision
     pub backup_path: String,
-    // no idea what else could be needed for settings... default playlist ?
+    pub mp3_path: String,
+    pub jpg_path: String,
+    pub static_increment: f32,
+    pub static_reduction: f32,
 }

@@ -5,8 +5,8 @@ use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
 use crate::player::interface::read_file_from_beginning;
 use crate::player::interface::{self};
-use crate::playliststructs::MusicData;
-use crate::playliststructs::PungeMusicObject;
+use crate::playliststructs::{Config, MusicData, PungeMusicObject};
+use crate::utils::cache::read_from_cache;
 use arc_swap::ArcSwap;
 
 use global_hotkey::GlobalHotKeyEvent;
@@ -147,6 +147,7 @@ impl App {
                 .await
                 .unwrap(); // send the sender to the gui !!
             let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
+            let mut config: Config = read_from_cache().unwrap();
             // maybe here  we need to get index of last song that was on?
             // send the data to the program
             let mut music_obj = interface::MusicPlayer::new(items);
@@ -307,10 +308,16 @@ impl App {
                                 .unwrap();
                         }
                         PungeCommand::StaticVolumeUp => {
-                            music_obj.sink.set_volume(music_obj.sink.volume() + 0.005);
+                            // let val =
+                            //     self.setting_page.static_increment.parse::<u8>().unwrap() / 200;
+                            music_obj
+                                .sink
+                                .set_volume(music_obj.sink.volume() + config.static_increment);
                         }
                         PungeCommand::StaticVolumeDown => {
-                            music_obj.sink.set_volume(music_obj.sink.volume() - 0.005);
+                            music_obj
+                                .sink
+                                .set_volume(music_obj.sink.volume() - config.static_reduction);
                         }
                         PungeCommand::GoToAlbum => {
                             println!("going 2 album!")
@@ -350,6 +357,10 @@ impl App {
                                 music_obj.list =
                                     fetch::get_all_from_playlist(&playlist_uuid).unwrap();
                             }
+                        }
+                        PungeCommand::NewStatic(inc, red) => {
+                            config.static_increment = inc;
+                            config.static_reduction = red;
                         }
                     },
                     _ => {
@@ -520,14 +531,14 @@ impl App {
                                             }
                                         }
                                         PungeCommand::StaticVolumeUp => {
-                                            music_obj
-                                                .sink
-                                                .set_volume(music_obj.sink.volume() + 0.005);
+                                            music_obj.sink.set_volume(
+                                                music_obj.sink.volume() + config.static_increment,
+                                            );
                                         }
                                         PungeCommand::StaticVolumeDown => {
-                                            music_obj
-                                                .sink
-                                                .set_volume(music_obj.sink.volume() - 0.005);
+                                            music_obj.sink.set_volume(
+                                                music_obj.sink.volume() - config.static_reduction,
+                                            );
                                         }
                                         PungeCommand::ChangeSong(uuid) => {
                                             let index = music_obj
@@ -571,6 +582,10 @@ impl App {
                                                 }))
                                                 .await
                                                 .unwrap();
+                                        }
+                                        PungeCommand::NewStatic(inc, red) => {
+                                            config.static_increment = inc;
+                                            config.static_reduction = red;
                                         }
                                         _ => {
                                             println!("yeah, other stuff... {:?}", cmd)

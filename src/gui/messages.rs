@@ -18,6 +18,7 @@ pub enum PungeCommand {
     ToggleShuffle,          // will either shuffle or unshuffle the playlist
     GoToAlbum, // not implemented yet. will be used as change the surrounding playlist to the album the song is from
     ChangePlaylist(String), // change the current playlist to the one specified here
+    NewStatic(f32, f32),
 }
 
 #[derive(Debug, Clone)]
@@ -43,7 +44,19 @@ pub enum ProgramCommands {
     AddToPlaylist(Option<String>, Option<String>), // add song uniqueid and playlist uniqueid
     ToggleList,
     CreateBackup,
-    UpdateBackupText(String),
+    UpdateWidgetText(TextType, String),
+    SaveConfig,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum TextType {
+    // enum used in ProgramCommands::UpdateWidgetText(widget, text)
+    // used to update the gui, and not need a bunch of different messages to get it done
+    BackupText,      // settings
+    Mp3Text,         // settings
+    JpgText,         // settings
+    StaticIncrement, // settings
+    StaticReduction, // settings
 }
 
 #[derive(Debug, Clone, Copy)]
