@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use crate::playliststructs::Config;
+use crate::types::Config;
 use serde_json;
 
 pub fn read_from_cache() -> Result<Config, std::io::Error> {

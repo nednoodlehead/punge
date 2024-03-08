@@ -1,9 +1,8 @@
-use crate::playliststructs::{Playlist};
+use crate::types::Playlist;
 use regex::Regex;
 
 use serde_json::Value;
 use std::collections::HashMap;
-
 
 // this is a file used to get the links of each song in a playlist.
 // inspired to have the same functionality as pytube
@@ -11,7 +10,7 @@ use std::collections::HashMap;
 
 // It should also be known that this does *not* support downloading playlists with more than 100 videos
 
-use crate::playliststructs::AppError;
+use crate::types::AppError;
 
 pub fn get_playlist(link: &str) -> Result<Playlist, AppError> {
     let html: String = get_html(link);
@@ -56,18 +55,16 @@ fn json_to_vec_videos(to_json: &String) -> Vec<String> {
     let vals = &obj["contents"]["twoColumnWatchNextResults"]["playlist"]["playlist"]["contents"];
     let bruh = vals.as_array().unwrap();
     for video in bruh {
-        let id = &video["playlistPanelVideoRenderer"]["videoId"]
-            .as_str();
+        let id = &video["playlistPanelVideoRenderer"]["videoId"].as_str();
         match id {
             Some(t) => {
                 let string = format!["https://youtube.com/watch?v={}", t];
-            return_vals.push(string)
+                return_vals.push(string)
             }
             None => {
                 println!("Unable to fetch video data. Ignoring.")
             }
         }
-
     }
     return return_vals;
 }

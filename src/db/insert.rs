@@ -1,6 +1,5 @@
-use crate::playliststructs::{DatabaseErrors, PungeMusicObject, UserPlaylist};
+use crate::types::{DatabaseErrors, PungeMusicObject, UserPlaylist};
 use rusqlite::{params, Connection};
-
 
 pub fn add_to_main(music_obj: PungeMusicObject) -> Result<String, DatabaseErrors> {
     let conn = Connection::open("main.db")?;

@@ -120,7 +120,7 @@ pub enum AppError {
     FfmpegError(String),
     FileError(String),
     InvalidUrlError(String),
-    RustubeVideoError(String),
+    YouTubeError(String),
 }
 
 impl From<DatabaseErrors> for AppError {
@@ -129,17 +129,10 @@ impl From<DatabaseErrors> for AppError {
     }
 }
 
-use rustube::url::ParseError;
-impl From<ParseError> for AppError {
-    fn from(e: ParseError) -> Self {
-        AppError::InvalidUrlError(e.to_string())
-    }
-}
-
-use rustube::Error as TubeError;
-impl From<TubeError> for AppError {
-    fn from(e: TubeError) -> Self {
-        AppError::RustubeVideoError(format!("{:?}", e))
+use rusty_ytdl::VideoError;
+impl From<VideoError> for AppError {
+    fn from(e: VideoError) -> Self {
+        AppError::YoutubeError(e.to_string())
     }
 }
 
@@ -202,4 +195,13 @@ pub struct Config {
     pub jpg_path: String,
     pub static_increment: f32,
     pub static_reduction: f32,
+}
+
+// used in src/yt to move data around in an easier / simpler format
+#[derive(Debug, Clone)]
+pub struct YouTubeData {
+    pub title: String,
+    pub author: String,
+    pub album: String,
+    pub url: String,
 }

@@ -1,4 +1,4 @@
-use crate::playliststructs::DatabaseErrors;
+use crate::types::DatabaseErrors;
 use rusqlite::{params, Connection};
 
 pub fn update_playlist(

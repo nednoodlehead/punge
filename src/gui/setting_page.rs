@@ -1,5 +1,5 @@
 use crate::gui::messages::{Page, ProgramCommands, TextType};
-use crate::playliststructs::Config;
+use crate::types::Config;
 use crate::utils::cache;
 use iced::widget::{button, column, row, text, text_input, Container};
 use iced::Element;

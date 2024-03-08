@@ -1,6 +1,6 @@
 // this file is called from /.decide_youtube.rs and serves to seperate a webm video into multiple parts
 // if said video is an album upload. Uses ffmpeg_rust to slice videos
-use crate::playliststructs::PungeMusicObject;
+use crate::types::PungeMusicObject;
 use chrono::Local;
 use itertools::Itertools;
 use regex::Regex;
@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::process::Command;
 
-pub fn seperate(
+pub fn separate(
     description: String,
     obj: PungeMusicObject,
     mp3_dir: String,

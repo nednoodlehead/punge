@@ -3,7 +3,7 @@
 
 use crate::db::fetch::get_all_playlists;
 use crate::gui::messages::ProgramCommands;
-use crate::playliststructs::UserPlaylist;
+use crate::types::UserPlaylist;
 use iced::widget::{button, text, Text};
 use iced::widget::{Column, Scrollable};
 use iced::Element;

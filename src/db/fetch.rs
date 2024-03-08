@@ -1,4 +1,4 @@
-use crate::playliststructs::{DatabaseErrors, PungeMusicObject};
+use crate::types::{DatabaseErrors, PungeMusicObject};
 use rusqlite::{params, Connection};
 
 pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
@@ -112,7 +112,7 @@ pub fn get_name_from_uuid(playlist_uuid: String) -> String {
 //     // operator: < > == !=
 // }
 
-use crate::playliststructs::UserPlaylist;
+use crate::types::UserPlaylist;
 
 pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
     let conn = Connection::open("main.db")?;

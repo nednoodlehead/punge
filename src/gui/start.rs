@@ -6,11 +6,13 @@ use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::player_cache;
 use crate::player::sort::get_values_from_db;
-use crate::playliststructs::{Config, MusicData, UserPlaylist};
+use crate::types::{Config, MusicData, UserPlaylist};
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
+use crate::utils::playlist::get_playlist;
 use crate::utils::types;
 use arc_swap::ArcSwap;
+use fancy_regex::Match;
 use std::sync::Arc;
 
 use global_hotkey::{
@@ -212,10 +214,16 @@ impl Application for App {
                     }
                 }
                 if eval == false {
+                    let playlist_title = if link.contains("list=") {
+                        Some(get_playlist(link.as_str()).unwrap().title)
+                    } else {
+                        None
+                    };
                     println!("pushing and downloading!");
                     self.download_list.push(types::Download {
                         id: self.last_id,
                         link: Some(link),
+                        playlist_title,
                     });
                 } else {
                     println!("not pushing !!! already downloading")
@@ -224,53 +232,58 @@ impl Application for App {
             Self::Message::AddToDownloadFeedback(feedback) => {
                 // only is called from the subscription !!
                 match feedback {
-                    Some(t) => {
-                        for item in t {
-                            match item {
-                                Ok((link, auth_and_title)) => {
-                                    println!("{} made {:?}", &link, &auth_and_title);
-                                    self.download_page.download_feedback.push(format!(
-                                        "{} downloaded successfully!",
-                                        auth_and_title
-                                    ));
-                                    let mut ind = 0;
-                                    for (index, download) in self.download_list.iter().enumerate() {
-                                        if download.link.as_ref().unwrap() == &link {
-                                            println!("removed: {}", &link);
-                                            ind = index;
-                                        }
+                    Some(item) => {
+                        match item {
+                            Ok(youtube_data) => {
+                                println!(
+                                    "{} made {:?}",
+                                    &youtube_data.url,
+                                    (&youtube_data.title, &youtube_data.author)
+                                );
+                                self.download_page.download_feedback.push(format!(
+                                    "{} downloaded successfully!",
+                                    format!("{} - {}", youtube_data.title, youtube_data.author)
+                                ));
+                                let mut ind = 0;
+                                for (index, download) in self.download_list.iter().enumerate() {
+                                    if download.link.as_ref().unwrap() == &youtube_data.url {
+                                        println!("removed: {}", &youtube_data.url);
+                                        ind = index;
                                     }
-                                    // not sure why this can be 0?
-                                    if ind != 0 {
-                                        self.download_list.remove(ind);
-                                    }
+                                }
+                                // not sure why this can be 0?
+                                if ind != 0 {
+                                    self.download_list.remove(ind);
+                                }
 
-                                    if self.current_song.load().playlist == "main".to_string() {
-                                        println!("sender status?: {:?}", self.sender);
-                                        // if main is the current playlist, refresh it so the new song shows up
-                                        self.sender
-                                            .as_mut()
-                                            .unwrap()
-                                            .send(PungeCommand::ChangePlaylist("main".to_string()))
-                                            .unwrap();
-                                    }
+                                if self.current_song.load().playlist == "main".to_string() {
+                                    println!("sender status?: {:?}", self.sender);
+                                    // if main is the current playlist, refresh it so the new song shows up
+                                    self.sender
+                                        .as_mut()
+                                        .unwrap()
+                                        .send(PungeCommand::ChangePlaylist("main".to_string()))
+                                        .unwrap();
                                 }
-                                Err(error) => {
-                                    if self.download_list.len() == 0 {
-                                        self.download_page.download_feedback.push("Unexpected error (start.rs 222, download_list.len() == 0?)".to_string());
-                                    } else {
-                                        self.download_page.download_feedback.push(format!(
-                                            "Error downloading {}: {:?}",
-                                            self.download_list
-                                                [self.download_list.len().saturating_sub(1)] // no underflow errors here buddy
-                                            .link
-                                            .clone()
-                                            .unwrap(),
-                                            error
-                                        ))
-                                    }
-                                    // add to some list ? like failed downloads
+                            }
+                            Err(error) => {
+                                if self.download_list.len() == 0 {
+                                    self.download_page.download_feedback.push("Unexpected error (start.rs 271, download_list.len() == 0?)".to_string());
+                                } else {
+                                    self.download_page.text = String::from(""); // clear the textbox
+                                    self.download_page.download_feedback.push(format!(
+                                        "Error downloading {}: {:?}",
+                                        self.download_list
+                                            [self.download_list.len().saturating_sub(1)] // no underflow errors here buddy
+                                        .link
+                                        .clone()
+                                        .unwrap(),
+                                        error
+                                    ));
+                                    self.download_list
+                                        .remove(self.download_list.len().saturating_sub(1));
                                 }
+                                // add to some list ? like failed downloads
                             }
                         }
                     }

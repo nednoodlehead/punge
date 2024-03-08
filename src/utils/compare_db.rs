@@ -1,6 +1,6 @@
 // use rusqlite::Connection;
 
-// use crate::playliststructs::{DatabaseErrors, PungeMusicObject};
+// use crate::types::{DatabaseErrors, PungeMusicObject};
 // use crate::utils::db_convert::OldData; // old db // new db
 
 // use crate::db::fetch;

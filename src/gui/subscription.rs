@@ -5,7 +5,7 @@ use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
 use crate::player::interface::read_file_from_beginning;
 use crate::player::interface::{self};
-use crate::playliststructs::{Config, MusicData, PungeMusicObject};
+use crate::types::{Config, MusicData, PungeMusicObject};
 use crate::utils::cache::read_from_cache;
 use arc_swap::ArcSwap;
 

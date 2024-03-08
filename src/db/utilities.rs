@@ -1,7 +1,7 @@
 // in this file, we are adding a new field to our db "threshold", which is calculated from existing values
 // the purpose is for our src\gui\subscription.rs database subscription to read a value from db (instead of doing an unneeded calculation to get it)
 
-use crate::playliststructs::PungeMusicObject;
+use crate::types::PungeMusicObject;
 
 use rusqlite::{params, Connection};
 

@@ -1,6 +1,6 @@
 use crate::db::fetch;
 use crate::player::player_cache::{fetch_cache, Cache};
-use crate::playliststructs::PungeMusicObject;
+use crate::types::PungeMusicObject;
 use rand;
 use rand::seq::SliceRandom;
 use rodio::{Decoder, OutputStream, Sink};

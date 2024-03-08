@@ -2,7 +2,7 @@
 // there are also 2 main sorts, one sorts author / title, the other sorts album (if album sort is choosen as best match for user input, shuffle = false, count = first song of the album)
 // quite inspired by helix's regex
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_uuid_from_name};
-use crate::playliststructs::PungeMusicObject;
+use crate::types::PungeMusicObject;
 use fancy_regex::Regex;
 
 fn search_string(to_search: String, pattern: String) -> bool {

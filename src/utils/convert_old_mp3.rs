@@ -1,4 +1,4 @@
-// use crate::playliststructs::PungeMusicObject;
+// use crate::types::PungeMusicObject;
 // use crate::utils::db_convert::convert_duration_format;
 // use crate::utils::db_convert::OldData;
 // use crate::utils::decide_youtube::clean_inputs_for_win_saving;

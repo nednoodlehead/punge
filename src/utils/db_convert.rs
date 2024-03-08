@@ -1,7 +1,7 @@
 // this file was having some compile problems when decide_youtube's download functions were made async
 // since this is only for converting databases, we can go ahead and uncomment all of it and forget about it!
 
-// use crate::playliststructs::{DatabaseErrors, PungeMusicObject};
+// use crate::types::{DatabaseErrors, PungeMusicObject};
 // use chrono::Local;
 // use mp3_duration;
 // use rodio::Source;
@@ -136,7 +136,7 @@
 // // so no worry about thread
 
 // // this produces errors now since the download() function now is async, not fixing this lol
-// // use crate::playliststructs::{AppError, Playlist};
+// // use crate::types::{AppError, Playlist};
 // // use crate::utils::decide_youtube::{begin_playlist, begin_single};
 // // use crate::utils::youtube_interface::{check_if_exists, playlist_parse, single_parse};
 // // pub fn download(link: String) -> Vec<Result<(String, String), AppError>> {

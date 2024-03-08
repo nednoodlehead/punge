@@ -1,1 +1,1 @@
-pub mod playliststructs;
+pub mod types;
