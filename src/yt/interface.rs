@@ -248,35 +248,32 @@ async fn download_to_punge(
     _new_jpg_name: String, // unused rn
 ) -> Result<(), AppError> {
     // let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
+    // first we downlaod it as '.mp4' then ffmpeg it over to mp3
     let id = vid.get_basic_info().unwrap();
     let mp4_name = format!(
         "{}{}.mp4",
         mp3_path.clone(),
         id.video_details.video_id.clone()
     ); // can sometimes be .webm??
-    let webm_name = format!("{}{}.webm", mp3_path.clone(), id.video_details.video_id);
-    println!(
-        "mp4_name: {} \nwebm name: {}\ndoes path exist: {}",
-        &mp4_name,
-        &webm_name,
-        std::path::Path::new(&mp4_name).exists()
+    let mp3_name = format!(
+        "{}{}.mp3",
+        mp3_path.clone(),
+        id.video_details.video_id.clone()
     );
-    let old_name = if std::path::Path::new(&mp4_name).exists() {
-        // sometimes its an webm download, sometimes mp4. dunno why
-        mp4_name
-    } else {
-        webm_name
-    };
+    let path_download = std::path::Path::new(mp4_name.as_str());
+    println!("{} AND {}", &mp3_name, &mp4_name);
     // we assume that the inputs are sanitized by "clean_input_for_win_saving"
     // the unwrap can fail sometimes. so we loop 5 times, sleeping for 3 seconds inbetween so it will try again
-    match vid.download(r"D:\punge_downloads\mp3\bruh.webm") {
+    println!("startin download!");
+    let before = std::time::Instant::now();
+    match vid.download(path_download) {
         Ok(_t) => {
-            println!("SWAG MONEY!");
+            println!("Download finsihed in: {:.2?}", before.elapsed());
             // convert the old file to (webm) to mp3 and rename
             let x = std::process::Command::new("ffmpeg.exe")
                 .args([
                     "-i",
-                    old_name.as_str(),
+                    mp4_name.as_str(),
                     "-vn",
                     "-c:a",
                     "libmp3lame",
@@ -288,12 +285,12 @@ async fn download_to_punge(
             match x {
                 Ok(_t) => {
                     println!("hell yeah");
-                    match std::fs::remove_file(old_name.clone()) {
+                    match std::fs::remove_file(mp4_name.clone()) {
                         Ok(_t) => {
                             Ok(()) // if the ffmpeg operation goes well and he file is removed
                         }
                         Err(e) => {
-                            println!("nameer::  {} {}", new_mp3_name.as_str(), &old_name);
+                            println!("nameer::  {} {}", new_mp3_name.as_str(), &mp4_name);
                             Err(AppError::FileError(format!("{:?}", e))) // if the ffmpeg operation works, and the file is not removed
                         }
                     }
