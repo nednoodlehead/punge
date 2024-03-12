@@ -12,7 +12,6 @@ use crate::utils::cache;
 use crate::utils::playlist::get_playlist;
 use crate::utils::types;
 use arc_swap::ArcSwap;
-use fancy_regex::Match;
 use std::sync::Arc;
 
 use global_hotkey::{

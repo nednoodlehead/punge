@@ -3,11 +3,11 @@
 // quite inspired by helix's regex
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_uuid_from_name};
 use crate::types::PungeMusicObject;
-use fancy_regex::Regex;
+use regex::Regex;
 
 fn search_string(to_search: String, pattern: String) -> bool {
     let regex = Regex::new(&pattern).unwrap();
-    regex.is_match(to_search.as_str()).unwrap()
+    regex.is_match(to_search.as_str())
 }
 
 fn create_alt_pattern(input: String) -> String {
