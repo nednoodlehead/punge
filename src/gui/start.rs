@@ -1,7 +1,10 @@
 // can we rename this to lib.rs at some point maybe??
-use crate::db::fetch::{get_all_main, get_all_playlists, get_uuid_from_name};
-use crate::db::insert::add_to_playlist;
+use crate::db::fetch::{
+    get_all_from_playlist, get_all_main, get_all_playlists, get_uuid_from_name,
+};
+use crate::db::insert::{add_to_playlist, create_playlist};
 use crate::gui::messages::{AppEvent, Page, ProgramCommands, PungeCommand, TextType};
+use crate::gui::persistent;
 use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::player_cache;
@@ -76,6 +79,7 @@ pub struct App {
     download_page: crate::gui::download_page::DownloadPage,
     pub setting_page: setting_page::SettingPage, // pub so src\gui\subscrip can see the user choosen value increments
     media_page: crate::gui::media_page::MediaPage,
+    playlist_page: crate::gui::new_playlist_page::PlaylistPage,
     download_list: Vec<types::Download>, // should also include the link somewhere to check for
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
@@ -125,6 +129,7 @@ impl Application for App {
                 download_page: download_page::DownloadPage::new(),
                 setting_page: setting_page::SettingPage::new(),
                 media_page: crate::gui::media_page::MediaPage::new(),
+                playlist_page: crate::gui::new_playlist_page::PlaylistPage::new(None),
                 download_list: vec![],
                 last_id: 0,
                 manager,
@@ -342,7 +347,31 @@ impl Application for App {
             }
             Self::Message::ChangeViewingPlaylist(playlist) => {
                 // we will change the current view to the playlist view, and pass in the playlist to fill the content
-                println!("received msg for playlist: {}", &playlist.title);
+                self.playlist_uuid = Some(playlist.uniqueid.clone());
+                // main should be treated just like a regular playlist !?
+                if playlist.uniqueid == "Main" {
+                    let new = get_all_main().unwrap();
+                    self.rows = new
+                        .into_iter()
+                        .map(|item| Row {
+                            title: item.title,
+                            author: item.author,
+                            album: item.album,
+                            uniqueid: item.uniqueid,
+                        })
+                        .collect();
+                } else {
+                    let new = get_all_from_playlist(playlist.uniqueid.as_str()).unwrap();
+                    self.rows = new
+                        .into_iter()
+                        .map(|item| Row {
+                            title: item.title,
+                            author: item.author,
+                            album: item.album,
+                            uniqueid: item.uniqueid,
+                        })
+                        .collect();
+                }
             }
             Self::Message::ChangeActivePlaylist(playlist) => {
                 println!("changed active playlist! {}", &playlist.title);
@@ -364,7 +393,8 @@ impl Application for App {
                 if song_id.is_none() | playlist_id.is_none() {
                     println!("fail!")
                 } else {
-                    add_to_playlist(playlist_id.unwrap(), song_id.unwrap()); // what abt duplicate addigs?
+                    add_to_playlist(playlist_id.unwrap(), song_id.unwrap()).unwrap(); // what abt duplicate addigs?
+                    self.selected_song_name = String::new();
                 }
             }
             Self::Message::ToggleList => {
@@ -416,6 +446,15 @@ impl Application for App {
                 TextType::StaticReduction => {
                     self.setting_page.static_reduction = txt;
                 }
+                TextType::UserTitle => {
+                    self.playlist_page.user_title = txt;
+                }
+                TextType::UserDescription => {
+                    self.playlist_page.user_description = txt;
+                }
+                TextType::UserThumbnail => {
+                    self.playlist_page.user_thumbnail = txt;
+                }
             },
 
             Self::Message::SaveConfig => {
@@ -454,6 +493,18 @@ impl Application for App {
                     }
                 }
             }
+            Self::Message::NewPlaylist => {
+                // TODO we should be doing a check for updating an existing playlist vs making a new one
+                let playlist = UserPlaylist::new(
+                    self.playlist_page.user_title.clone(),
+                    self.playlist_page.user_description.clone(),
+                    self.playlist_page.user_thumbnail.clone(),
+                    false,
+                );
+                create_playlist(playlist).unwrap();
+                self.user_playlists = get_all_playlists().unwrap();
+                // also refresh the buttons!
+            }
 
             _ => println!("inumplmented"),
         }
@@ -461,12 +512,6 @@ impl Application for App {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        let page_buttons: iced::widget::Row<'_, ProgramCommands> = row![
-            button(text("Settings")).on_press(ProgramCommands::ChangePage(Page::Settings)),
-            button(text("Download!")).on_press(ProgramCommands::ChangePage(Page::Download)),
-            button(text("Toggle table")).on_press(ProgramCommands::ToggleList),
-        ]
-        .spacing(50);
         let search_container = container(row![
             iced::widget::text_input("GoTo closest match", self.search.as_str())
                 .on_input(ProgramCommands::UpdateSearch)
@@ -484,20 +529,23 @@ impl Application for App {
             table.into()
         });
 
+        let mut all_playlists_but_main = self.user_playlists.clone();
+        all_playlists_but_main.remove(0);
         let actions_cont = container(column![
             text(self.selected_song_name.clone()),
+            button(text("Add to:")).on_press(ProgramCommands::AddToPlaylist(
+                self.selected_uuid.clone(),
+                self.playlist_uuid.clone()
+            )),
+            // need to have main not show up here that makes no sense..
             pick_list(
-                self.user_playlists
+                all_playlists_but_main
                     .iter()
                     .map(|pl| pl.title.clone())
                     .collect::<Vec<String>>(),
                 Some(self.side_menu_playlist_select.clone()),
                 ProgramCommands::PlaylistSelected
             ),
-            button(text("Add to:")).on_press(ProgramCommands::AddToPlaylist(
-                self.selected_uuid.clone(),
-                self.playlist_uuid.clone()
-            ))
         ])
         .padding(15);
         let buttons: Vec<Element<ProgramCommands>> = self
@@ -506,7 +554,7 @@ impl Application for App {
             .map(|playlist| {
                 button(text(playlist.title.clone()))
                     .on_press(ProgramCommands::ChangeViewingPlaylist(playlist.clone()))
-                    .width(Length::Fixed(100.0))
+                    .height(Length::Fixed(32.5)) // playlist button height :)
                     .into()
             })
             .collect();
@@ -515,13 +563,20 @@ impl Application for App {
         let curr_song = self.current_song.load();
         let main_page_2 = container(row![column![
             row![
-                row![page_buttons],
+                row![
+                    persistent::render_top_buttons(Page::Main),
+                    button(text("Toggle table")).on_press(ProgramCommands::ToggleList)
+                ]
+                .spacing(10),
                 horizontal_space(),
                 // self.render_sidebar()
             ],
             row![
                 table_cont,
-                column![actions_cont, iced::widget::Column::with_children(buttons)]
+                column![
+                    actions_cont,
+                    iced::widget::Column::with_children(buttons).spacing(10.0)
+                ]
             ],
             // vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
             row![
@@ -559,6 +614,7 @@ impl Application for App {
             Page::Download => self.download_page.view(),
             Page::Settings => self.setting_page.view(),
             Page::Media => self.media_page.view(),
+            Page::Playlist => self.playlist_page.view(),
         }
     }
 

@@ -1,4 +1,5 @@
 use crate::gui::messages::{Page, ProgramCommands, TextType};
+use crate::gui::persistent;
 use crate::types::Config;
 use crate::utils::cache;
 use iced::widget::{button, column, row, text, text_input, Container};
@@ -40,7 +41,7 @@ impl SettingPage {
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
         Container::new(column![
-            button(text("Home")).on_press(ProgramCommands::ChangePage(Page::Main)),
+            persistent::render_top_buttons(Page::Settings),
             row![
                 text("Backup location directory: "),
                 text_input(&self.backup_text, &self.backup_text).on_input(|txt| {

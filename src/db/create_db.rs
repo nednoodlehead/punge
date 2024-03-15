@@ -1,4 +1,5 @@
 use crate::types::DatabaseErrors;
+use chrono::Local;
 use rusqlite::{params, Connection};
 // Creates the file with the two default tables :D
 
@@ -42,6 +43,21 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
             song_id TEXT
             )",
         params![],
+    )?;
+    conn.execute(
+        // the main 'playlist' :)
+        "INSERT INTO metadata (title, description, thumbnail, datecreated
+        songcount, totaltime, isautogen, playlist_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        params![
+            String::from("Main"),
+            String::from("All of your music"),
+            String::from("No thumbnail"),
+            Local::now().to_string(),
+            0,
+            String::from("00:00:00"),
+            false, // so technically it is 'auto gen', but not in the right sense
+            "MAIN"
+        ],
     )?;
     Ok(())
 }

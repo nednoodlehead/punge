@@ -1,4 +1,5 @@
 use crate::gui::messages::{Page, ProgramCommands};
+use crate::gui::persistent;
 use iced::widget::{
     button, column, container, horizontal_space, row, scrollable, text, text_input, Column,
     Container,
@@ -29,8 +30,7 @@ impl DownloadPage {
         let feedback_scrollable = row![horizontal_space(), container(self.create_scrollable())];
         Container::new(
             column![
-                text("Download page"),
-                button(text("Home")).on_press(ProgramCommands::ChangePage(Page::Main)),
+                persistent::render_top_buttons(Page::Download),
                 download_row,
                 feedback_scrollable,
                 debug_button
