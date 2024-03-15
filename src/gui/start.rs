@@ -500,7 +500,16 @@ impl Application for App {
             ))
         ])
         .padding(15);
-
+        let buttons: Vec<Element<ProgramCommands>> = self
+            .user_playlists
+            .iter()
+            .map(|playlist| {
+                button(text(playlist.title.clone()))
+                    .on_press(ProgramCommands::ChangeViewingPlaylist(playlist.clone()))
+                    .width(Length::Fixed(100.0))
+                    .into()
+            })
+            .collect();
         let table_cont = container(table).height(Length::Fixed(540.0)).padding(20);
 
         let curr_song = self.current_song.load();
@@ -510,7 +519,10 @@ impl Application for App {
                 horizontal_space(),
                 // self.render_sidebar()
             ],
-            row![table_cont, actions_cont],
+            row![
+                table_cont,
+                column![actions_cont, iced::widget::Column::with_children(buttons)]
+            ],
             // vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
             row![
                 column![
