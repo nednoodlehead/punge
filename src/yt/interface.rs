@@ -156,10 +156,10 @@ fn fetch_json() -> (String, String) {
     let mut jpg = jpg.as_str().unwrap().to_string();
     // ensure that the directories given do end with a slash of some type.
     // probably better to ensure that the user-changed input has this slash. later activity
-    if !mp3.ends_with("\\") && !mp3.ends_with("/") {
+    if !mp3.ends_with('\\') && !mp3.ends_with('/') {
         mp3.push('/')
     }
-    if !jpg.ends_with("\\") && !jpg.ends_with("/") {
+    if !jpg.ends_with('\\') && !jpg.ends_with('/') {
         jpg.push('/')
     }
     (mp3, jpg)
@@ -176,7 +176,7 @@ async fn create_punge_obj(
 ) -> Result<PungeMusicObject, AppError> {
     // downloads the video, thumbnail
     // creates the punge obj for further processing if needed (like one song -> whole album)
-    let author = clean_inputs_for_win_saving(youtube_data.author);
+    let author = clean_inputs_for_win_saving(clean_author(youtube_data.author));
     let title = clean_inputs_for_win_saving(youtube_data.title);
     let album = clean_inputs_for_win_saving(youtube_data.album);
     let naming_conv = format!("{} - {}{}", author, title, vid_id.clone());
@@ -311,13 +311,13 @@ async fn download_to_punge(
 fn clean_author(author: String) -> String {
     // cleans the authors name of VEVO, Official, and - topic
     let length = author.len();
-    let x = if author.ends_with(" - Topic") {
+    if author.ends_with(" - Topic") {
         author[..length - 8].to_string()
     } else if author.ends_with("VEVO") {
         // catches both cases where vevo is either attached to the author or not
         // e.g. : KendrickVEVO | Kendrick VEVO
         let new = author[..length - 4].to_string();
-        if new.ends_with(" ") {
+        if new.ends_with(' ') {
             new[..new.len() - 1].to_string()
         } else {
             new
@@ -326,8 +326,7 @@ fn clean_author(author: String) -> String {
         author[..length - 9].to_string()
     } else {
         author
-    };
-    x
+    }
 }
 
 fn description_timestamp_check(desc: &str) -> bool {
