@@ -1,7 +1,6 @@
 use crate::db::insert::add_to_main;
 use crate::types::{AppError, DatabaseErrors, PungeMusicObject, YouTubeData};
 use crate::utils::sep_video;
-use chrono::NaiveDate;
 use itertools::Itertools;
 use regex::Regex;
 use rusqlite;
@@ -31,7 +30,7 @@ pub async fn download_interface(
     let (mp3, jpg) = fetch_json();
 
     // different cases for videos:
-    // 1. normal, title = title, author = author, no album in desc
+    // 1. normal, title has auth and title in it, separated by " - ", no album
     // 2. auto-gen. title = title, author = author, album = 4th line in description
     // 3. one vid = whole album. title, author = title.split("-")
     // 4. playlist album. playlist.title = album, author = firstvid.author, title = each title
@@ -41,7 +40,7 @@ pub async fn download_interface(
     // 6. / else: title = title, author = author, album = single. hit no others...
 
     let youtube_data = if playlist_title.is_none() && details.title.contains(" - ") {
-        // #1
+        // #1, has a dash in title, no playlist
         let title_string = details.title.split(" - ").collect_vec();
         let title = title_string[0].to_string(); // first half of the title
         let author = title_string[1].to_string(); // second half. expects: <title> - <artist>
@@ -58,12 +57,24 @@ pub async fn download_interface(
         let title = details.title;
         let author = details.author;
         let album = details.description.split("\n").collect_vec()[4].to_string();
-        YouTubeData {
+        let youtube_data = YouTubeData {
             title,
             author: author.unwrap().name,
             album,
             url: url.clone(),
-        }
+        };
+        let obj = create_punge_obj(
+            video,
+            youtube_data.clone(),
+            String::from("None"),
+            jpg,
+            mp3,
+            details.video_id,
+            details.length_seconds.parse::<usize>().unwrap(),
+        )
+        .await?;
+        add_to_main(obj.clone())?;
+        youtube_data
     } else if description_timestamp_check(details.description.as_str()) {
         // how is this meant to be done ??
         let (album, auth) = if details.title.contains(" - ") {
@@ -104,32 +115,45 @@ pub async fn download_interface(
         let title = details.title;
         let author = details.author;
         let album = playlist_title.unwrap();
-        YouTubeData {
+        let youtube_data = YouTubeData {
             title,
             author: author.unwrap().name.to_string(),
             album,
             url: url.clone(),
-        }
+        };
+        let obj = create_punge_obj(
+            video,
+            youtube_data.clone(),
+            String::from("None"),
+            jpg,
+            mp3,
+            details.video_id,
+            details.length_seconds.parse::<usize>().unwrap(),
+        )
+        .await?;
+        add_to_main(obj.clone())?;
+        youtube_data
     } else {
         // these if elifs cannot find any recognized format. default to this...
-        YouTubeData {
+        let youtube_data = YouTubeData {
             title: details.title,
             author: details.author.unwrap().name,
             album: String::from("Single"),
             url: url.clone(),
-        }
+        };
+        let obj = create_punge_obj(
+            video,
+            youtube_data.clone(),
+            String::from("None"),
+            jpg,
+            mp3,
+            details.video_id,
+            details.length_seconds.parse::<usize>().unwrap(),
+        )
+        .await?;
+        add_to_main(obj.clone())?;
+        youtube_data
     };
-    let obj = create_punge_obj(
-        video,
-        youtube_data.clone(),
-        String::from("None"),
-        jpg,
-        mp3,
-        details.video_id,
-        details.length_seconds.parse::<usize>().unwrap(),
-    )
-    .await?;
-    add_to_main(obj.clone())?;
     Ok(youtube_data)
 }
 
@@ -224,20 +248,6 @@ pub fn clean_inputs_for_win_saving(to_check: String) -> String {
         }
     }
     new_string
-}
-
-pub fn handle_single_vid_album(title: String, author: String) -> (String, String) {
-    // returned format should be <artist> <album>. titles for songs are done elsewhere
-    if title.contains(" - ") {
-        // format is: <artist> - <album>
-        let split: Vec<&str> = title.split(" - ").collect_vec();
-        // this covers the weird case where there is multiple " - " in the title
-        (split[0].to_string(), split[1..].join(" - ").to_string())
-    } else {
-        // we assume the format is: title = album name, artist channel of song = artist. almost all
-        // instances should be covered in the if statement above
-        (author, title)
-    }
 }
 
 async fn download_to_punge(

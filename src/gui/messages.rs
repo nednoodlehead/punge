@@ -46,6 +46,7 @@ pub enum ProgramCommands {
     CreateBackup,
     UpdateWidgetText(TextType, String),
     SaveConfig,
+    NewPlaylist, // title, description, path_to_thumbnail
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -57,6 +58,9 @@ pub enum TextType {
     JpgText,         // settings
     StaticIncrement, // settings
     StaticReduction, // settings
+    UserTitle,       // playlist
+    UserDescription, // playlist
+    UserThumbnail,   // playlist
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -65,6 +69,7 @@ pub enum Page {
     Settings,
     Download,
     Media, // TODO make the media page :)
+    Playlist,
 }
 
 #[derive(Debug, Clone)]

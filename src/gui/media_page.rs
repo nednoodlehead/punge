@@ -1,8 +1,8 @@
-use crate::gui::messages::ProgramCommands;
-
+use crate::gui::messages::{Page, ProgramCommands};
+use crate::gui::persistent;
 
 use iced::widget::{container, text};
-use iced::{Element};
+use iced::Element;
 
 pub struct MediaPage {
     pub download_input: String,
@@ -18,7 +18,7 @@ impl MediaPage {
         }
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
-        container(text("here")).into()
+        container(persistent::render_top_buttons(Page::Media)).into()
     }
 }
 
@@ -35,8 +35,6 @@ fn download_content(link: String, download_path: String) -> String {
     }
     todo!()
 }
-
-
 
 // TODO (at some point), make this async and have it send o the subscription that is listening
 // for youtube events. not sure how that will be handled for instagram download...
