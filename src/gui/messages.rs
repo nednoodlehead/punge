@@ -27,6 +27,8 @@ pub enum ProgramCommands {
     UpdateSender(Option<async_sender::UnboundedSender<PungeCommand>>),
     NewData(MusicData), // for sending back title, artist and album to GUI
     VolumeChange(u8),
+    ShuffleToggle,
+    PlayToggle,
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),

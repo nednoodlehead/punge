@@ -75,6 +75,7 @@ pub struct App {
     pub current_song: Arc<ArcSwap<Arc<MusicData>>>, // represents title, auth, album, song_id, volume, shuffle, playlist
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
     volume: u8,
+    shuffle: bool,
     current_view: Page,
     download_page: crate::gui::download_page::DownloadPage,
     pub setting_page: setting_page::SettingPage, // pub so src\gui\subscrip can see the user choosen value increments
@@ -125,6 +126,7 @@ impl Application for App {
                 current_song: Arc::new(ArcSwap::new(Arc::new(Arc::new(MusicData::default())))),
                 sender: None,
                 volume: 25,
+                shuffle: true, // need to pull from cache
                 current_view: Page::Main,
                 download_page: download_page::DownloadPage::new(),
                 setting_page: setting_page::SettingPage::new(),
@@ -201,6 +203,22 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::NewVolume(val))
                     .expect("failure sending msg");
+            }
+            Self::Message::ShuffleToggle => {
+                self.shuffle = if self.shuffle { false } else { true };
+                self.sender
+                    .as_mut()
+                    .unwrap()
+                    .send(PungeCommand::ToggleShuffle)
+                    .unwrap();
+            }
+            Self::Message::PlayToggle => {
+                self.is_paused = if self.is_paused { false } else { true };
+                self.sender
+                    .as_mut()
+                    .unwrap()
+                    .send(PungeCommand::ToggleShuffle)
+                    .unwrap();
             }
             Self::Message::ChangePage(page) => self.current_view = page,
             Self::Message::UpdateDownloadEntry(string) => {
@@ -589,12 +607,15 @@ impl Application for App {
                 .width(225.0),
                 button(text("Go back"))
                     .on_press(ProgramCommands::Send(PungeCommand::SkipBackwards)),
-                button(text("Play / Pause"))
-                    .on_press(ProgramCommands::Send(PungeCommand::PlayOrPause)),
+                button(text(if self.is_paused { "Play!" } else { "Stop!" }))
+                    .on_press(ProgramCommands::PlayToggle),
                 button(text("Go forwards"))
                     .on_press(ProgramCommands::Send(PungeCommand::SkipForwards)),
-                button(text("Shuffle"))
-                    .on_press(ProgramCommands::Send(PungeCommand::ToggleShuffle)),
+                button(text(format!(
+                    "Shuffle ({})",
+                    if self.shuffle { "On" } else { "Off" }
+                )))
+                .on_press(ProgramCommands::ShuffleToggle),
                 column![
                     slider(0..=30, self.volume, Self::Message::VolumeChange).width(150),
                     search_container
