@@ -120,13 +120,14 @@ impl Application for App {
         manager.register(hotkey_4).unwrap();
         manager.register(hotkey_5).unwrap();
         manager.register(hotkey_6).unwrap();
+        let player_cache = player_cache::fetch_cache();
         (
             App {
                 is_paused: true,
                 current_song: Arc::new(ArcSwap::new(Arc::new(Arc::new(MusicData::default())))),
                 sender: None,
-                volume: 25,
-                shuffle: true, // need to pull from cache
+                volume: player_cache.volume as u8,
+                shuffle: player_cache.shuffle, // need to pull from cache
                 current_view: Page::Main,
                 download_page: download_page::DownloadPage::new(),
                 setting_page: setting_page::SettingPage::new(),
@@ -217,7 +218,7 @@ impl Application for App {
                 self.sender
                     .as_mut()
                     .unwrap()
-                    .send(PungeCommand::ToggleShuffle)
+                    .send(PungeCommand::PlayOrPause)
                     .unwrap();
             }
             Self::Message::ChangePage(page) => self.current_view = page,
