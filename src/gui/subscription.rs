@@ -25,7 +25,7 @@ impl App {
     // also, in the other download function , we divide the len by 25 to see how many times it fits,  we will have the db check every 15 seconds,
     pub fn database_subscription(
         &self,
-        obj: Arc<ArcSwap<Arc<MusicData>>>,
+        obj: Arc<ArcSwap<MusicData>>,
     ) -> Subscription<ProgramCommands> {
         iced::subscription::channel(11, 32, |mut _sender| async move {
             async_std::task::sleep(std::time::Duration::from_secs(4)).await; // give the id time to init properly, no real rush to have the subscription start right away anyways...

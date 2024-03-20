@@ -72,7 +72,7 @@ pub fn begin() -> iced::Result {
 
 pub struct App {
     pub is_paused: bool,
-    pub current_song: Arc<ArcSwap<Arc<MusicData>>>, // represents title, auth, album, song_id, volume, shuffle, playlist
+    pub current_song: Arc<ArcSwap<MusicData>>, // represents title, auth, album, song_id, volume, shuffle, playlist
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
     volume: u8,
     shuffle: bool,
@@ -124,7 +124,7 @@ impl Application for App {
         (
             App {
                 is_paused: true,
-                current_song: Arc::new(ArcSwap::new(Arc::new(Arc::new(MusicData::default())))),
+                current_song: Arc::new(ArcSwap::from_pointee(MusicData::default())),
                 sender: None,
                 volume: player_cache.volume as u8,
                 shuffle: player_cache.shuffle, // need to pull from cache
@@ -195,7 +195,7 @@ impl Application for App {
                     "The new information given to update: {} {} {}",
                     data.author, data.title, data.album
                 );
-                self.current_song.store(Arc::new(Arc::new(data)));
+                self.current_song.store(Arc::new(data));
             }
             Self::Message::VolumeChange(val) => {
                 self.volume = val;
@@ -549,7 +549,10 @@ impl Application for App {
         });
 
         let mut all_playlists_but_main = self.user_playlists.clone();
-        all_playlists_but_main.remove(0);
+        if all_playlists_but_main.len() != 0 {
+            // if the user doesn't have any playlists, we cant remove nothing
+            all_playlists_but_main.remove(0);
+        }
         let actions_cont = container(column![
             text(self.selected_song_name.clone()),
             button(text("Add to:")).on_press(ProgramCommands::AddToPlaylist(
