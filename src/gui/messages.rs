@@ -29,6 +29,8 @@ pub enum ProgramCommands {
     VolumeChange(u8),
     ShuffleToggle,
     PlayToggle,
+    SkipForwards,
+    SkipBackwards,
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),

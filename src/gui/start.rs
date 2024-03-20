@@ -221,6 +221,27 @@ impl Application for App {
                     .send(PungeCommand::PlayOrPause)
                     .unwrap();
             }
+            Self::Message::SkipForwards => {
+                // if it is paused, and this is called, update the stop/play
+                if self.is_paused {
+                    self.is_paused = false;
+                }
+                self.sender
+                    .as_mut()
+                    .unwrap()
+                    .send(PungeCommand::SkipForwards)
+                    .unwrap();
+            }
+            Self::Message::SkipBackwards => {
+                if self.is_paused {
+                    self.is_paused = false;
+                }
+                self.sender
+                    .as_mut()
+                    .unwrap()
+                    .send(PungeCommand::SkipBackwards)
+                    .unwrap();
+            }
             Self::Message::ChangePage(page) => self.current_view = page,
             Self::Message::UpdateDownloadEntry(string) => {
                 self.download_page.text = string;
@@ -549,11 +570,9 @@ impl Application for App {
         });
 
         let mut all_playlists_but_main = self.user_playlists.clone();
-        if all_playlists_but_main.len() != 0 {
-            // if the user doesn't have any playlists, we cant remove nothing
-            // shouldb't it be impossible for it to be 0 anyways? since main? idk it errored once..
-            all_playlists_but_main.remove(0);
-        }
+        // user should always have the 'main' playlist
+
+        all_playlists_but_main.remove(0);
         let actions_cont = container(column![
             text(self.selected_song_name.clone()),
             button(text("Add to:")).on_press(ProgramCommands::AddToPlaylist(
@@ -610,12 +629,10 @@ impl Application for App {
                 ]
                 .padding(2.5)
                 .width(225.0),
-                button(text("Go back"))
-                    .on_press(ProgramCommands::Send(PungeCommand::SkipBackwards)),
+                button(text("Go back")).on_press(ProgramCommands::SkipBackwards),
                 button(text(if self.is_paused { "Play!" } else { "Stop!" }))
                     .on_press(ProgramCommands::PlayToggle),
-                button(text("Go forwards"))
-                    .on_press(ProgramCommands::Send(PungeCommand::SkipForwards)),
+                button(text("Go forwards")).on_press(ProgramCommands::SkipForwards),
                 button(text(format!(
                     "Shuffle ({})",
                     if self.shuffle { "On" } else { "Off" }

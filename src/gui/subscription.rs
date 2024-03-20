@@ -76,10 +76,7 @@ impl App {
                         match hotkey {
                             GlobalHotKeyEvent { id: 4121890298 } => {
                                 // right arrow
-                                sender
-                                    .send(ProgramCommands::Send(PungeCommand::SkipForwards))
-                                    .await
-                                    .unwrap();
+                                sender.send(ProgramCommands::SkipForwards).await.unwrap();
                             }
                             GlobalHotKeyEvent { id: 2037224482 } => {
                                 // up arrow
@@ -90,10 +87,7 @@ impl App {
                             }
                             GlobalHotKeyEvent { id: 1912779161 } => {
                                 // left arrow??
-                                sender
-                                    .send(ProgramCommands::Send(PungeCommand::SkipBackwards))
-                                    .await
-                                    .unwrap();
+                                sender.send(ProgramCommands::SkipBackwards).await.unwrap();
                             }
                             GlobalHotKeyEvent { id: 4174001518 } => {
                                 // down arrow!
@@ -104,17 +98,11 @@ impl App {
                             }
                             GlobalHotKeyEvent { id: 3520754938 } => {
                                 // page down (shuffle)
-                                sender
-                                    .send(ProgramCommands::Send(PungeCommand::ToggleShuffle))
-                                    .await
-                                    .unwrap();
+                                sender.send(ProgramCommands::ShuffleToggle).await.unwrap();
                             }
                             GlobalHotKeyEvent { id: 3009842507 } => {
                                 // end (pause)
-                                sender
-                                    .send(ProgramCommands::Send(PungeCommand::PlayOrPause))
-                                    .await
-                                    .unwrap()
+                                sender.send(ProgramCommands::PlayToggle).await.unwrap()
                             }
 
                             _ => {
