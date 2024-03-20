@@ -9,6 +9,7 @@ use std::io::{BufReader, Seek, SeekFrom};
 
 pub struct MusicPlayer {
     pub list: Vec<PungeMusicObject>,
+    pub playlist: String,
     pub sink: rodio::Sink,
     pub count: isize,
     pub shuffle: bool,
@@ -40,6 +41,7 @@ impl MusicPlayer {
         // list should inherite from cache at some point. not worried now tho
         MusicPlayer {
             list,
+            playlist: cache.playlist,
             sink,
             count: count as isize,
             shuffle: cache.shuffle,

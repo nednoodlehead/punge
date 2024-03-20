@@ -87,6 +87,7 @@ pub fn get_uuid_from_name(playlist_name: String) -> String {
     let mut stmt = conn
         .prepare("SELECT playlist_id from metadata WHERE title = ?")
         .unwrap();
+    println!("playlist name HERE: {}", &playlist_name);
     let result: String = stmt.query_row(&[&playlist_name], |row| row.get(0)).unwrap();
     drop(stmt);
     conn.close().unwrap();
@@ -116,6 +117,7 @@ pub fn get_name_from_uuid(playlist_uuid: String) -> String {
 use crate::types::UserPlaylist;
 
 pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
+    // we assume that the user has a 'main' playlist
     let conn = Connection::open("main.db")?;
     let mut stmt = conn.prepare("SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, playlist_id
         FROM metadata")?;

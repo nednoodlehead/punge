@@ -85,12 +85,10 @@ pub struct App {
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
     search: String,
-    selected_uuid: Option<String>, // ok ngl there gotta be a better way to handle this..  TODO
-    playlist_uuid: Option<String>, // like a vec that holds all song id's, that is added by checkboxes
-    side_menu_playlist_select: String, // will refactor soon !
-    selected_song_name: String,
+    viewing_playlist: String, // could derive from cache soon... just the uniqueid rn
+    side_menu_song_select: (String, String), // title, uniqueid. these two are for adding to playlists
+    side_menu_playlist_select: (String, String), // title, uniqueid
     user_playlists: Vec<UserPlaylist>,
-    add_to_playlist_feedback: String,
     // tarkah table stuff
     header: scrollable::Id,
     body: scrollable::Id,
@@ -127,7 +125,7 @@ impl Application for App {
                 current_song: Arc::new(ArcSwap::from_pointee(MusicData::default())),
                 sender: None,
                 volume: (player_cache.volume * 80.0) as u8, // 80 is out magic number from sink volume -> slider
-                shuffle: player_cache.shuffle,              // need to pull from cache
+                shuffle: player_cache.shuffle,
                 current_view: Page::Main,
                 download_page: download_page::DownloadPage::new(),
                 setting_page: setting_page::SettingPage::new(),
@@ -137,11 +135,9 @@ impl Application for App {
                 last_id: 0,
                 manager,
                 search: "".to_string(),
-                selected_uuid: None,
-                playlist_uuid: None,
-                side_menu_playlist_select: String::from(""),
-                selected_song_name: String::from(""),
-                add_to_playlist_feedback: String::from(""),
+                viewing_playlist: "main".to_string(),
+                side_menu_song_select: ("".to_string(), "".to_string()),
+                side_menu_playlist_select: ("".to_string(), "".to_string()),
                 user_playlists: get_all_playlists().unwrap(), // im addicted to unwraping
                 header: scrollable::Id::unique(),
                 body: scrollable::Id::unique(),
@@ -379,6 +375,21 @@ impl Application for App {
                 }
             }
             Self::Message::PlaySong(song) => {
+                // this is only used from the 'play' buttons on the songs
+                if self.is_paused {
+                    self.is_paused = false;
+                }
+                // if the viewing playlist is different than the most recent
+                if self.current_song.load().playlist != self.viewing_playlist {
+                    // change playlist, hopefully no data race occurs... if it does,
+                    // we can change it to play the song, then change the playlist in the background..
+                    self.sender
+                        .as_ref()
+                        .unwrap()
+                        .send(PungeCommand::ChangePlaylist(self.viewing_playlist.clone()))
+                        .unwrap();
+                }
+                // need to change active playlist, shuffle, and get index spot
                 self.sender
                     .as_ref()
                     .unwrap()
@@ -387,9 +398,10 @@ impl Application for App {
             }
             Self::Message::ChangeViewingPlaylist(playlist) => {
                 // we will change the current view to the playlist view, and pass in the playlist to fill the content
-                self.playlist_uuid = Some(playlist.uniqueid.clone());
+                self.viewing_playlist = playlist.clone();
+
                 // main should be treated just like a regular playlist !?
-                if playlist.uniqueid == "Main" {
+                if playlist == "main" {
                     let new = get_all_main().unwrap();
                     self.rows = new
                         .into_iter()
@@ -401,7 +413,7 @@ impl Application for App {
                         })
                         .collect();
                 } else {
-                    let new = get_all_from_playlist(playlist.uniqueid.as_str()).unwrap();
+                    let new = get_all_from_playlist(playlist.as_str()).unwrap();
                     self.rows = new
                         .into_iter()
                         .map(|item| Row {
@@ -419,22 +431,21 @@ impl Application for App {
             }
             Self::Message::SelectSong(uniqueid, song) => {
                 // when the song is selected from the table, update the song in the top right
-                self.selected_uuid = Some(uniqueid);
-                self.selected_song_name = song;
+                self.side_menu_song_select = (song, uniqueid);
                 // maybe buttons should bring title with it??? idk
             }
             Self::Message::PlaylistSelected(name) => {
                 // set playlist uuid string to uniqueid and set side to the title of that uuid
                 let uniqueid = get_uuid_from_name(name.clone());
-                self.playlist_uuid = Some(uniqueid);
-                self.side_menu_playlist_select = name;
+                self.side_menu_playlist_select = (name, uniqueid);
             }
             Self::Message::AddToPlaylist(song_id, playlist_id) => {
                 if song_id.is_none() | playlist_id.is_none() {
                     println!("fail!")
                 } else {
                     add_to_playlist(playlist_id.unwrap(), song_id.unwrap()).unwrap(); // what abt duplicate addigs?
-                    self.selected_song_name = String::new();
+                                                                                      // clear the song once it was added :)
+                    self.side_menu_song_select = ("".to_string(), "".to_string())
                 }
             }
             Self::Message::ToggleList => {
@@ -574,10 +585,10 @@ impl Application for App {
 
         all_playlists_but_main.remove(0);
         let actions_cont = container(column![
-            text(self.selected_song_name.clone()),
+            text(self.side_menu_song_select.0.clone()),
             button(text("Add to:")).on_press(ProgramCommands::AddToPlaylist(
-                self.selected_uuid.clone(),
-                self.playlist_uuid.clone()
+                Some(self.side_menu_song_select.1.clone()),
+                Some(self.side_menu_playlist_select.1.clone())
             )),
             // need to have main not show up here that makes no sense..
             pick_list(
@@ -585,7 +596,7 @@ impl Application for App {
                     .iter()
                     .map(|pl| pl.title.clone())
                     .collect::<Vec<String>>(),
-                Some(self.side_menu_playlist_select.clone()),
+                Some(self.side_menu_playlist_select.0.clone()),
                 ProgramCommands::PlaylistSelected
             ),
         ])
@@ -595,7 +606,9 @@ impl Application for App {
             .iter()
             .map(|playlist| {
                 button(text(playlist.title.clone()))
-                    .on_press(ProgramCommands::ChangeViewingPlaylist(playlist.clone()))
+                    .on_press(ProgramCommands::ChangeViewingPlaylist(
+                        playlist.uniqueid.clone(),
+                    ))
                     .height(Length::Fixed(32.5)) // playlist button height :)
                     .into()
             })

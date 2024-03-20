@@ -149,7 +149,7 @@ impl App {
                     volume: music_obj.sink.volume(),
                     is_playing: false,
                     shuffle: music_obj.shuffle,
-                    playlist: "main".to_string(),
+                    playlist: music_obj.playlist.clone(),
                     threshold: music_obj.current_object.threshold,
                     context: Context::Default,
                 }))
@@ -183,7 +183,7 @@ impl App {
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
-                                    playlist: "main".to_string(),
+                                    playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
                                     context: Context::PlayPause,
                                 }))
@@ -218,7 +218,7 @@ impl App {
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
-                                    playlist: "main".to_string(),
+                                    playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
                                     context: Context::SkippedForward,
                                 }))
@@ -250,7 +250,7 @@ impl App {
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
-                                    playlist: "main".to_string(),
+                                    playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold.clone(),
                                     context: Context::SkippedBackwards,
                                 }))
@@ -288,7 +288,7 @@ impl App {
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
-                                    playlist: "main".to_string(),
+                                    playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold.clone(),
                                     context: Context::Seeked,
                                 }))
@@ -314,12 +314,15 @@ impl App {
                             println!("skipping to seconds")
                         }
                         PungeCommand::ToggleShuffle => {
-                            println!(
-                                "imagine we are chaning shuffle status: {}",
-                                &music_obj.current_object.title
-                            );
+                            println!("DEBUG HERE: {}", music_obj.list.len());
                             if music_obj.shuffle {
-                                music_obj.list = fetch::get_all_main().unwrap();
+                                if music_obj.playlist == "main" {
+                                    music_obj.list = fetch::get_all_main().unwrap();
+                                } else {
+                                    music_obj.list =
+                                        fetch::get_all_from_playlist(music_obj.playlist.as_str())
+                                            .unwrap();
+                                }
                                 // it is shuffled, lets re-order
                                 let index = music_obj // todo ok, need to put back in order
                                     .list
@@ -338,13 +341,14 @@ impl App {
                             }
                         }
                         PungeCommand::ChangePlaylist(name) => {
-                            if name == "main".to_string() {
+                            println!("changing the playlist! above");
+                            if name == "main" {
                                 music_obj.list = fetch::get_all_main().unwrap();
                             } else {
-                                let playlist_uuid = fetch::get_uuid_from_name(name);
-                                music_obj.list =
-                                    fetch::get_all_from_playlist(&playlist_uuid).unwrap();
+                                println!("getting all from {}", &name);
+                                music_obj.list = fetch::get_all_from_playlist(&name).unwrap();
                             }
+                            music_obj.playlist = name;
                         }
                         PungeCommand::NewStatic(inc, red) => {
                             config.static_increment = inc;
@@ -399,7 +403,7 @@ impl App {
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: false, // we can only pause...
                                                     shuffle: music_obj.shuffle,
-                                                    playlist: "main".to_string(),
+                                                    playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::SkippedForward,
                                                 }))
@@ -441,7 +445,7 @@ impl App {
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle,
-                                                    playlist: "main".to_string(),
+                                                    playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::SkippedForward,
                                                 }))
@@ -488,7 +492,7 @@ impl App {
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle,
-                                                    playlist: "main".to_string(),
+                                                    playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::SkippedBackwards,
                                                 }))
@@ -500,7 +504,14 @@ impl App {
                                         }
                                         PungeCommand::ToggleShuffle => {
                                             if music_obj.shuffle {
-                                                music_obj.list = fetch::get_all_main().unwrap();
+                                                if music_obj.playlist == "main" {
+                                                    music_obj.list = fetch::get_all_main().unwrap();
+                                                } else {
+                                                    music_obj.list = fetch::get_all_from_playlist(
+                                                        music_obj.playlist.as_str(),
+                                                    )
+                                                    .unwrap();
+                                                }
                                                 let index = music_obj
                                                     .list
                                                     .iter()
@@ -518,6 +529,18 @@ impl App {
                                                 music_obj.shuffle = true;
                                             }
                                         }
+                                        PungeCommand::ChangePlaylist(name) => {
+                                            println!("changin the playlist below {}", &name);
+                                            if name == "main" {
+                                                music_obj.list = fetch::get_all_main().unwrap();
+                                            } else {
+                                                println!("getting all from {}", &name);
+                                                music_obj.list =
+                                                    fetch::get_all_from_playlist(&name).unwrap();
+                                            }
+                                            music_obj.playlist = name;
+                                            println!("length below: {}", music_obj.list.len())
+                                        }
                                         PungeCommand::StaticVolumeUp => {
                                             music_obj.sink.set_volume(
                                                 music_obj.sink.volume() + config.static_increment,
@@ -529,6 +552,11 @@ impl App {
                                             );
                                         }
                                         PungeCommand::ChangeSong(uuid) => {
+                                            println!(
+                                                "CURRENT PLAYLIST: {} and {}",
+                                                music_obj.playlist,
+                                                music_obj.list.len()
+                                            );
                                             let index = music_obj
                                                 .list
                                                 .iter()
@@ -564,7 +592,7 @@ impl App {
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle.clone(),
-                                                    playlist: "main".to_string(),
+                                                    playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::Seeked,
                                                 }))
@@ -613,7 +641,7 @@ impl App {
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
-                                    playlist: "main".to_string(),
+                                    playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
                                     context: Context::AutoPlay,
                                 }))

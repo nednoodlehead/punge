@@ -39,7 +39,7 @@ pub enum ProgramCommands {
     InAppEvent(AppEvent),
     UpdateSearch(String), // for updating the string that is used in the regex search
     GoToSong, // uses the regex search to take user input and skip to nearest search for user. input derives from self.search
-    ChangeViewingPlaylist(UserPlaylist), // pass whole playlist in.
+    ChangeViewingPlaylist(String), // pass only the unqiueid i guess. problem was making self.viewing_playlist
     ChangeActivePlaylist(UserPlaylist),
     PlaySong(String),           // unqiueid
     SelectSong(String, String), // uniqueid and title, used to do stuff to the current song
