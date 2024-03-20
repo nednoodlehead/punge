@@ -16,7 +16,7 @@ pub struct MusicPlayer {
     pub stream: rodio::OutputStream,
     pub current_object: PungeMusicObject, // represents the playing song. used in shuffle to get back to it
 }
-
+// ngl i aint know too much, but im pretty sure this could cause problems, but it makes the program work, so...
 unsafe impl Send for MusicPlayer {}
 unsafe impl Sync for MusicPlayer {}
 
