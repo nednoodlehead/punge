@@ -2,7 +2,7 @@
 // there are also 2 main sorts, one sorts author / title, the other sorts album (if album sort is choosen as best match for user input, shuffle = false, count = first song of the album)
 // quite inspired by helix's regex
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_uuid_from_name};
-use crate::types::PungeMusicObject;
+use crate::types::{AppError, PungeMusicObject};
 use regex::Regex;
 
 fn search_string(to_search: String, pattern: String) -> bool {
@@ -53,11 +53,14 @@ fn get_value_of_found(search_string: String, letters: String) -> u8 {
     score
 }
 
-pub fn get_values_from_db(playlist: String, user_string: String) -> Vec<(u8, PungeMusicObject)> {
+pub async fn get_values_from_db(
+    playlist: String, // uniqueid now
+    user_string: String,
+) -> Result<PungeMusicObject, AppError> {
     let playlist_values = if playlist == "main".to_string() {
         get_all_main().unwrap()
     } else {
-        get_all_from_playlist(get_uuid_from_name(playlist).as_str()).unwrap()
+        get_all_from_playlist(playlist.as_str()).unwrap()
     };
     let regex_patt = create_alt_pattern(user_string.clone());
     println!("pattern: {}", &regex_patt);
@@ -77,6 +80,9 @@ pub fn get_values_from_db(playlist: String, user_string: String) -> Vec<(u8, Pun
             ));
         }
     }
+    if found_values.len() == 0 {
+        return Err(AppError::SearchError);
+    }
     found_values.sort_by_key(|item| item.0);
-    found_values
+    Ok(found_values[0].1.clone())
 }

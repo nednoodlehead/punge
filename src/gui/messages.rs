@@ -1,7 +1,7 @@
 // these are the messages sent around the program. This is divded up here because start.rs imports this
 // as well as the actual music-playing portion of the app
 
-use crate::types::{AppError, UserPlaylist};
+use crate::types::{AppError, PungeMusicObject, UserPlaylist};
 use crate::types::{MusicData, YouTubeData};
 use iced::widget::scrollable;
 use tokio::sync::mpsc as async_sender;
@@ -38,7 +38,8 @@ pub enum ProgramCommands {
     AddToDownloadFeedback(Option<Result<YouTubeData, AppError>>), // only called from the subscription,
     InAppEvent(AppEvent),
     UpdateSearch(String), // for updating the string that is used in the regex search
-    GoToSong, // uses the regex search to take user input and skip to nearest search for user. input derives from self.search
+    GoToSong,             //
+    SongFound(Result<PungeMusicObject, AppError>), // when the song is found from GoToSong, this is called
     ChangeViewingPlaylist(String), // pass only the unqiueid i guess. problem was making self.viewing_playlist
     ChangeActivePlaylist(UserPlaylist),
     PlaySong(String),           // unqiueid

@@ -181,10 +181,12 @@ impl Application for App {
                     .unwrap()
                     .send(cmd)
                     .expect("failure sending msg");
+                Command::none()
             }
             Self::Message::UpdateSender(sender) => {
                 println!("updated sender!");
                 self.sender = sender;
+                Command::none()
             }
             Self::Message::NewData(data) => {
                 println!(
@@ -192,6 +194,7 @@ impl Application for App {
                     data.author, data.title, data.album
                 );
                 self.current_song.store(Arc::new(data));
+                Command::none()
             }
             Self::Message::VolumeChange(val) => {
                 self.volume = val;
@@ -200,6 +203,7 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::NewVolume(val))
                     .expect("failure sending msg");
+                Command::none()
             }
             Self::Message::ShuffleToggle => {
                 self.shuffle = if self.shuffle { false } else { true };
@@ -208,6 +212,7 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::ToggleShuffle)
                     .unwrap();
+                Command::none()
             }
             Self::Message::PlayToggle => {
                 self.is_paused = if self.is_paused { false } else { true };
@@ -216,6 +221,7 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::PlayOrPause)
                     .unwrap();
+                Command::none()
             }
             Self::Message::SkipForwards => {
                 // if it is paused, and this is called, update the stop/play
@@ -227,6 +233,7 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::SkipForwards)
                     .unwrap();
+                Command::none()
             }
             Self::Message::SkipBackwards => {
                 if self.is_paused {
@@ -237,10 +244,15 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::SkipBackwards)
                     .unwrap();
+                Command::none()
             }
-            Self::Message::ChangePage(page) => self.current_view = page,
+            Self::Message::ChangePage(page) => {
+                self.current_view = page;
+                Command::none()
+            }
             Self::Message::UpdateDownloadEntry(string) => {
                 self.download_page.text = string;
+                Command::none()
             }
             Self::Message::Download(link) => {
                 // should be depreciated?
@@ -268,6 +280,7 @@ impl Application for App {
                 } else {
                     println!("not pushing !!! already downloading")
                 }
+                Command::none()
             }
             Self::Message::AddToDownloadFeedback(feedback) => {
                 // only is called from the subscription !!
@@ -331,9 +344,11 @@ impl Application for App {
                         println!("start.rs: none after downloadfeedback?? 128")
                     }
                 }
+                Command::none()
             }
             Self::Message::Debug => {
-                println!("Da list: {:?}", self.download_list)
+                println!("Da list: {:?}", self.download_list);
+                Command::none()
             }
             Self::Message::InAppEvent(t) => match t {
                 AppEvent::CloseRequested => {
@@ -352,27 +367,49 @@ impl Application for App {
             },
             Self::Message::UpdateSearch(input) => {
                 self.search = input;
+                Command::none()
+            }
+            Self::Message::SongFound(obj_or_err) => {
+                match obj_or_err {
+                    Ok(obj) => {
+                        self.sender
+                            .as_ref()
+                            .unwrap()
+                            .send(PungeCommand::ChangeSong(obj.uniqueid))
+                            .unwrap();
+                        self.search = "".to_string();
+                    }
+                    Err(e) => self.search = { "No results found".to_string() },
+                };
+                Command::none()
             }
 
             Self::Message::GoToSong => {
-                let val = get_values_from_db(
-                    self.current_song.load().playlist.clone(),
-                    self.search.clone(),
-                );
-                println!("GoToSong: {:?}", val);
-                if val.is_empty() {
-                    // if the user's search gives no results, tell them in the search box
-                    self.search = format!("{} returned no results", self.search);
-                } else {
-                    self.sender
-                        .as_ref()
-                        .unwrap()
-                        .send(PungeCommand::ChangeSong(
-                            val[val.len() - 1].clone().1.uniqueid,
-                        ))
-                        .unwrap();
-                    self.search = "".to_string()
-                }
+                Command::perform(
+                    get_values_from_db(
+                        self.current_song.load().playlist.clone(),
+                        self.search.clone(),
+                    ),
+                    ProgramCommands::SongFound,
+                )
+                // let val = get_values_from_db(
+                //     self.current_song.load().playlist.clone(),
+                //     self.search.clone(),
+                // );
+                // println!("GoToSong: {:?}", val);
+                // if val.is_empty() {
+                //     // if the user's search gives no results, tell them in the search box
+                //     self.search = format!("{} returned no results", self.search);
+                // } else {
+                //     self.sender
+                //         .as_ref()
+                //         .unwrap()
+                //         .send(PungeCommand::ChangeSong(
+                //             val[val.len() - 1].clone().1.uniqueid,
+                //         ))
+                //         .unwrap();
+                //     self.search = "".to_string()
+                // }
             }
             Self::Message::PlaySong(song) => {
                 // this is only used from the 'play' buttons on the songs
@@ -395,6 +432,7 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::ChangeSong(song))
                     .unwrap();
+                Command::none()
             }
             Self::Message::ChangeViewingPlaylist(playlist) => {
                 // we will change the current view to the playlist view, and pass in the playlist to fill the content
@@ -424,20 +462,24 @@ impl Application for App {
                         })
                         .collect();
                 }
+                Command::none()
             }
             Self::Message::ChangeActivePlaylist(playlist) => {
                 println!("changed active playlist! {}", &playlist.title);
                 // so we will self.sender.send(PungeCommand::UpdateList()) or whatever. will try to search
+                Command::none()
             }
             Self::Message::SelectSong(uniqueid, song) => {
                 // when the song is selected from the table, update the song in the top right
                 self.side_menu_song_select = (song, uniqueid);
                 // maybe buttons should bring title with it??? idk
+                Command::none()
             }
             Self::Message::PlaylistSelected(name) => {
                 // set playlist uuid string to uniqueid and set side to the title of that uuid
                 let uniqueid = get_uuid_from_name(name.clone());
                 self.side_menu_playlist_select = (name, uniqueid);
+                Command::none()
             }
             Self::Message::AddToPlaylist(song_id, playlist_id) => {
                 if song_id.is_none() | playlist_id.is_none() {
@@ -447,6 +489,7 @@ impl Application for App {
                                                                                       // clear the song once it was added :)
                     self.side_menu_song_select = ("".to_string(), "".to_string())
                 }
+                Command::none()
             }
             Self::Message::ToggleList => {
                 if self.rows.len() == 1 {
@@ -468,6 +511,7 @@ impl Application for App {
                         uniqueid: "".to_string(),
                     }]
                 }
+                Command::none()
             }
             Self::Message::CreateBackup => {
                 // get backup path from config and use it :)
@@ -480,31 +524,40 @@ impl Application for App {
                         println!("whaa {:?}", e);
                     }
                 };
+                Command::none()
             }
             Self::Message::UpdateWidgetText(text_type, txt) => match text_type {
                 TextType::BackupText => {
                     self.setting_page.backup_text = txt;
+                    Command::none()
                 }
                 TextType::Mp3Text => {
                     self.setting_page.mp3_path_text = txt;
+                    Command::none()
                 }
                 TextType::JpgText => {
                     self.setting_page.jpg_path_text = txt;
+                    Command::none()
                 }
                 TextType::StaticIncrement => {
                     self.setting_page.static_increment = txt;
+                    Command::none()
                 }
                 TextType::StaticReduction => {
                     self.setting_page.static_reduction = txt;
+                    Command::none()
                 }
                 TextType::UserTitle => {
                     self.playlist_page.user_title = txt;
+                    Command::none()
                 }
                 TextType::UserDescription => {
                     self.playlist_page.user_description = txt;
+                    Command::none()
                 }
                 TextType::UserThumbnail => {
                     self.playlist_page.user_thumbnail = txt;
+                    Command::none()
                 }
             },
 
@@ -543,6 +596,7 @@ impl Application for App {
                         println!("Config failed! {:?}", e)
                     }
                 }
+                Command::none()
             }
             Self::Message::NewPlaylist => {
                 // TODO we should be doing a check for updating an existing playlist vs making a new one
@@ -555,11 +609,14 @@ impl Application for App {
                 create_playlist(playlist).unwrap();
                 self.user_playlists = get_all_playlists().unwrap();
                 // also refresh the buttons!
+                Command::none()
             }
 
-            _ => println!("inumplmented"),
+            _ => {
+                println!("inumplmented");
+                Command::none()
+            }
         }
-        Command::none()
     }
 
     fn view(&self) -> Element<'_, Self::Message> {

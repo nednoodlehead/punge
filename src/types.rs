@@ -121,6 +121,7 @@ pub enum AppError {
     FileError(String),
     InvalidUrlError(String),
     YouTubeError(String),
+    SearchError,
 }
 
 impl From<DatabaseErrors> for AppError {
