@@ -126,8 +126,8 @@ impl Application for App {
                 is_paused: true,
                 current_song: Arc::new(ArcSwap::from_pointee(MusicData::default())),
                 sender: None,
-                volume: player_cache.volume as u8,
-                shuffle: player_cache.shuffle, // need to pull from cache
+                volume: (player_cache.volume * 80.0) as u8, // 80 is out magic number from sink volume -> slider
+                shuffle: player_cache.shuffle,              // need to pull from cache
                 current_view: Page::Main,
                 download_page: download_page::DownloadPage::new(),
                 setting_page: setting_page::SettingPage::new(),
@@ -551,6 +551,7 @@ impl Application for App {
         let mut all_playlists_but_main = self.user_playlists.clone();
         if all_playlists_but_main.len() != 0 {
             // if the user doesn't have any playlists, we cant remove nothing
+            // shouldb't it be impossible for it to be 0 anyways? since main? idk it errored once..
             all_playlists_but_main.remove(0);
         }
         let actions_cont = container(column![
