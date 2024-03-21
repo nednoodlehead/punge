@@ -305,6 +305,20 @@ impl Application for App {
                 }
                 Command::none()
             }
+            Self::Message::DownloadMedia(link, path) => Command::perform(
+                crate::gui::media_page::download_content(link, path),
+                ProgramCommands::DownloadMediaWorked,
+            ),
+            Self::Message::DownloadMediaWorked(maybe) => {
+                let val = match maybe {
+                    Ok(t) => t,
+                    Err(e) => {
+                        format!("Error downloading: {:?}", e)
+                    }
+                };
+                self.media_page.download_feedback.push(val);
+                Command::none()
+            }
             Self::Message::AddToDownloadFeedback(feedback) => {
                 // only is called from the subscription !!
                 match feedback {
@@ -332,7 +346,7 @@ impl Application for App {
                                     self.download_list.remove(ind);
                                 }
 
-                                if self.current_song.load().playlist == "main".to_string() {
+                                if self.current_song.load().playlist == "main" {
                                     println!("sender status?: {:?}", self.sender);
                                     // if main is the current playlist, refresh it so the new song shows up
                                     self.sender
@@ -344,7 +358,7 @@ impl Application for App {
                             }
                             Err(error) => {
                                 if self.download_list.len() == 0 {
-                                    self.download_page.download_feedback.push("Unexpected error (start.rs 271, download_list.len() == 0?)".to_string());
+                                    self.download_page.download_feedback.push("Unexpected error (start.rs 361, download_list.len() == 0?)".to_string());
                                 } else {
                                     self.download_page.text = String::from(""); // clear the textbox
                                     self.download_page.download_feedback.push(format!(
@@ -485,11 +499,6 @@ impl Application for App {
                         })
                         .collect();
                 }
-                Command::none()
-            }
-            Self::Message::ChangeActivePlaylist(playlist) => {
-                println!("changed active playlist! {}", &playlist.title);
-                // so we will self.sender.send(PungeCommand::UpdateList()) or whatever. will try to search
                 Command::none()
             }
             Self::Message::SelectSong(uniqueid, song) => {

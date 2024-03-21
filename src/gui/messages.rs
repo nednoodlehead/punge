@@ -34,6 +34,8 @@ pub enum ProgramCommands {
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),
+    DownloadMedia(String, String), // link, path. Both should derive from the comboboxes
+    DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
     Debug, // a message that has its associated action changed with the debug in question
     AddToDownloadFeedback(Option<Result<YouTubeData, AppError>>), // only called from the subscription,
     InAppEvent(AppEvent),
@@ -41,9 +43,8 @@ pub enum ProgramCommands {
     GoToSong,             //
     SongFound(Result<PungeMusicObject, AppError>), // when the song is found from GoToSong, this is called
     ChangeViewingPlaylist(String), // pass only the unqiueid i guess. problem was making self.viewing_playlist
-    ChangeActivePlaylist(UserPlaylist),
-    PlaySong(String),           // unqiueid
-    SelectSong(String, String), // uniqueid and title, used to do stuff to the current song
+    PlaySong(String),              // unqiueid
+    SelectSong(String, String),    // uniqueid and title, used to do stuff to the current song
     SyncHeader(scrollable::AbsoluteOffset),
     PlaylistSelected(String), // playlist uuid, would love to also pass in title, but cannot due to pick_list restrictions :(
     AddToPlaylist(Option<String>, Option<String>), // add song uniqueid and playlist uniqueid
@@ -68,7 +69,7 @@ pub enum TextType {
     UserThumbnail,   // playlist
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Page {
     Main,
     Settings,
