@@ -80,10 +80,7 @@ impl App {
                             }
                             GlobalHotKeyEvent { id: 2037224482 } => {
                                 // up arrow
-                                sender
-                                    .send(ProgramCommands::Send(PungeCommand::StaticVolumeUp))
-                                    .await
-                                    .unwrap();
+                                sender.send(ProgramCommands::StaticVolumeUp).await.unwrap();
                             }
                             GlobalHotKeyEvent { id: 1912779161 } => {
                                 // left arrow??
@@ -92,7 +89,7 @@ impl App {
                             GlobalHotKeyEvent { id: 4174001518 } => {
                                 // down arrow!
                                 sender
-                                    .send(ProgramCommands::Send(PungeCommand::StaticVolumeDown))
+                                    .send(ProgramCommands::StaticVolumeDown)
                                     .await
                                     .unwrap();
                             }
@@ -294,18 +291,6 @@ impl App {
                                 }))
                                 .await
                                 .unwrap();
-                        }
-                        PungeCommand::StaticVolumeUp => {
-                            // let val =
-                            //     self.setting_page.static_increment.parse::<u8>().unwrap() / 200;
-                            music_obj
-                                .sink
-                                .set_volume(music_obj.sink.volume() + config.static_increment);
-                        }
-                        PungeCommand::StaticVolumeDown => {
-                            music_obj
-                                .sink
-                                .set_volume(music_obj.sink.volume() - config.static_reduction);
                         }
                         PungeCommand::GoToAlbum => {
                             println!("going 2 album!")
@@ -540,16 +525,6 @@ impl App {
                                             }
                                             music_obj.playlist = name;
                                             println!("length below: {}", music_obj.list.len())
-                                        }
-                                        PungeCommand::StaticVolumeUp => {
-                                            music_obj.sink.set_volume(
-                                                music_obj.sink.volume() + config.static_increment,
-                                            );
-                                        }
-                                        PungeCommand::StaticVolumeDown => {
-                                            music_obj.sink.set_volume(
-                                                music_obj.sink.volume() - config.static_reduction,
-                                            );
                                         }
                                         PungeCommand::ChangeSong(uuid) => {
                                             println!(

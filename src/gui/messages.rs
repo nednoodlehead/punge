@@ -13,8 +13,6 @@ pub enum PungeCommand {
     SkipToSeconds(usize), // intends to play current song from this time (bcs only active song can be target of this operation)
     SkipForwards,
     SkipBackwards,
-    StaticVolumeUp, // used for binds to increase volume by x amount
-    StaticVolumeDown,
     ToggleShuffle,          // will either shuffle or unshuffle the playlist
     GoToAlbum, // not implemented yet. will be used as change the surrounding playlist to the album the song is from
     ChangePlaylist(String), // change the current playlist to the one specified here
@@ -31,6 +29,8 @@ pub enum ProgramCommands {
     PlayToggle,
     SkipForwards,
     SkipBackwards,
+    StaticVolumeUp,
+    StaticVolumeDown,
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),

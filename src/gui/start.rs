@@ -205,6 +205,19 @@ impl Application for App {
                     .expect("failure sending msg");
                 Command::none()
             }
+            Self::Message::StaticVolumeUp => {
+                // should we try to limit this to 30? the slider max value? makes sense
+                self.volume = if self.volume == 30 {
+                    30
+                } else {
+                    self.volume + 1
+                };
+                Command::none()
+            }
+            Self::Message::StaticVolumeDown => {
+                self.volume = self.volume.saturating_sub(1);
+                Command::none()
+            }
             Self::Message::ShuffleToggle => {
                 self.shuffle = if self.shuffle { false } else { true };
                 self.sender
