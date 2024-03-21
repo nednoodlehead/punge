@@ -319,6 +319,11 @@ impl Application for App {
                 self.media_page.download_feedback.push(val);
                 Command::none()
             }
+            Self::Message::UpdateMp3Or4Combobox(choosen) => {
+                self.media_page.download_type = choosen;
+                Command::none()
+            }
+
             Self::Message::AddToDownloadFeedback(feedback) => {
                 // only is called from the subscription !!
                 match feedback {
@@ -589,6 +594,14 @@ impl Application for App {
                 }
                 TextType::UserThumbnail => {
                     self.playlist_page.user_thumbnail = txt;
+                    Command::none()
+                }
+                TextType::Mp4DownloadInput => {
+                    self.media_page.download_input = txt;
+                    Command::none()
+                }
+                TextType::Mp4PathInput => {
+                    self.media_page.download_to_location = txt;
                     Command::none()
                 }
             },

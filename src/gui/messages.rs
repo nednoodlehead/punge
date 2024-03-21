@@ -36,6 +36,7 @@ pub enum ProgramCommands {
     Download(String),
     DownloadMedia(String, String), // link, path. Both should derive from the comboboxes
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
+    UpdateMp3Or4Combobox(String),
     Debug, // a message that has its associated action changed with the debug in question
     AddToDownloadFeedback(Option<Result<YouTubeData, AppError>>), // only called from the subscription,
     InAppEvent(AppEvent),
@@ -59,14 +60,16 @@ pub enum ProgramCommands {
 pub enum TextType {
     // enum used in ProgramCommands::UpdateWidgetText(widget, text)
     // used to update the gui, and not need a bunch of different messages to get it done
-    BackupText,      // settings
-    Mp3Text,         // settings
-    JpgText,         // settings
-    StaticIncrement, // settings
-    StaticReduction, // settings
-    UserTitle,       // playlist
-    UserDescription, // playlist
-    UserThumbnail,   // playlist
+    BackupText,       // settings
+    Mp3Text,          // settings
+    JpgText,          // settings
+    StaticIncrement,  // settings
+    StaticReduction,  // settings
+    UserTitle,        // playlist
+    UserDescription,  // playlist
+    UserThumbnail,    // playlist
+    Mp4DownloadInput, // media
+    Mp4PathInput,     // media
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
