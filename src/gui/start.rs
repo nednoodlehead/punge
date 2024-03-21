@@ -212,10 +212,20 @@ impl Application for App {
                 } else {
                     self.volume + 1
                 };
+                self.sender
+                    .as_mut()
+                    .unwrap()
+                    .send(PungeCommand::NewVolume(self.volume))
+                    .unwrap();
                 Command::none()
             }
             Self::Message::StaticVolumeDown => {
                 self.volume = self.volume.saturating_sub(1);
+                self.sender
+                    .as_mut()
+                    .unwrap()
+                    .send(PungeCommand::NewVolume(self.volume))
+                    .unwrap();
                 Command::none()
             }
             Self::Message::ShuffleToggle => {
