@@ -45,12 +45,24 @@ pub async fn download_interface(
         let title = title_string[0].to_string(); // first half of the title
         let author = title_string[1].to_string(); // second half. expects: <title> - <artist>
         let album = "Single".to_string();
-        YouTubeData {
+        let yt_data = YouTubeData {
             title,
             author,
             album,
             url: url.clone(),
-        }
+        };
+        let obj = create_punge_obj(
+            video,
+            yt_data.clone(),
+            String::from("None"),
+            jpg,
+            mp3,
+            details.video_id,
+            details.length_seconds.parse::<usize>().unwrap(),
+        )
+        .await?;
+        add_to_main(obj)?;
+        yt_data
     } else if details.description.starts_with("Provided") {
         // #2 autogens
         // no check for playlist_title, since it doesnt matter for this
