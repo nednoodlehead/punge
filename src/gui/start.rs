@@ -783,7 +783,7 @@ impl Application for App {
             Subscription::batch(self.download_list.iter().map(types::Download::subscription)),
             self.database_subscription(self.current_song.clone()),
             self.close_app_sub(),
-            // self.database_sub(database_receiver),
+            self.discord_loop(self.current_song.clone()), // self.database_sub(database_receiver),
         ]) // is two batches required?? prolly not
     }
 }

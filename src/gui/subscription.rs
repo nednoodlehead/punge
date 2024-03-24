@@ -8,6 +8,7 @@ use crate::player::interface::{self};
 use crate::types::{Config, MusicData, PungeMusicObject};
 use crate::utils::cache::read_from_cache;
 use arc_swap::ArcSwap;
+use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 
 use global_hotkey::GlobalHotKeyEvent;
 
@@ -626,6 +627,29 @@ impl App {
                     }
                 }
                 async_std::task::sleep(std::time::Duration::from_millis(50)).await;
+            }
+        })
+    }
+
+    pub fn discord_loop(&self, obj: Arc<ArcSwap<MusicData>>) -> Subscription<ProgramCommands> {
+        iced::subscription::channel(13, 32, |mut _sender| async move {
+            let mut client = DiscordIpcClient::new("1219029975441608737").unwrap();
+            client.connect().unwrap();
+            loop {
+                // every 5 seconds, update the song. maybe this will be changed at some point to include the
+                let tmp = obj.load();
+                let (title, artist) = (tmp.title.clone(), tmp.author.clone());
+                client
+                    .set_activity(
+                        activity::Activity::new()
+                            .state(title.as_str())
+                            .details(artist.as_str())
+                            .assets(
+                                activity::Assets::new().large_image("punge_icon_for_discord-02"),
+                            ),
+                    )
+                    .unwrap();
+                async_std::task::sleep(std::time::Duration::from_secs(5)).await;
             }
         })
     }
