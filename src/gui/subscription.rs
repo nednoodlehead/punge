@@ -279,7 +279,7 @@ impl App {
                                 .send(ProgramCommands::NewData(MusicData {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
-                                    album: music_obj.current_object.author.clone(),
+                                    album: music_obj.current_object.album.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
                                     previous_id: None,
                                     volume: music_obj.sink.volume(),
