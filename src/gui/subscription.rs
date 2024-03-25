@@ -15,10 +15,28 @@ use global_hotkey::GlobalHotKeyEvent;
 use iced::futures::sink::SinkExt;
 use iced::subscription::Subscription;
 use rand::seq::SliceRandom;
+use rand::{self, Rng};
 use std::sync::Arc;
 use std::time::Instant;
-
 use tokio::{self}; // for benchmarking the skip function
+
+// makes idling a bit more interesting. Could pull these from json one day...
+const IDLE_STRINGS: &[&str] = &[
+    "Chillin in Punge",
+    "Listening to nothin..",
+    "Listening to the birds chirp",
+    "Idle in Punge menus",
+    "Probably afk lol",
+    "Currently touching grass..",
+    "Busy improving Punge",
+    "Taking the dog for a walk",
+    "Listening to silence",
+    "Music stopped, locked in 😈",
+    "Honestly, probably getting food.",
+    "Piggin out",
+    "Writing more stupid quips",
+    "Doing a war attack",
+];
 impl App {
     // difference between this database subscription is that no sender and receiver is needed, instead we check the status of self.current_obj every 20 seconds or so and do some calculations for inserting into db
     // now the question you may have is, "ok, i see how this can work for weight, but how for plays?", because the weight can be adjusted maybe += 1 for each 20 seconds its listened
@@ -634,21 +652,41 @@ impl App {
     pub fn discord_loop(&self, obj: Arc<ArcSwap<MusicData>>) -> Subscription<ProgramCommands> {
         iced::subscription::channel(13, 32, |mut _sender| async move {
             let mut client = DiscordIpcClient::new("1219029975441608737").unwrap();
+            let punge_img = activity::Assets::new().large_image("punge_icon_for_discord-02");
             client.connect().unwrap();
             loop {
                 // every 5 seconds, update the song. maybe this will be changed at some point to include the
-                let tmp = obj.load();
-                let (title, artist) = (tmp.title.clone(), tmp.author.clone());
-                client
-                    .set_activity(
-                        activity::Activity::new()
-                            .state(title.as_str())
-                            .details(artist.as_str())
-                            .assets(
-                                activity::Assets::new().large_image("punge_icon_for_discord-02"),
-                            ),
-                    )
-                    .unwrap();
+                if !obj.load().is_playing {
+                    client
+                        .set_activity(
+                            activity::Activity::new()
+                                .state(
+                                    IDLE_STRINGS
+                                        [rand::thread_rng().gen_range(0..IDLE_STRINGS.len())],
+                                )
+                                .assets(punge_img.clone()),
+                        )
+                        .unwrap();
+                    loop {
+                        // loop so the idle message doesn't change repeatedly...
+                        if obj.load().is_playing {
+                            break;
+                        } else {
+                            async_std::task::sleep(std::time::Duration::from_secs(1)).await;
+                        }
+                    }
+                } else {
+                    let tmp = obj.load();
+                    let (title, artist) = (tmp.title.clone(), tmp.author.clone());
+                    client
+                        .set_activity(
+                            activity::Activity::new()
+                                .state(title.as_str())
+                                .details(artist.as_str())
+                                .assets(punge_img.clone()),
+                        )
+                        .unwrap();
+                }
                 async_std::task::sleep(std::time::Duration::from_secs(5)).await;
             }
         })
