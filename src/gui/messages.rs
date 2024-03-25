@@ -53,7 +53,9 @@ pub enum ProgramCommands {
     CreateBackup,
     UpdateWidgetText(TextType, String),
     SaveConfig,
-    NewPlaylist, // title, description, path_to_thumbnail
+    NewPlaylist,                        // title, description, path_to_thumbnail
+    OpenSongEditPage(String),           // uuid
+    UpdateSong(crate::gui::table::Row), // happens to be a convient type for this data
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -70,6 +72,9 @@ pub enum TextType {
     UserThumbnail,    // playlist
     Mp4DownloadInput, // media
     Mp4PathInput,     // media
+    TitleChange,      // song edit
+    AuthorChange,     // song edit
+    AlbumChange,      // song edit
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -79,6 +84,7 @@ pub enum Page {
     Download,
     Media, // TODO make the media page :)
     Playlist,
+    SongEdit, // cases where no page needs to be marked out (song_edit_page.rs)
 }
 
 #[derive(Debug, Clone)]

@@ -5,6 +5,7 @@ pub mod new_playlist_page;
 pub mod persistent;
 pub mod playlist_bar;
 pub mod setting_page;
+pub mod song_edit_page;
 pub mod start;
 pub mod subscription;
 pub mod table;

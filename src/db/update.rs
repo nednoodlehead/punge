@@ -22,13 +22,11 @@ pub fn update_song(
     author: String,
     title: String,
     album: String,
-    features: String,
-    _unique: String,
+    unique: String,
 ) -> Result<(), DatabaseErrors> {
     let conn: Connection = rusqlite::Connection::open("main.db")?;
-    let statement: &str =
-        "UPDATE main author = ?, title = ?, album = ?, features = ? WHERE uniqueid = ?";
-    conn.execute(statement, params![author, title, album, features])?;
+    let statement: &str = "UPDATE main SET author = ?, title = ?, album = ? WHERE uniqueid = ?";
+    conn.execute(statement, params![author, title, album, unique])?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }

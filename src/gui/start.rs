@@ -1,8 +1,9 @@
 // can we rename this to lib.rs at some point maybe??
 use crate::db::fetch::{
-    get_all_from_playlist, get_all_main, get_all_playlists, get_uuid_from_name,
+    get_all_from_playlist, get_all_main, get_all_playlists, get_uuid_from_name, song_from_uuid,
 };
 use crate::db::insert::{add_to_playlist, create_playlist};
+use crate::db::update::update_song;
 use crate::gui::messages::{AppEvent, Page, ProgramCommands, PungeCommand, TextType};
 use crate::gui::persistent;
 use crate::gui::table::{Column, ColumnKind, Row};
@@ -81,6 +82,7 @@ pub struct App {
     pub setting_page: setting_page::SettingPage, // pub so src\gui\subscrip can see the user choosen value increments
     media_page: crate::gui::media_page::MediaPage,
     playlist_page: crate::gui::new_playlist_page::PlaylistPage,
+    song_edit_page: crate::gui::song_edit_page::SongEditPage,
     download_list: Vec<types::Download>, // should also include the link somewhere to check for
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
@@ -131,6 +133,7 @@ impl Application for App {
                 setting_page: setting_page::SettingPage::new(),
                 media_page: crate::gui::media_page::MediaPage::new(),
                 playlist_page: crate::gui::new_playlist_page::PlaylistPage::new(None),
+                song_edit_page: crate::gui::song_edit_page::SongEditPage::new(),
                 download_list: vec![],
                 last_id: 0,
                 manager,
@@ -604,6 +607,18 @@ impl Application for App {
                     self.media_page.download_to_location = txt;
                     Command::none()
                 }
+                TextType::TitleChange => {
+                    self.song_edit_page.title = txt;
+                    Command::none()
+                }
+                TextType::AuthorChange => {
+                    self.song_edit_page.author = txt;
+                    Command::none()
+                }
+                TextType::AlbumChange => {
+                    self.song_edit_page.album = txt;
+                    Command::none()
+                }
             },
 
             Self::Message::SaveConfig => {
@@ -656,6 +671,42 @@ impl Application for App {
                 // also refresh the buttons!
                 Command::none()
             }
+            Self::Message::OpenSongEditPage(uniqueid) => {
+                // empty uniqueid will crash program, check against it
+                if !uniqueid.is_empty() {
+                    let item = song_from_uuid(&uniqueid).unwrap();
+                    self.song_edit_page
+                        .update_info(item.0, item.1, item.2, uniqueid);
+                    self.current_view = Page::SongEdit;
+                }
+                Command::none()
+            }
+            Self::Message::UpdateSong(row) => {
+                update_song(row.author, row.title, row.album, row.uniqueid).unwrap();
+                self.rows = if self.viewing_playlist == "main" {
+                    let n = get_all_main().unwrap();
+                    n.into_iter()
+                        .map(|item| Row {
+                            title: item.title,
+                            author: item.author,
+                            album: item.album,
+                            uniqueid: item.uniqueid,
+                        })
+                        .collect()
+                } else {
+                    let n = get_all_from_playlist(&self.viewing_playlist).unwrap();
+                    n.into_iter()
+                        .map(|item| Row {
+                            title: item.title,
+                            author: item.author,
+                            album: item.album,
+                            uniqueid: item.uniqueid,
+                        })
+                        .collect()
+                };
+                self.current_view = Page::Main;
+                Command::none()
+            }
 
             _ => {
                 println!("inumplmented");
@@ -701,6 +752,9 @@ impl Application for App {
                 Some(self.side_menu_playlist_select.0.clone()),
                 ProgramCommands::PlaylistSelected
             ),
+            button(text("Edit!")).on_press(ProgramCommands::OpenSongEditPage(
+                self.side_menu_song_select.1.clone()
+            ))
         ])
         .padding(15);
         let buttons: Vec<Element<ProgramCommands>> = self
@@ -773,6 +827,7 @@ impl Application for App {
             Page::Settings => self.setting_page.view(),
             Page::Media => self.media_page.view(),
             Page::Playlist => self.playlist_page.view(),
+            Page::SongEdit => self.song_edit_page.view(),
         }
     }
 

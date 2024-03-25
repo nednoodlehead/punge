@@ -107,6 +107,7 @@ pub enum ColumnKind {
     Edit,
 }
 
+#[derive(Debug, Clone)]
 pub struct Row {
     pub title: String,
     pub author: String,

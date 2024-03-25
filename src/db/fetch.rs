@@ -100,7 +100,7 @@ pub fn get_name_from_uuid(playlist_uuid: String) -> String {
     let mut stmt = conn
         .prepare("SELECT title from metadata WHERE playlist_id = ?")
         .unwrap();
-    
+
     stmt.query_row([&playlist_uuid], |row| row.get(0)).unwrap()
 }
 
@@ -140,4 +140,22 @@ pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
     drop(stmt);
     conn.close().map_err(|(_, err)| err)?;
     Ok(ret_vec)
+}
+
+pub fn song_from_uuid(uniqueid: &str) -> Result<(String, String, String), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    let mut stmt = conn.prepare("SELECT title, author, album FROM main WHERE uniqueid = ?")?;
+    let mut rows = stmt.query(params![uniqueid])?;
+    if let Some(row) = rows.next()? {
+        Ok((
+            row.get::<_, String>(0)?, // title
+            row.get::<_, String>(1)?, // author
+            row.get::<_, String>(2)?, // album
+        ))
+    } else {
+        Err(DatabaseErrors::FromSqlError(format!(
+            "No rows reqturned from query. uuid: {}",
+            &uniqueid
+        )))
+    }
 }
