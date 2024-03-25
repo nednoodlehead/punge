@@ -3,7 +3,7 @@ use crate::gui::persistent;
 use crate::types::AppError;
 use rusty_ytdl;
 
-use iced::widget::{button, column, combo_box, container, row, text, text_input, Container};
+use iced::widget::{button, column, combo_box, row, text, text_input, Container};
 
 use iced::{Alignment, Element};
 
@@ -94,7 +94,7 @@ pub async fn download_content(link: String, download_path: String) -> Result<Str
 async fn download_youtube(link: String, mut path: String) -> Result<String, AppError> {
     let vid = rusty_ytdl::Video::new(link)?;
     // make the path end with a slash
-    path = if !path.ends_with("\\") | !path.ends_with("/") {
+    path = if !path.ends_with('\\') | !path.ends_with('/') {
         format!("{}/", path)
     } else {
         path

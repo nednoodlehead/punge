@@ -46,7 +46,7 @@ pub fn convert() {
 
 pub fn calc_thres(len: String) -> u16 {
     // len: 00:10:12 format
-    let sep: Vec<&str> = len.split(":").collect();
+    let sep: Vec<&str> = len.split(':').collect();
     // nothing reaches this in the db lol let hrs = sep[0].parse::<u16>().unwrap();
     let min = sep[1].parse::<u16>().unwrap();
     let sec = sep[2].parse::<u16>().unwrap();

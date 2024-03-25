@@ -1,7 +1,7 @@
 // in this file, we have the funcationality of sorting through our current playlist and find the best match for user input
 // there are also 2 main sorts, one sorts author / title, the other sorts album (if album sort is choosen as best match for user input, shuffle = false, count = first song of the album)
 // quite inspired by helix's regex
-use crate::db::fetch::{get_all_from_playlist, get_all_main, get_uuid_from_name};
+use crate::db::fetch::{get_all_from_playlist, get_all_main};
 use crate::types::{AppError, PungeMusicObject};
 use regex::Regex;
 
@@ -31,23 +31,21 @@ fn get_value_of_found(search_string: String, letters: String) -> u8 {
     for letter in search_string.chars() {
         if active_letter >= search_letters.len() {
             // ignore
-        } else {
-            if letter == search_letters[active_letter] {
-                if streak {
-                    // so if we are on a streak of multiple letters, increase the value
-                    score += 2;
-                    active_letter += 1;
-                } else {
-                    // so if this is our first letter being found (not on streak)
-                    score += 1;
-                    streak = true;
-                    active_letter += 1;
-                }
+        } else if letter == search_letters[active_letter] {
+            if streak {
+                // so if we are on a streak of multiple letters, increase the value
+                score += 2;
+                active_letter += 1;
             } else {
-                // letter does not match
-                // skip
-                streak = false;
+                // so if this is our first letter being found (not on streak)
+                score += 1;
+                streak = true;
+                active_letter += 1;
             }
+        } else {
+            // letter does not match
+            // skip
+            streak = false;
         }
     }
     score
@@ -57,7 +55,7 @@ pub async fn get_values_from_db(
     playlist: String, // uniqueid now
     user_string: String,
 ) -> Result<PungeMusicObject, AppError> {
-    let playlist_values = if playlist == "main".to_string() {
+    let playlist_values = if playlist == *"main" {
         get_all_main().unwrap()
     } else {
         get_all_from_playlist(playlist.as_str()).unwrap()
@@ -80,7 +78,7 @@ pub async fn get_values_from_db(
             ));
         }
     }
-    if found_values.len() == 0 {
+    if found_values.is_empty() {
         return Err(AppError::SearchError);
     }
     found_values.sort_by_key(|item| item.0);

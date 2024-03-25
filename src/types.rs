@@ -58,7 +58,7 @@ impl std::fmt::Debug for UserPlaylist {
 
 impl PartialEq for UserPlaylist {
     fn eq(&self, other: &Self) -> bool {
-        self.uniqueid == self.uniqueid
+        self.uniqueid == other.uniqueid
     }
 }
 

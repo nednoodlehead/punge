@@ -63,7 +63,7 @@ pub fn begin() -> iced::Result {
             exit_on_close_request: false,
         },
         default_font: Default::default(),
-        default_text_size: iced::Pixels { 0: 16.0 },
+        default_text_size: iced::Pixels(16.0),
         antialiasing: false,
         fonts: Settings::<()>::default().fonts, // thanks source code?
     })
@@ -229,7 +229,7 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::ShuffleToggle => {
-                self.shuffle = if self.shuffle { false } else { true };
+                self.shuffle = !self.shuffle;
                 self.sender
                     .as_mut()
                     .unwrap()
@@ -238,7 +238,7 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::PlayToggle => {
-                self.is_paused = if self.is_paused { false } else { true };
+                self.is_paused = !self.is_paused;
                 self.sender
                     .as_mut()
                     .unwrap()
@@ -288,7 +288,7 @@ impl Application for App {
                         eval = true;
                     }
                 }
-                if eval == false {
+                if !eval {
                     let playlist_title = if link.contains("list=") {
                         Some(get_playlist(link.as_str()).unwrap().title)
                     } else {
@@ -362,7 +362,7 @@ impl Application for App {
                                 }
                             }
                             Err(error) => {
-                                if self.download_list.len() == 0 {
+                                if self.download_list.is_empty() {
                                     self.download_page.download_feedback.push("Unexpected error (start.rs 361, download_list.len() == 0?)".to_string());
                                 } else {
                                     self.download_page.text = String::from(""); // clear the textbox
@@ -404,7 +404,7 @@ impl Application for App {
                     player_cache::dump_cache(cache); // dumps user cache
                     println!("dumpepd cache!");
 
-                    return iced::window::close::<Self::Message>(iced::window::Id::MAIN);
+                    iced::window::close::<Self::Message>(iced::window::Id::MAIN)
                 }
             },
             Self::Message::UpdateSearch(input) => {
@@ -421,7 +421,7 @@ impl Application for App {
                             .unwrap();
                         self.search = "".to_string();
                     }
-                    Err(e) => self.search = { "No results found".to_string() },
+                    Err(_e) => self.search = "No results found".to_string(),
                 };
                 Command::none()
             }
@@ -634,7 +634,7 @@ impl Application for App {
                     static_reduction,
                 };
                 match cache::write_to_cache(obj) {
-                    Ok(t) => {
+                    Ok(_t) => {
                         println!("config written successfully")
                     }
                     Err(e) => {
@@ -671,7 +671,7 @@ impl Application for App {
                 .width(Length::Fixed(250.0)),
             button(text("Confirm")).on_press(ProgramCommands::GoToSong)
         ]);
-        let table = responsive(|size| {
+        let table = responsive(|_size| {
             let table = iced_table::table(
                 self.header.clone(),
                 self.body.clone(),

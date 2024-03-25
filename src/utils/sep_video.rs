@@ -63,7 +63,7 @@ pub fn separate(
             datedownloaded: Local::now().date_naive(),
             lastlistenedto: Local::now().date_naive(),
             ischild: true,
-            uniqueid: format!("{}{}", obj.uniqueid, count.to_string()),
+            uniqueid: format!("{}{}", obj.uniqueid, count),
             plays: 0,
             weight: 0,
             threshold: crate::db::utilities::calc_thres(length_map[count].clone()),
@@ -108,7 +108,7 @@ pub fn hash_to_vec_ordered(
 // pass in the length of the song in "hh:mm:ss" format
 pub fn generate_map(description: String) -> HashMap<String, String> {
     let mut map: HashMap<String, String> = HashMap::new();
-    let split_by_new_line: Vec<&str> = description.split("\n").collect();
+    let split_by_new_line: Vec<&str> = description.split('\n').collect();
     let timestamp_reg = Regex::new(r#"\d+:\d+"#).unwrap();
     for line in split_by_new_line {
         let timestamper = Regex::find(&timestamp_reg, line);
@@ -143,12 +143,12 @@ pub fn get_length_from_timestamp(timestamp: Vec<(String, String, String)>) -> Ve
     for (start, end, _title) in timestamp {
         let start = timestamp_to_int(start);
         let end = if end == "end" {
-            total_length_seconds + start.clone()
+            total_length_seconds + start
         } else {
             timestamp_to_int(end)
         };
         let val = end - start;
-        total_length_seconds += val.clone();
+        total_length_seconds += val;
         let ret_val = int_to_timestamp(val);
         length_vec.push(ret_val)
     }
@@ -158,7 +158,7 @@ pub fn get_length_from_timestamp(timestamp: Vec<(String, String, String)>) -> Ve
 fn timestamp_to_int(timestamp: String) -> usize {
     let mut val = 0;
     let bruh: Vec<String> = timestamp
-        .split(":")
+        .split(':')
         .collect_vec()
         .iter()
         .map(|item| item.to_string())
@@ -196,7 +196,7 @@ pub fn int_to_timestamp(mut seconds: usize) -> String {
     let min_str = minutes.to_string();
     let sec_str = seconds.to_string();
     let mut new_time: String = String::new();
-    for mut string in vec![hrs_str, min_str, sec_str] {
+    for mut string in [hrs_str, min_str, sec_str] {
         if string.len() != 2 {
             string = format!("{}{}", "0", string);
         }

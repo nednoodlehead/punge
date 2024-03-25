@@ -267,7 +267,7 @@ impl App {
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
                                     playlist: music_obj.playlist.clone(),
-                                    threshold: music_obj.current_object.threshold.clone(),
+                                    threshold: music_obj.current_object.threshold,
                                     context: Context::SkippedBackwards,
                                 }))
                                 .await
@@ -305,7 +305,7 @@ impl App {
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
                                     playlist: music_obj.playlist.clone(),
-                                    threshold: music_obj.current_object.threshold.clone(),
+                                    threshold: music_obj.current_object.threshold,
                                     context: Context::Seeked,
                                 }))
                                 .await
@@ -465,7 +465,7 @@ impl App {
                                             // music_obj.count -= 1; // do check for smaller than music_obj.len()?
                                             music_obj.count = change_count(
                                                 false,
-                                                music_obj.count.clone(),
+                                                music_obj.count,
                                                 music_obj.list.len(),
                                             );
                                             music_obj.current_object =
@@ -585,7 +585,7 @@ impl App {
                                                     previous_id: None,
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
-                                                    shuffle: music_obj.shuffle.clone(),
+                                                    shuffle: music_obj.shuffle,
                                                     playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::Seeked,
@@ -710,14 +710,12 @@ pub fn change_count(incrementing: bool, count: isize, vec_len: usize) -> isize {
         // going below the limit
         (vec_len as isize) - 1
     } else if (count == (vec_len - 1) as isize) && incrementing {
-        0 as isize // going above or equal the limit
+        0_isize // going above or equal the limit
+    } else if incrementing {
+        // all other cases!
+        count + 1
     } else {
-        if incrementing {
-            // all other cases!
-            count + 1
-        } else {
-            count - 1
-        }
+        count - 1
     };
     new_count
 }

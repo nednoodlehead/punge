@@ -49,7 +49,7 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
     fn cell(
         &'a self,
         _col_index: usize,
-        row_index: usize,
+        _row_index: usize,
         row: &'a Self::Row,
     ) -> Element<'a, ProgramCommands> {
         let content: Element<_> = match self.kind {
@@ -80,7 +80,7 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
         rows: &'a [Self::Row],
     ) -> Option<Element<'a, ProgramCommands>> {
         let content = if matches!(self.kind, ColumnKind::Title) {
-            let total_enabled = rows.iter().count();
+            let total_enabled = rows.len();
 
             Element::from(text(format!("Total: {total_enabled}")))
         } else {

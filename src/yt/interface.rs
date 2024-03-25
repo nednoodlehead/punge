@@ -68,7 +68,7 @@ pub async fn download_interface(
         // no check for playlist_title, since it doesnt matter for this
         let title = details.title;
         let author = details.author;
-        let album = details.description.split("\n").collect_vec()[4].to_string();
+        let album = details.description.split('\n').collect_vec()[4].to_string();
         let youtube_data = YouTubeData {
             title,
             author: author.unwrap().name,
@@ -358,9 +358,9 @@ fn description_timestamp_check(desc: &str) -> bool {
     // maybe a check to see if timestamps increment??
     let pattern = Regex::new(r"\d*:\d\d").unwrap(); // catches timestamps (10:10, 1:34:51..)
     let mut caught_list: Vec<&str> = pattern.find_iter(desc).map(|mat| mat.as_str()).collect(); // list for all captured regex patterns. We will check if they are all the same
-    if caught_list.len() == 0 {
+    if caught_list.is_empty() {
         // if the caught list it empty, meaning that there are no timestamps
-        return false;
+        false
     } else {
         let init_catch = caught_list[0];
         for catch in &mut caught_list[1..] {

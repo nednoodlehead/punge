@@ -27,8 +27,8 @@ pub fn get_playlist(link: &str) -> Result<Playlist, AppError> {
 }
 // gets the html from the given link
 fn get_html(link: &str) -> String {
-    let val = reqwest::blocking::get(link).unwrap().text().unwrap();
-    val
+    
+    reqwest::blocking::get(link).unwrap().text().unwrap()
 }
 // function to get the extra information from the json
 fn get_extras(json: &String) -> (String, String, u64) {
@@ -42,7 +42,7 @@ fn get_extras(json: &String) -> (String, String, u64) {
         ["totalVideos"]
         .as_u64()
         .unwrap();
-    return (title, author, count);
+    (title, author, count)
 }
 
 // turns the json into a vec of the videos
@@ -66,7 +66,7 @@ fn json_to_vec_videos(to_json: &String) -> Vec<String> {
             }
         }
     }
-    return return_vals;
+    return_vals
 }
 
 // parses the html looking for the json object
@@ -107,7 +107,7 @@ fn find_object_from_startpoint(old_html: &str, starting: usize) -> String {
     while i < html.len() {
         // if that stack length == 0 that means we have reached the end of the object because
         // there are no more context closers (aka keeping tack of how many braces there are)
-        if stack.len() == 0 {
+        if stack.is_empty() {
             break;
         }
         // updates the current char
@@ -141,6 +141,6 @@ fn find_object_from_startpoint(old_html: &str, starting: usize) -> String {
     }
     // define the json, and return it as a string !
     let full_obj: &[char] = &html[..i];
-    let _ret_obj: String = full_obj.into_iter().collect();
-    return full_obj.into_iter().collect();
+    let _ret_obj: String = full_obj.iter().collect();
+    return full_obj.iter().collect();
 }

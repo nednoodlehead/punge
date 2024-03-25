@@ -1,7 +1,7 @@
 // this file is for elements that are persistent across pages
 // such as the 'current playing' bar at the bottom, and the buttons at the top to change pages
 use crate::gui::messages::{Page, ProgramCommands};
-use iced::widget::{button, row, slider, text, text_input, Row};
+use iced::widget::{button, text, Row};
 use iced::Element;
 
 pub fn render_top_buttons(ignore: Page) -> Element<'static, ProgramCommands> {

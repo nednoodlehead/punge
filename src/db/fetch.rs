@@ -1,5 +1,5 @@
 use crate::types::{DatabaseErrors, PungeMusicObject};
-use chrono::NaiveDate;
+
 use rusqlite::{params, Connection};
 
 pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
@@ -74,7 +74,7 @@ pub fn exists_in_db(uniqueid: String) -> bool {
     let mut stmt = conn
         .prepare("SELECT title FROM main WHERE uniqueid = ?")
         .unwrap();
-    let mut rows = stmt.query(&[&uniqueid]).unwrap();
+    let mut rows = stmt.query([&uniqueid]).unwrap();
     let val = rows.next().unwrap().is_some();
     drop(rows); // drop to release borrown on stmt
     drop(stmt); // explicitly drop stmt to release borrow on conn
@@ -88,7 +88,7 @@ pub fn get_uuid_from_name(playlist_name: String) -> String {
         .prepare("SELECT playlist_id from metadata WHERE title = ?")
         .unwrap();
     println!("playlist name HERE: {}", &playlist_name);
-    let result: String = stmt.query_row(&[&playlist_name], |row| row.get(0)).unwrap();
+    let result: String = stmt.query_row([&playlist_name], |row| row.get(0)).unwrap();
     drop(stmt);
     conn.close().unwrap();
     result
@@ -100,8 +100,8 @@ pub fn get_name_from_uuid(playlist_uuid: String) -> String {
     let mut stmt = conn
         .prepare("SELECT title from metadata WHERE playlist_id = ?")
         .unwrap();
-    let result = stmt.query_row(&[&playlist_uuid], |row| row.get(0)).unwrap();
-    result
+    
+    stmt.query_row([&playlist_uuid], |row| row.get(0)).unwrap()
 }
 
 // pub fn get_from_text_query(table: &str, query: &str) -> Vec<PungeMusicObject> {

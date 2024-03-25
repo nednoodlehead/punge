@@ -37,7 +37,7 @@ impl MusicPlayer {
             .iter()
             .position(|r| r.clone().uniqueid == cache.song_id)
             .unwrap_or(0);
-        let current_object = list[count as usize].clone();
+        let current_object = list[count].clone();
         // list should inherite from cache at some point. not worried now tho
         MusicPlayer {
             list,
@@ -74,8 +74,8 @@ pub fn read_file_from_beginning(file: String) -> Decoder<BufReader<File>> {
     // we should overhaul this at some point to be a method associated with the app. when there is a file that doesn't exist,
     // we can send it to some related "missing" vector. this can be written to json when program closes? or when found?
     let reader = BufReader::new(File::open(file).unwrap());
-    let decoder = Decoder::new(reader).unwrap();
-    decoder
+    
+    Decoder::new(reader).unwrap()
 }
 
 pub fn read_from_time(file: String, time: usize) -> Decoder<BufReader<File>> {

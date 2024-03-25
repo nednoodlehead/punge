@@ -1,7 +1,7 @@
 // these are the messages sent around the program. This is divded up here because start.rs imports this
 // as well as the actual music-playing portion of the app
 
-use crate::types::{AppError, PungeMusicObject, UserPlaylist};
+use crate::types::{AppError, PungeMusicObject};
 use crate::types::{MusicData, YouTubeData};
 use iced::widget::scrollable;
 use tokio::sync::mpsc as async_sender;
