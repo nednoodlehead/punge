@@ -704,6 +704,13 @@ impl Application for App {
                         })
                         .collect()
                 };
+                // update the active playlists in memory with the new name, im not sure if there is a better way
+                // to do this, just reload the playlist ig
+                self.sender
+                    .as_mut()
+                    .unwrap()
+                    .send(PungeCommand::ChangePlaylist(self.viewing_playlist.clone()))
+                    .unwrap();
                 self.current_view = Page::Main;
                 Command::none()
             }
