@@ -32,3 +32,4 @@ rand = "0.8"
 arc-swap = "1.6.0"
 iced_table = {git = "https://github.com/tarkah/iced_table"}
 log = "0.4.21"  # stinky crate conflict
+discord-rich-presence = "0.2.3"
