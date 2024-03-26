@@ -292,20 +292,29 @@ impl Application for App {
                     }
                 }
                 if !eval {
-                    let playlist_title = if link.contains("list=") {
-                        Some(get_playlist(link.as_str()).unwrap().title)
+                    if link.contains("list=") {
+                        // add all of the songs and push them
+                        let playlist = get_playlist(&link).unwrap();
+                        // ok genuine no guarentee that they download and insert in order? which is sort of important..?
+                        for sub_link in playlist.links {
+                            self.download_list.push(types::Download {
+                                id: self.last_id,
+                                link: Some(sub_link),
+                                playlist_title: Some(playlist.title.clone()),
+                            })
+                        }
                     } else {
-                        None
+                        self.download_list.push(types::Download {
+                            id: self.last_id,
+                            link: Some(link),
+                            playlist_title: None,
+                        });
                     };
-                    println!("pushing and downloading!");
-                    self.download_list.push(types::Download {
-                        id: self.last_id,
-                        link: Some(link),
-                        playlist_title,
-                    });
                 } else {
                     println!("not pushing !!! already downloading")
                 }
+                // reset the value, regardless of the outcome
+                self.download_page.text = String::new();
                 Command::none()
             }
             Self::Message::DownloadMedia(link, path) => Command::perform(
