@@ -3,7 +3,7 @@ use crate::gui::persistent;
 use crate::types::AppError;
 use rusty_ytdl;
 
-use iced::widget::{button, column, combo_box, row, text, text_input, Container};
+use iced::widget::{button, column, combo_box, horizontal_space, row, text, text_input, Container};
 
 use iced::{Alignment, Element};
 
@@ -27,25 +27,30 @@ impl MediaPage {
     pub fn view(&self) -> Element<'_, ProgramCommands> {
         let buttons_and_labels = column![
             row![
+                horizontal_space(),
                 text("Youtube / Instagram link").width(175.0),
                 text_input(&self.download_input, &self.download_input)
                     .on_input(|txt| {
                         ProgramCommands::UpdateWidgetText(TextType::Mp4DownloadInput, txt)
                     })
-                    .width(500.0)
+                    .width(500.0),
+                horizontal_space(),
             ]
             .padding(10.0)
             .align_items(Alignment::Center),
             row![
+                horizontal_space(),
                 text("Path:").width(175.0),
                 text_input(&self.download_to_location, &self.download_to_location)
                     .on_input(|txt| {
                         ProgramCommands::UpdateWidgetText(TextType::Mp4PathInput, txt)
                     })
-                    .width(500)
+                    .width(500),
+                horizontal_space()
             ]
             .padding(10.0),
             row![
+                horizontal_space(),
                 combo_box(
                     &self.mp3_and_4,
                     self.download_type.as_str(),
@@ -58,7 +63,8 @@ impl MediaPage {
                         self.download_input.clone(),
                         self.download_to_location.clone()
                     ))
-                    .width(100.0)
+                    .width(100.0),
+                horizontal_space()
             ]
             .padding(10.0)
         ];

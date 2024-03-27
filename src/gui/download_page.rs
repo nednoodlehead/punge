@@ -25,9 +25,18 @@ impl DownloadPage {
             .width(Length::Fixed(400.0));
         let confirm_button =
             button(text("Download!")).on_press(ProgramCommands::Download(self.text.clone()));
-        let download_row =
-            row![horizontal_space(), input_field, confirm_button].align_items(Alignment::End);
-        let feedback_scrollable = row![horizontal_space(), container(self.create_scrollable())];
+        let download_row = row![
+            horizontal_space(),
+            input_field,
+            confirm_button,
+            horizontal_space()
+        ]
+        .align_items(Alignment::End);
+        let feedback_scrollable = row![
+            horizontal_space(),
+            container(self.create_scrollable()),
+            horizontal_space()
+        ];
         Container::new(
             column![
                 persistent::render_top_buttons(Page::Download),

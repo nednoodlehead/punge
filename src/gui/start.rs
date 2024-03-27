@@ -14,7 +14,6 @@ use crate::types::{Config, MusicData, UserPlaylist};
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
 use crate::utils::playlist::get_playlist;
-use crate::utils::types;
 use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
 use std::sync::Arc;
