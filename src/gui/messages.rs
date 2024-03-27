@@ -38,7 +38,7 @@ pub enum ProgramCommands {
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
     UpdateMp3Or4Combobox(String),
     Debug, // a message that has its associated action changed with the debug in question
-    AddToDownloadFeedback(Option<Result<YouTubeData, AppError>>), // only called from the subscription,
+    AddToDownloadFeedback(String, Result<YouTubeData, AppError>), // String = youtubelink, Result<string> = title - author
     InAppEvent(AppEvent),
     UpdateSearch(String), // for updating the string that is used in the regex search
     GoToSong,             //

@@ -15,6 +15,7 @@ use crate::utils::backup::create_backup;
 use crate::utils::cache;
 use crate::utils::playlist::get_playlist;
 use crate::utils::types;
+use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
 use std::sync::Arc;
 
@@ -83,7 +84,7 @@ pub struct App {
     media_page: crate::gui::media_page::MediaPage,
     playlist_page: crate::gui::new_playlist_page::PlaylistPage,
     song_edit_page: crate::gui::song_edit_page::SongEditPage,
-    download_list: Vec<types::Download>, // should also include the link somewhere to check for
+    download_list: Vec<String>, // full link, songs are removed when finished / errored. Used so multiple downloads are not started
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
     search: String,
@@ -281,41 +282,30 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::Download(link) => {
-                // should be depreciated?
-                let mut eval: bool = false;
-                for download in self.download_list.iter() {
-                    if &download.link.clone().unwrap() == &link {
-                        self.download_page
-                            .download_feedback
-                            .push(format!("Download already started on {}", link.clone()));
-                        eval = true;
+                // is it a playlist?
+                let download = if link.contains("list=") {
+                    let mut list_cmd = Vec::new();
+                    let playlist = get_playlist(&link).unwrap();
+                    for song in playlist.links {
+                        self.download_list.push(song.clone());
+                        let cmd = Command::perform(
+                            download_interface(song.clone(), Some(playlist.title.clone())),
+                            |yt_data| ProgramCommands::AddToDownloadFeedback(song, yt_data),
+                        );
+                        list_cmd.push(cmd);
                     }
-                }
-                if !eval {
-                    if link.contains("list=") {
-                        // add all of the songs and push them
-                        let playlist = get_playlist(&link).unwrap();
-                        // ok genuine no guarentee that they download and insert in order? which is sort of important..?
-                        for sub_link in playlist.links {
-                            self.download_list.push(types::Download {
-                                id: self.last_id,
-                                link: Some(sub_link),
-                                playlist_title: Some(playlist.title.clone()),
-                            })
-                        }
-                    } else {
-                        self.download_list.push(types::Download {
-                            id: self.last_id,
-                            link: Some(link),
-                            playlist_title: None,
-                        });
-                    };
+                    Command::batch(list_cmd)
                 } else {
-                    println!("not pushing !!! already downloading")
-                }
+                    self.download_list.push(link.clone());
+                    Command::perform(download_interface(link.clone(), None), |yt_data| {
+                        ProgramCommands::AddToDownloadFeedback(link, yt_data)
+                    })
+                };
+
                 // reset the value, regardless of the outcome
                 self.download_page.text = String::new();
-                Command::none()
+                download
+                // Command::none()
             }
             Self::Message::DownloadMedia(link, path) => Command::perform(
                 crate::gui::media_page::download_content(link, path),
@@ -336,68 +326,25 @@ impl Application for App {
                 Command::none()
             }
 
-            Self::Message::AddToDownloadFeedback(feedback) => {
-                // only is called from the subscription !!
-                match feedback {
-                    Some(item) => {
-                        match item {
-                            Ok(youtube_data) => {
-                                println!(
-                                    "{} made {:?}",
-                                    &youtube_data.url,
-                                    (&youtube_data.title, &youtube_data.author)
-                                );
-                                self.download_page.download_feedback.push(format!(
-                                    "{} downloaded successfully!",
-                                    format!("{} - {}", youtube_data.title, youtube_data.author)
-                                ));
-                                let mut ind = 0;
-                                for (index, download) in self.download_list.iter().enumerate() {
-                                    if download.link.as_ref().unwrap() == &youtube_data.url {
-                                        println!("removed: {}", &youtube_data.url);
-                                        ind = index;
-                                    }
-                                }
-                                // not sure why this can be 0?
-                                if ind != 0 {
-                                    self.download_list.remove(ind);
-                                }
+            Self::Message::AddToDownloadFeedback(link, youtubedata) => {
+                // remove it from the download list, since it has either been downloaded, or failed to download
+                self.download_list.swap_remove(
+                    // swap remove is a little quicker, and order doesn't matter :)
+                    self.download_list
+                        .iter()
+                        .position(|x| *x == link)
+                        .expect("Failure removing!"),
+                );
+                let feedback = match youtubedata {
+                    Ok(t) => {
+                        format!("{} - {} Downloaded Successfully", t.title, t.author)
+                    }
+                    Err(e) => {
+                        format!("Error downloading: {}\n{:?}", link, e)
+                    }
+                };
+                self.download_page.download_feedback.push(feedback);
 
-                                if self.current_song.load().playlist == "main" {
-                                    println!("sender status?: {:?}", self.sender);
-                                    // if main is the current playlist, refresh it so the new song shows up
-                                    self.sender
-                                        .as_mut()
-                                        .unwrap()
-                                        .send(PungeCommand::ChangePlaylist("main".to_string()))
-                                        .unwrap();
-                                }
-                            }
-                            Err(error) => {
-                                if self.download_list.is_empty() {
-                                    self.download_page.download_feedback.push("Unexpected error (start.rs 361, download_list.len() == 0?)".to_string());
-                                } else {
-                                    self.download_page.text = String::from(""); // clear the textbox
-                                    self.download_page.download_feedback.push(format!(
-                                        "Error downloading {}: {:?}",
-                                        self.download_list
-                                            [self.download_list.len().saturating_sub(1)] // no underflow errors here buddy
-                                        .link
-                                        .clone()
-                                        .unwrap(),
-                                        error
-                                    ));
-                                    self.download_list
-                                        .remove(self.download_list.len().saturating_sub(1));
-                                }
-                                // add to some list ? like failed downloads
-                            }
-                        }
-                    }
-                    None => {
-                        println!("start.rs: none after downloadfeedback?? 128")
-                    }
-                }
                 Command::none()
             }
             Self::Message::Debug => {
@@ -851,7 +798,6 @@ impl Application for App {
         iced::subscription::Subscription::batch(vec![
             self.music_loop(),
             self.hotkey_loop(),
-            Subscription::batch(self.download_list.iter().map(types::Download::subscription)),
             self.database_subscription(self.current_song.clone()),
             self.close_app_sub(),
             self.discord_loop(self.current_song.clone()), // self.database_sub(database_receiver),
