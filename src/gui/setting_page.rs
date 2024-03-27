@@ -20,14 +20,11 @@ impl SettingPage {
             Err(e) => {
                 println!("error gettin cache {:?}", e);
                 Config {
-                    backup_path: format!(
-                        "C:/Users/{}/Documents/",
-                        whoami::username()
-                    ),
+                    backup_path: format!("C:/Users/{}/Documents/", whoami::username()),
                     mp3_path: String::from("C:/"),
                     jpg_path: String::from("C:/"),
-                    static_increment: 0.005,
-                    static_reduction: 0.005,
+                    static_increment: 1,
+                    static_reduction: 1,
                 }
             }
         };

@@ -194,8 +194,8 @@ pub struct Config {
     pub backup_path: String,
     pub mp3_path: String,
     pub jpg_path: String,
-    pub static_increment: f32,
-    pub static_reduction: f32,
+    pub static_increment: usize,
+    pub static_reduction: usize,
 }
 
 // used in src/yt to move data around in an easier / simpler format

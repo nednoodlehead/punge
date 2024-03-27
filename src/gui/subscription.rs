@@ -354,10 +354,6 @@ impl App {
                             }
                             music_obj.playlist = name;
                         }
-                        PungeCommand::NewStatic(inc, red) => {
-                            config.static_increment = inc;
-                            config.static_reduction = red;
-                        }
                     },
                     _ => {
                         // what gets hit when nothing happens
@@ -592,10 +588,6 @@ impl App {
                                                 }))
                                                 .await
                                                 .unwrap();
-                                        }
-                                        PungeCommand::NewStatic(inc, red) => {
-                                            config.static_increment = inc;
-                                            config.static_reduction = red;
                                         }
                                         _ => {
                                             println!("yeah, other stuff... {:?}", cmd)

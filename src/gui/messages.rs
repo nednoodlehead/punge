@@ -16,12 +16,11 @@ pub enum PungeCommand {
     ToggleShuffle,          // will either shuffle or unshuffle the playlist
     GoToAlbum, // not implemented yet. will be used as change the surrounding playlist to the album the song is from
     ChangePlaylist(String), // change the current playlist to the one specified here
-    NewStatic(f32, f32),
 }
 
 #[derive(Debug, Clone)]
 pub enum ProgramCommands {
-    Send(PungeCommand),
+    Send(PungeCommand), // what is this meant for ... ?
     UpdateSender(Option<async_sender::UnboundedSender<PungeCommand>>),
     NewData(MusicData), // for sending back title, artist and album to GUI
     VolumeChange(u8),

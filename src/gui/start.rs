@@ -213,7 +213,7 @@ impl Application for App {
                 self.volume = if self.volume == 30 {
                     30
                 } else {
-                    self.volume + 1
+                    self.volume + self.setting_page.static_increment.parse::<u8>().unwrap()
                 };
                 self.sender
                     .as_mut()
@@ -223,7 +223,9 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::StaticVolumeDown => {
-                self.volume = self.volume.saturating_sub(1);
+                self.volume = self
+                    .volume
+                    .saturating_sub(self.setting_page.static_reduction.parse::<u8>().unwrap());
                 self.sender
                     .as_mut()
                     .unwrap()
@@ -581,19 +583,13 @@ impl Application for App {
                     .setting_page
                     .static_increment
                     .clone()
-                    .parse::<f32>()
+                    .parse::<usize>()
                     .unwrap();
                 let static_reduction = self
                     .setting_page
                     .static_reduction
                     .clone()
-                    .parse::<f32>()
-                    .unwrap();
-
-                self.sender
-                    .as_mut()
-                    .unwrap()
-                    .send(PungeCommand::NewStatic(static_increment, static_reduction))
+                    .parse::<usize>()
                     .unwrap();
 
                 let obj = Config {
