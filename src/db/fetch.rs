@@ -159,3 +159,27 @@ pub fn song_from_uuid(uniqueid: &str) -> Result<(String, String, String), Databa
         )))
     }
 }
+
+pub fn get_obj_from_uuid(uniqueid: &str) -> Result<PungeMusicObject, DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    let mut stmt = conn.prepare("SELECT * from main where uniqueid =?")?;
+    let playlist_obj_iter = stmt.query_row([uniqueid], |row| {
+        Ok(PungeMusicObject {
+            title: row.get(0)?,
+            author: row.get(1)?,
+            album: row.get(2)?,
+            features: row.get(3)?,
+            length: row.get(4)?,
+            savelocationmp3: row.get(5)?,
+            savelocationjpg: row.get(6)?,
+            datedownloaded: row.get(7)?,
+            lastlistenedto: row.get(8)?,
+            ischild: row.get(9)?,
+            uniqueid: row.get(10)?,
+            plays: row.get(11)?,
+            weight: row.get(12)?,
+            threshold: row.get(13)?,
+        })
+    })?;
+    Ok(playlist_obj_iter)
+}
