@@ -24,7 +24,7 @@ pub enum ProgramCommands {
     UpdateSender(Option<async_sender::UnboundedSender<PungeCommand>>),
     NewData(MusicData), // for sending back title, artist and album to GUI
     VolumeChange(u8),
-    ShuffleToggle,
+    ShuffleToggle, // all of these play-type commands are
     PlayToggle,
     SkipForwards,
     SkipBackwards,

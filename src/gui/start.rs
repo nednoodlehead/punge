@@ -2,7 +2,7 @@
 use crate::db::fetch::{
     get_all_from_playlist, get_all_main, get_all_playlists, get_uuid_from_name, song_from_uuid,
 };
-use crate::db::insert::{add_to_playlist, create_playlist};
+use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
 use crate::db::update::update_song;
 use crate::gui::messages::{AppEvent, Page, ProgramCommands, PungeCommand, TextType};
 use crate::gui::persistent;
@@ -286,8 +286,13 @@ impl Application for App {
                 // is it a playlist?
                 let download = if link.contains("list=") {
                     let mut list_cmd = Vec::new();
+                    let mut link_list = Vec::new();
                     let playlist = get_playlist(&link).unwrap();
+                    // to guarentee that the order is preserved, we add an empty entry with just the uuid
+                    // then, after the downloads have completed, we either update the entry with the data
+                    // or remove the entry afterwards if it fails
                     for song in playlist.links {
+                        link_list.push(song.clone());
                         self.download_list.push(song.clone());
                         let cmd = Command::perform(
                             download_interface(song.clone(), Some(playlist.title.clone())),
@@ -295,6 +300,8 @@ impl Application for App {
                         );
                         list_cmd.push(cmd);
                     }
+                    // add the empty entries!
+                    add_empty_entries(link_list).unwrap();
                     Command::batch(list_cmd)
                 } else {
                     self.download_list.push(link.clone());
@@ -341,6 +348,18 @@ impl Application for App {
                         format!("{} - {} Downloaded Successfully", t.title, t.author)
                     }
                     Err(e) => {
+                        // if the problem occured from playlist, there is an existing entry for the obj, but if it failed, we want to
+                        // remove that, since it will cause a panic on null fields.
+                        match crate::db::update::delete_from_uuid(
+                            link[link.len() - 11..].to_string(), // last 11 chars of the url, aka uniqueid
+                        ) {
+                            Ok(_t) => {
+                                println!("Deleted successfully: {}", &link);
+                            }
+                            Err(_e) => {
+                                println!("nothin to delete")
+                            }
+                        };
                         format!("Error downloading: {}\n{:?}", link, e)
                     }
                 };

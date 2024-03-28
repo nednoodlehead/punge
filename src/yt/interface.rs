@@ -1,4 +1,5 @@
 use crate::db::insert::add_to_main;
+use crate::db::update::update_empty_entries;
 use crate::types::{AppError, DatabaseErrors, PungeMusicObject, YouTubeData};
 use crate::utils::sep_video;
 use itertools::Itertools;
@@ -143,7 +144,7 @@ pub async fn download_interface(
             details.length_seconds.parse::<usize>().unwrap(),
         )
         .await?;
-        add_to_main(obj.clone())?;
+        update_empty_entries(obj)?; // update the entries because we made them already in Self::Message::Download
         youtube_data
     } else {
         // these if elifs cannot find any recognized format. default to this...

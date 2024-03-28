@@ -45,3 +45,12 @@ pub fn add_to_playlist(playlist_uuid: String, uniqueid: String) -> Result<(), Da
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
+
+pub fn add_empty_entries(uuids: Vec<String>) -> Result<(), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    for str in uuids {
+        conn.execute("INSERT into main (uniqueid) VALUES (?)", params![str])?;
+    }
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}
