@@ -59,3 +59,13 @@ pub fn delete_from_uuid(uniqueid: String) -> Result<(), DatabaseErrors> {
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
+
+pub fn delete_from_playlist(uniqueid: String, playlistid: String) -> Result<(), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    conn.execute(
+        "DELETE FROM playlist_relations WHERE playlist_id = ? AND song_id = ?",
+        params![playlistid, uniqueid],
+    )?;
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}

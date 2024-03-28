@@ -45,6 +45,7 @@ pub enum ProgramCommands {
     ChangeViewingPlaylist(String), // pass only the unqiueid i guess. problem was making self.viewing_playlist
     PlaySong(String),              // unqiueid
     SelectSong(String, String),    // uniqueid and title, used to do stuff to the current song
+    DeleteSong(String),
     SyncHeader(scrollable::AbsoluteOffset),
     PlaylistSelected(String), // playlist uuid, would love to also pass in title, but cannot due to pick_list restrictions :(
     AddToPlaylist(Option<String>, Option<String>), // add song uniqueid and playlist uniqueid

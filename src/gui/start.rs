@@ -3,7 +3,7 @@ use crate::db::fetch::{
     get_all_from_playlist, get_all_main, get_all_playlists, get_uuid_from_name, song_from_uuid,
 };
 use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
-use crate::db::update::update_song;
+use crate::db::update::{delete_from_playlist, update_song};
 use crate::gui::messages::{AppEvent, Page, ProgramCommands, PungeCommand, TextType};
 use crate::gui::persistent;
 use crate::gui::table::{Column, ColumnKind, Row};
@@ -13,6 +13,7 @@ use crate::player::sort::get_values_from_db;
 use crate::types::{Config, MusicData, UserPlaylist};
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
+use crate::utils::delete::{self, delete_record_and_file};
 use crate::utils::playlist::get_playlist;
 use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
@@ -507,6 +508,46 @@ impl Application for App {
                 }
                 Command::none()
             }
+            Self::Message::DeleteSong(uuid) => {
+                // need to handle main vs playlist TODO
+                if self.viewing_playlist == "main" {
+                    match delete_record_and_file(uuid) {
+                        Ok(t) => {
+                            println!("epic delete moment")
+                        }
+                        Err(e) => {
+                            println!("error deleting {:?}", e)
+                        }
+                    }
+                } else {
+                    delete_from_playlist(uuid, self.viewing_playlist.clone()).unwrap();
+                }
+                // refresh current playlist
+                // should i function this? used twice..
+                self.rows = if self.viewing_playlist == "main" {
+                    let n = get_all_main().unwrap();
+                    n.into_iter()
+                        .map(|item| Row {
+                            title: item.title,
+                            author: item.author,
+                            album: item.album,
+                            uniqueid: item.uniqueid,
+                        })
+                        .collect()
+                } else {
+                    let n = get_all_from_playlist(&self.viewing_playlist).unwrap();
+                    n.into_iter()
+                        .map(|item| Row {
+                            title: item.title,
+                            author: item.author,
+                            album: item.album,
+                            uniqueid: item.uniqueid,
+                        })
+                        .collect()
+                };
+
+                Command::none()
+            }
             Self::Message::ToggleList => {
                 if self.rows.len() == 1 {
                     self.rows = get_all_main()
@@ -731,7 +772,10 @@ impl Application for App {
             ),
             button(text("Edit!")).on_press(ProgramCommands::OpenSongEditPage(
                 self.side_menu_song_select.1.clone()
-            ))
+            )),
+            button(text("DELETE!")).on_press(ProgramCommands::DeleteSong(
+                self.side_menu_song_select.1.clone()
+            )),
         ])
         .padding(15);
         let buttons: Vec<Element<ProgramCommands>> = self
