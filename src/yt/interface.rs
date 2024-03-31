@@ -21,8 +21,10 @@ pub async fn download_interface(
         request_options: rusty_ytdl::RequestOptions::default(),
     };
     let video = rusty_ytdl::blocking::Video::new_with_options(url.clone(), vid_opt)?; // url check
-    if check_if_exists(video.get_video_id()) {
+    println!("is one? {}", playlist_title.is_none());
+    if check_if_exists(video.get_video_id()) && playlist_title.is_none() {
         // if the entry exists already
+        println!("FAILED!@#!@#!");
         return Err(AppError::DatabaseError(
             DatabaseErrors::DatabaseEntryExistsError,
         ));
@@ -64,15 +66,15 @@ pub async fn download_interface(
         .await?;
         add_to_main(obj)?;
         yt_data
-    } else if details.description.starts_with("Provided") {
-        // #2 autogens
-        // no check for playlist_title, since it doesnt matter for this
+    // } {
+    } else if playlist_title.is_some() {
+        // #4 a playlist, assuming that each vid.title = title and vid.author = author
         let title = details.title;
         let author = details.author;
-        let album = details.description.split('\n').collect_vec()[4].to_string();
+        let album = playlist_title.unwrap();
         let youtube_data = YouTubeData {
             title,
-            author: author.unwrap().name,
+            author: author.unwrap().name.to_string(),
             album,
             url: url.clone(),
         };
@@ -86,7 +88,7 @@ pub async fn download_interface(
             details.length_seconds.parse::<usize>().unwrap(),
         )
         .await?;
-        add_to_main(obj.clone())?;
+        update_empty_entries(obj)?; // update the entries because we made them already in Self::Message::Download
         youtube_data
     } else if description_timestamp_check(details.description.as_str()) {
         // how is this meant to be done ??
@@ -123,14 +125,16 @@ pub async fn download_interface(
             add_to_main(sub_item)?;
         }
         yt_data
-    } else if playlist_title.is_some() {
-        // #4 a playlist, assuming that each vid.title = title and vid.author = author
+    // } else if playlist_title.is_some() {
+    } else if details.description.starts_with("Provided") {
+        // #2 autogens
+        // no check for playlist_title, since it doesnt matter for this
         let title = details.title;
         let author = details.author;
-        let album = playlist_title.unwrap();
+        let album = details.description.split('\n').collect_vec()[4].to_string();
         let youtube_data = YouTubeData {
             title,
-            author: author.unwrap().name.to_string(),
+            author: author.unwrap().name,
             album,
             url: url.clone(),
         };
@@ -144,7 +148,7 @@ pub async fn download_interface(
             details.length_seconds.parse::<usize>().unwrap(),
         )
         .await?;
-        update_empty_entries(obj)?; // update the entries because we made them already in Self::Message::Download
+        add_to_main(obj.clone())?;
         youtube_data
     } else {
         // these if elifs cannot find any recognized format. default to this...
@@ -174,14 +178,17 @@ pub fn check_if_exists(uniqueid: String) -> bool {
     // maybe should be Result!?
     // checks if the given unique id is found inside the main table. aka: has it been downloaded?
     let conn = rusqlite::Connection::open("main.db").unwrap();
+    println!("exists?: {}", &uniqueid);
     let mut stmt = conn
-        .prepare("SELECT 1 FROM main WHERE uniqueid = ?")
+        .prepare("SELECT * FROM main WHERE uniqueid = ?")
         .unwrap();
     let exists = stmt.exists([uniqueid]).unwrap();
+    println!("does exzists: {}", &exists);
     drop(stmt);
-    conn.close().map_err(|(_, err)| err).unwrap();
+    conn.close().unwrap();
     exists
 }
+
 fn fetch_json() -> (String, String) {
     // reason we fetch the json each time instead of having it be a static value is because when the app is open
     // the user can change the json value. So we should probably fetch it each time
