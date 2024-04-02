@@ -95,20 +95,18 @@ pub async fn download_content(link: String, download_path: String) -> Result<Str
     todo!()
 }
 
-// TODO (at some point), make this async and have it send o the subscription that is listening
-// for youtube events. not sure how that will be handled for instagram download...
 async fn download_youtube(link: String, mut path: String) -> Result<String, AppError> {
-    let vid = rusty_ytdl::Video::new(link)?;
+    let vid = rusty_ytdl::blocking::Video::new(link)?;
     // make the path end with a slash
     path = if !path.ends_with('\\') | !path.ends_with('/') {
         format!("{}/", path)
     } else {
         path
     };
-    let title = vid.get_basic_info().await?.video_details.title;
+    let title = vid.get_basic_info()?.video_details.title;
     let full_output = format!("{}{} - {}", path, &title, vid.get_video_url());
     let new_path = std::path::Path::new(&full_output);
-    vid.download(new_path).await?;
+    vid.download(new_path)?;
     Ok(format!("{} downloaded successfully!", title))
 }
 
