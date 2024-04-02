@@ -346,6 +346,14 @@ impl Application for App {
                 );
                 let feedback = match youtubedata {
                     Ok(t) => {
+                        // if we are listening to main, update the playlist with the song we just added
+                        if self.current_song.load().playlist == "main" {
+                            self.sender
+                                .as_mut()
+                                .unwrap()
+                                .send(PungeCommand::ChangePlaylist(String::from("main")))
+                                .unwrap();
+                        }
                         format!("{} - {} Downloaded Successfully", t.title, t.author)
                     }
                     Err(e) => {
@@ -461,29 +469,7 @@ impl Application for App {
                 self.viewing_playlist = playlist.clone();
 
                 // main should be treated just like a regular playlist !?
-                if playlist == "main" {
-                    let new = get_all_main().unwrap();
-                    self.rows = new
-                        .into_iter()
-                        .map(|item| Row {
-                            title: item.title,
-                            author: item.author,
-                            album: item.album,
-                            uniqueid: item.uniqueid,
-                        })
-                        .collect();
-                } else {
-                    let new = get_all_from_playlist(playlist.as_str()).unwrap();
-                    self.rows = new
-                        .into_iter()
-                        .map(|item| Row {
-                            title: item.title,
-                            author: item.author,
-                            album: item.album,
-                            uniqueid: item.uniqueid,
-                        })
-                        .collect();
-                }
+                self.refresh_playlist();
                 Command::none()
             }
             Self::Message::SelectSong(uniqueid, song) => {
@@ -524,28 +510,7 @@ impl Application for App {
                 }
                 // refresh current playlist
                 // should i function this? used twice..
-                self.rows = if self.viewing_playlist == "main" {
-                    let n = get_all_main().unwrap();
-                    n.into_iter()
-                        .map(|item| Row {
-                            title: item.title,
-                            author: item.author,
-                            album: item.album,
-                            uniqueid: item.uniqueid,
-                        })
-                        .collect()
-                } else {
-                    let n = get_all_from_playlist(&self.viewing_playlist).unwrap();
-                    n.into_iter()
-                        .map(|item| Row {
-                            title: item.title,
-                            author: item.author,
-                            album: item.album,
-                            uniqueid: item.uniqueid,
-                        })
-                        .collect()
-                };
-
+                self.refresh_playlist();
                 Command::none()
             }
             Self::Message::ToggleList => {
@@ -694,27 +659,7 @@ impl Application for App {
             }
             Self::Message::UpdateSong(row) => {
                 update_song(row.author, row.title, row.album, row.uniqueid).unwrap();
-                self.rows = if self.viewing_playlist == "main" {
-                    let n = get_all_main().unwrap();
-                    n.into_iter()
-                        .map(|item| Row {
-                            title: item.title,
-                            author: item.author,
-                            album: item.album,
-                            uniqueid: item.uniqueid,
-                        })
-                        .collect()
-                } else {
-                    let n = get_all_from_playlist(&self.viewing_playlist).unwrap();
-                    n.into_iter()
-                        .map(|item| Row {
-                            title: item.title,
-                            author: item.author,
-                            album: item.album,
-                            uniqueid: item.uniqueid,
-                        })
-                        .collect()
-                };
+                self.refresh_playlist();
                 // update the active playlists in memory with the new name, im not sure if there is a better way
                 // to do this, just reload the playlist ig
                 self.sender
@@ -860,5 +805,34 @@ impl Application for App {
             self.close_app_sub(),
             self.discord_loop(self.current_song.clone()), // self.database_sub(database_receiver),
         ]) // is two batches required?? prolly not
+    }
+}
+
+impl App {
+    fn refresh_playlist(&mut self) {
+        if self.viewing_playlist == "main" {
+            let new = get_all_main().unwrap();
+            self.rows = new
+                .into_iter()
+                .map(|item| Row {
+                    title: item.title,
+                    author: item.author,
+                    album: item.album,
+                    uniqueid: item.uniqueid,
+                })
+                .collect();
+        } else {
+            let new = get_all_from_playlist(&self.viewing_playlist).unwrap();
+            self.rows = new
+                .into_iter()
+                .map(|item| Row {
+                    title: item.title,
+                    author: item.author,
+                    album: item.album,
+                    uniqueid: item.uniqueid,
+                })
+                .collect();
+        }
+        // if we are listening to main, the playlist refreshes because of a download, update the main playlist in place
     }
 }
