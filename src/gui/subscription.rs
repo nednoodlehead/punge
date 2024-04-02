@@ -62,11 +62,6 @@ impl App {
                 async_std::task::sleep(std::time::Duration::from_secs(10)).await;
                 if id == obj.load().song_id {
                     cycle += 1;
-                    println!(
-                        "add one to weight!! cycle: {} vs {}",
-                        cycle,
-                        obj.load().threshold
-                    );
                     crate::db::metadata::add_one_weight(obj.load().song_id.clone()).unwrap();
                     if cycle == obj.load().threshold {
                         // so doing it this way gets rid of the need to hold onto the last id, since midway through (~2/3rd way) +1 play will occur
@@ -75,12 +70,9 @@ impl App {
                     }
                 } else {
                     //song has changed, was the threshold met?
-                    println!("song changed");
                     id = obj.load().song_id.clone();
                     cycle = 0;
                 }
-                println!("value inside sub: {:?}", **obj.load());
-                println!("\n\n last song: {:?}", id);
             }
         })
     }
