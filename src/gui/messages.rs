@@ -33,7 +33,7 @@ pub enum ProgramCommands {
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),
-    DownloadMedia(String, String), // link, path. Both should derive from the comboboxes
+    DownloadMedia(String, String, String), // link, path, mp3 or mp4
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
     UpdateMp3Or4Combobox(String),
     Debug, // a message that has its associated action changed with the debug in question

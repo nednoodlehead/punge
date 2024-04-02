@@ -1,7 +1,7 @@
 use crate::gui::messages::{Page, ProgramCommands, TextType};
 use crate::gui::persistent;
 use crate::types::AppError;
-use rusty_ytdl;
+use rusty_ytdl::{self, VideoOptions};
 
 use iced::widget::{button, column, combo_box, horizontal_space, row, text, text_input, Container};
 
@@ -61,7 +61,8 @@ impl MediaPage {
                 button(text("Download!"))
                     .on_press(ProgramCommands::DownloadMedia(
                         self.download_input.clone(),
-                        self.download_to_location.clone()
+                        self.download_to_location.clone(),
+                        self.download_type.clone(),
                     ))
                     .width(100.0),
                 horizontal_space()
@@ -80,11 +81,15 @@ impl MediaPage {
 }
 
 // should have option to choose mp4 vs mp3
-pub async fn download_content(link: String, download_path: String) -> Result<String, AppError> {
+pub async fn download_content(
+    link: String,
+    download_path: String,
+    mp3_4: String,
+) -> Result<String, AppError> {
     // string returned is what the user will see, either an error or download success
     // i dont really see a reason to be able to download playlists like this. who wants to download videos in batch like that? idk idc
     if link.contains("youtube") {
-        download_youtube(link, download_path).await?;
+        download_youtube(link, download_path, mp3_4).await?;
     } else if link.contains("instagram") {
         _download_insta();
     } else {
@@ -95,8 +100,25 @@ pub async fn download_content(link: String, download_path: String) -> Result<Str
     todo!()
 }
 
-async fn download_youtube(link: String, mut path: String) -> Result<String, AppError> {
-    let vid = rusty_ytdl::blocking::Video::new(link)?;
+async fn download_youtube(
+    link: String,
+    mut path: String,
+    mp3_4: String,
+) -> Result<String, AppError> {
+    let settings = if mp3_4 == ".mp3" {
+        VideoOptions {
+            quality: rusty_ytdl::VideoQuality::HighestAudio,
+            filter: rusty_ytdl::VideoSearchOptions::Audio,
+            ..Default::default()
+        }
+    } else {
+        VideoOptions {
+            quality: rusty_ytdl::VideoQuality::HighestVideo,
+            filter: rusty_ytdl::VideoSearchOptions::Video,
+            ..Default::default()
+        }
+    };
+    let vid = rusty_ytdl::blocking::Video::new_with_options(link, settings)?;
     // make the path end with a slash
     path = if !path.ends_with('\\') | !path.ends_with('/') {
         format!("{}/", path)
@@ -104,7 +126,7 @@ async fn download_youtube(link: String, mut path: String) -> Result<String, AppE
         path
     };
     let title = vid.get_basic_info()?.video_details.title;
-    let full_output = format!("{}{} - {}", path, &title, vid.get_video_url());
+    let full_output = format!("{}{} - {}.mp4", path, &title, vid.get_video_url());
     let new_path = std::path::Path::new(&full_output);
     vid.download(new_path)?;
     Ok(format!("{} downloaded successfully!", title))

@@ -293,7 +293,7 @@ impl Application for App {
                     // then, after the downloads have completed, we either update the entry with the data
                     // or remove the entry afterwards if it fails
                     for song in playlist.links {
-                        link_list.push(song.clone()[28..].to_string());
+                        link_list.push(song.clone());
                         self.download_list.push(song.clone());
                         let cmd = Command::perform(
                             download_interface(song.clone(), Some(playlist.title.clone())),
@@ -316,8 +316,8 @@ impl Application for App {
                 download
                 // Command::none()
             }
-            Self::Message::DownloadMedia(link, path) => Command::perform(
-                crate::gui::media_page::download_content(link, path),
+            Self::Message::DownloadMedia(link, path, mp3_4) => Command::perform(
+                crate::gui::media_page::download_content(link, path, mp3_4),
                 ProgramCommands::DownloadMediaWorked,
             ),
             Self::Message::DownloadMediaWorked(maybe) => {
