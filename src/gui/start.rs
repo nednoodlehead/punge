@@ -13,7 +13,7 @@ use crate::player::sort::get_values_from_db;
 use crate::types::{Config, MusicData, UserPlaylist};
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
-use crate::utils::delete::{self, delete_record_and_file};
+use crate::utils::delete::delete_record_and_file;
 use crate::utils::playlist::get_playlist;
 use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
@@ -178,15 +178,6 @@ impl Application for App {
     fn update(&mut self, msg: Self::Message) -> iced::Command<ProgramCommands> {
         println!("MATCHING MSG: {:?}", &msg);
         match msg {
-            Self::Message::Send(cmd) => {
-                println!("sending punge cmd: {:?}", &cmd);
-                self.sender
-                    .as_mut()
-                    .unwrap()
-                    .send(cmd)
-                    .expect("failure sending msg");
-                Command::none()
-            }
             Self::Message::UpdateSender(sender) => {
                 println!("updated sender!");
                 self.sender = sender;
@@ -495,7 +486,6 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::DeleteSong(uuid) => {
-                // need to handle main vs playlist TODO
                 if self.viewing_playlist == "main" {
                     match delete_record_and_file(uuid) {
                         Ok(t) => {

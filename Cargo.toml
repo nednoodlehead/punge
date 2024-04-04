@@ -26,7 +26,7 @@ rodio = "0.17.3"
 iced = {version = "0.12", features = ["advanced", "lazy"] }  # lazy for the iced::wid::responsive
 tokio = {version = "1.29.0", features = ["time", "sync"]}
 async-std = "1.12.0"
-global-hotkey = "0.2.4"
+global-hotkey = "0.5.1"
 mp3-duration = "0.1.10"
 rand = "0.8"
 arc-swap = "1.6.0"

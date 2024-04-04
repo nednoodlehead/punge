@@ -10,7 +10,7 @@ use crate::utils::cache::read_from_cache;
 use arc_swap::ArcSwap;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 
-use global_hotkey::GlobalHotKeyEvent;
+use global_hotkey::{GlobalHotKeyEvent, HotKeyState};
 
 use iced::futures::sink::SinkExt;
 use iced::subscription::Subscription;
@@ -85,30 +85,48 @@ impl App {
                         // handle global keybinds
                         println!("new keybind incming: {:?}", hotkey);
                         match hotkey {
-                            GlobalHotKeyEvent { id: 4121890298 } => {
+                            GlobalHotKeyEvent {
+                                id: 4121890298,
+                                state: HotKeyState::Released,
+                            } => {
                                 // right arrow
                                 sender.send(ProgramCommands::SkipForwards).await.unwrap();
                             }
-                            GlobalHotKeyEvent { id: 2037224482 } => {
+                            GlobalHotKeyEvent {
+                                id: 2037224482,
+                                state: HotKeyState::Released,
+                            } => {
                                 // up arrow
                                 sender.send(ProgramCommands::StaticVolumeUp).await.unwrap();
                             }
-                            GlobalHotKeyEvent { id: 1912779161 } => {
+                            GlobalHotKeyEvent {
+                                id: 1912779161,
+                                state: HotKeyState::Released,
+                            } => {
                                 // left arrow??
                                 sender.send(ProgramCommands::SkipBackwards).await.unwrap();
                             }
-                            GlobalHotKeyEvent { id: 4174001518 } => {
+                            GlobalHotKeyEvent {
+                                id: 4174001518,
+                                state: HotKeyState::Released,
+                            } => {
                                 // down arrow!
                                 sender
                                     .send(ProgramCommands::StaticVolumeDown)
                                     .await
                                     .unwrap();
                             }
-                            GlobalHotKeyEvent { id: 3520754938 } => {
+                            GlobalHotKeyEvent {
+                                id: 3520754938,
+                                state: HotKeyState::Released,
+                            } => {
                                 // page down (shuffle)
                                 sender.send(ProgramCommands::ShuffleToggle).await.unwrap();
                             }
-                            GlobalHotKeyEvent { id: 3009842507 } => {
+                            GlobalHotKeyEvent {
+                                id: 3009842507,
+                                state: HotKeyState::Released,
+                            } => {
                                 // end (pause)
                                 sender.send(ProgramCommands::PlayToggle).await.unwrap()
                             }

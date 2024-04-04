@@ -91,7 +91,7 @@ pub async fn download_content(
     if link.contains("youtube") {
         download_youtube(link, download_path, mp3_4).await?;
     } else if link.contains("instagram") {
-        _download_insta();
+        download_insta()?;
     } else {
         return Err(AppError::InvalidUrlError(
             "Link does not contain 'instagram' or 'youtube'".to_string(),
@@ -132,4 +132,8 @@ async fn download_youtube(
     Ok(format!("{} downloaded successfully!", title))
 }
 
-fn _download_insta() {}
+fn download_insta() -> Result<String, AppError> {
+    Err(AppError::SearchError(
+        "Instagram downloads are unimplmented".to_string(),
+    ))
+}

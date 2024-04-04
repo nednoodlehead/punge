@@ -5,6 +5,10 @@ use crate::utils::cache;
 use iced::widget::{button, column, row, text, text_input, Container};
 use iced::Element;
 
+// all bind options: staticvolup, staticvoldown, forward, bckwards, play/pause, shuffle, gotoalbum
+// optional cool binds: add current song to playlist[x]. so main = 0, energy = 1...
+// search for song from keyboard input, stop keyboard input via 'enter' event.
+
 pub struct SettingPage {
     pub backup_text: String,
     pub mp3_path_text: String,
@@ -60,14 +64,14 @@ impl SettingPage {
             ]
             .padding(10.0),
             row![
-                text("Static increment bind amount 0.005 = default: "),
+                text("Static increment bind amount (1=default): "),
                 text_input(&self.static_increment, &self.static_increment).on_input(|txt| {
                     ProgramCommands::UpdateWidgetText(TextType::StaticIncrement, txt)
                 })
             ]
             .padding(10.0),
             row![
-                text("Static reduction bind amount 0.005 = default: "),
+                text("Static reduction bind amount (1=default): "),
                 text_input(&self.static_reduction, &self.static_reduction).on_input(|txt| {
                     ProgramCommands::UpdateWidgetText(TextType::StaticReduction, txt)
                 })

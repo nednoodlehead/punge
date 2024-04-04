@@ -79,7 +79,7 @@ pub async fn get_values_from_db(
         }
     }
     if found_values.is_empty() {
-        return Err(AppError::SearchError);
+        return Err(AppError::SearchError("Search was not found".to_string()));
     }
     found_values.sort_by_key(|item| item.0);
     Ok(found_values[0].1.clone())

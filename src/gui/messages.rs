@@ -20,7 +20,6 @@ pub enum PungeCommand {
 
 #[derive(Debug, Clone)]
 pub enum ProgramCommands {
-    Send(PungeCommand), // what is this meant for ... ?
     UpdateSender(Option<async_sender::UnboundedSender<PungeCommand>>),
     NewData(MusicData), // for sending back title, artist and album to GUI
     VolumeChange(u8),
@@ -82,7 +81,7 @@ pub enum Page {
     Main,
     Settings,
     Download,
-    Media, // TODO make the media page :)
+    Media,
     Playlist,
     SongEdit, // cases where no page needs to be marked out (song_edit_page.rs)
 }
