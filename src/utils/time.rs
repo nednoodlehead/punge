@@ -46,9 +46,7 @@ pub fn legacy_old_time_to_new() -> Result<(), DatabaseErrors> {
             weight: x.weight,
             threshold: x.threshold,
         });
-        use rusqlite::Connection;
-        let conn = Connection::open("main.db")?;
-        conn.execute("DELETE FROM main", rusqlite::params![])?;
+        crate::db::create_db::create_table_defaults().unwrap();
         for y in new.clone().into_iter() {
             add_to_main(y).unwrap();
         }
@@ -108,7 +106,7 @@ pub struct OldPungeMusicObject {
 
 pub fn get_all_main() -> Result<Vec<OldPungeMusicObject>, DatabaseErrors> {
     // erm, forgot to close the db connection :nerd:
-    let conn = rusqlite::Connection::open("main.db")?;
+    let conn = rusqlite::Connection::open("main_OLD.db")?;
     let mut ret_vec: Vec<OldPungeMusicObject> = Vec::new();
     let mut stmt = conn.prepare("SELECT title, author, album, features,
     length, savelocationmp3, savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays,

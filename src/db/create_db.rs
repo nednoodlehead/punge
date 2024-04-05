@@ -11,7 +11,7 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
             author TEXT,
             album TEXT,
             features TEXT,
-            length TEXT,
+            length SMALLINT,
             savelocationmp3 TEXT,
             savelocationjpg TEXT,
             datedownloaded DATE,
