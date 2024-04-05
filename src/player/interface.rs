@@ -51,14 +51,8 @@ impl MusicPlayer {
         }
     }
 
-    fn fetch_and_update_playlist(&mut self, playlist_name: String) {
-        let playlist_uuid = fetch::get_uuid_from_name(playlist_name);
-        let new =
-            fetch::get_all_from_playlist(playlist_uuid.as_str()).expect("playlist uuid not found:");
-        self.list = new;
-    }
-
     fn play_from_time(&mut self, time: usize) {
+        // time == seconds into it :D
         // used when playing from the scrubbing bar
         self.sink.stop(); // is this required? likely
         self.sink.append(read_from_time(
@@ -70,11 +64,10 @@ impl MusicPlayer {
 }
 
 pub fn read_file_from_beginning(file: String) -> Decoder<BufReader<File>> {
-    println!("file: {}", &file);
     // we should overhaul this at some point to be a method associated with the app. when there is a file that doesn't exist,
     // we can send it to some related "missing" vector. this can be written to json when program closes? or when found?
     let reader = BufReader::new(File::open(file).unwrap());
-    
+
     Decoder::new(reader).unwrap()
 }
 

@@ -21,6 +21,7 @@ pub fn separate(
     let mut ret_vec: Vec<PungeMusicObject> = Vec::new();
     let map = generate_map(description);
     let timestamp_map = hash_to_vec_ordered(map, length);
+    // TODO streamline this, we are converting frmo timestamp -> string -> usize. go timestamp -> usize
     let length_map = get_length_from_timestamp(timestamp_map.clone());
     println!("Seperating!!. {}", &obj.savelocationmp3);
     for (count, (start_time, end_time, title)) in timestamp_map.iter().enumerate() {
@@ -57,7 +58,7 @@ pub fn separate(
             author: obj.author.to_owned(),
             album: obj.album.to_owned(),
             features: "none".to_string(),
-            length: length_map[count].clone(),
+            length: crate::utils::time::time_to_sec(&length_map[count].clone()),
             savelocationmp3: out_path.clone(),
             savelocationjpg: obj.savelocationjpg.to_owned(),
             datedownloaded: Local::now().date_naive(),
@@ -66,7 +67,9 @@ pub fn separate(
             uniqueid: format!("{}{}", obj.uniqueid, count),
             plays: 0,
             weight: 0,
-            threshold: crate::db::utilities::calc_thres(length_map[count].clone()),
+            threshold: crate::db::utilities::calc_thres(crate::utils::time::time_to_sec(
+                &length_map[count].clone(),
+            )) as u16,
         };
         ret_vec.push(new_obj)
     }

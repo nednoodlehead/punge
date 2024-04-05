@@ -76,8 +76,11 @@ pub struct App {
     pub is_paused: bool,
     pub current_song: Arc<ArcSwap<MusicData>>, // represents title, auth, album, song_id, volume, shuffle, playlist
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
-    volume: u8,
-    shuffle: bool,
+    pub volume: u8,
+    pub shuffle: bool,
+    pub scrubber: u8,
+    pub time_elapsed: String, // for the bottom bar, time on the left
+    pub total_time: String,   // bottom bar too, time on right, total time of song
     current_view: Page,
     download_page: crate::gui::download_page::DownloadPage,
     pub setting_page: setting_page::SettingPage, // pub so src\gui\subscrip can see the user choosen value increments
@@ -87,7 +90,7 @@ pub struct App {
     download_list: Vec<String>, // full link, songs are removed when finished / errored. Used so multiple downloads are not started
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
-    search: String,
+    pub search: String,
     viewing_playlist: String, // could derive from cache soon... just the uniqueid rn
     side_menu_song_select: (String, String), // title, uniqueid. these two are for adding to playlists
     side_menu_playlist_select: (String, String), // title, uniqueid
@@ -129,6 +132,9 @@ impl Application for App {
                 sender: None,
                 volume: (player_cache.volume * 80.0) as u8, // 80 is out magic number from sink volume -> slider
                 shuffle: player_cache.shuffle,
+                scrubber: 0,
+                time_elapsed: "0:00".to_string(),
+                total_time: "1:00".to_string(),
                 current_view: Page::Main,
                 download_page: download_page::DownloadPage::new(),
                 setting_page: setting_page::SettingPage::new(),
@@ -198,6 +204,15 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::NewVolume(val))
                     .expect("failure sending msg");
+                Command::none()
+            }
+            Self::Message::MoveSlider(num) => {
+                self.scrubber = num;
+                // change self.time_elapsed so it makes sense... might be too laggy to calc
+                Command::none()
+            }
+            Self::Message::SkipToSeconds(num) => {
+                println!("lets skip to: {}", num);
                 Command::none()
             }
             Self::Message::StaticVolumeUp => {
@@ -379,6 +394,7 @@ impl Application for App {
                         volume: lcl.volume,
                         shuffle: lcl.shuffle,
                         playlist: lcl.playlist.clone(),
+                        length: 190,
                     };
                     player_cache::dump_cache(cache); // dumps user cache
                     println!("dumpepd cache!");
@@ -669,12 +685,6 @@ impl Application for App {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        let search_container = container(row![
-            iced::widget::text_input("GoTo closest match", self.search.as_str())
-                .on_input(ProgramCommands::UpdateSearch)
-                .width(Length::Fixed(250.0)),
-            button(text("Confirm")).on_press(ProgramCommands::GoToSong)
-        ]);
         let table = responsive(|_size| {
             let table = iced_table::table(
                 self.header.clone(),
@@ -727,7 +737,6 @@ impl Application for App {
             .collect();
         let table_cont = container(table).height(Length::Fixed(540.0)).padding(20);
 
-        let curr_song = self.current_song.load();
         let main_page_2 = container(row![column![
             row![
                 row![
@@ -746,33 +755,8 @@ impl Application for App {
                 ]
             ],
             // vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
-            row![
-                column![
-                    text(curr_song.title.clone()),
-                    text(curr_song.author.clone()),
-                    text(curr_song.album.clone())
-                ]
-                .padding(2.5)
-                .width(225.0),
-                button(text("Go back")).on_press(ProgramCommands::SkipBackwards),
-                button(text(if self.is_paused { "Play!" } else { "Stop!" }))
-                    .on_press(ProgramCommands::PlayToggle),
-                button(text("Go forwards")).on_press(ProgramCommands::SkipForwards),
-                button(text(format!(
-                    "Shuffle ({})",
-                    if self.shuffle { "On" } else { "Off" }
-                )))
-                .on_press(ProgramCommands::ShuffleToggle),
-                column![
-                    slider(0..=30, self.volume, Self::Message::VolumeChange).width(150),
-                    search_container
-                ]
-                .align_items(Alignment::Center)
-                .spacing(5.0)
-            ]
-            .width(Length::Fill)
-            .align_items(Alignment::Center)
-            .spacing(50.0),
+            vertical_space(),
+            self.render_bottom_bar(),
             vertical_space()
         ],]);
         match self.current_view {

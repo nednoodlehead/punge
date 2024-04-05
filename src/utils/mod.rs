@@ -7,4 +7,5 @@ pub mod decide_youtube;
 pub mod delete;
 pub mod playlist;
 pub mod sep_video;
+pub mod time;
 pub mod youtube_interface;

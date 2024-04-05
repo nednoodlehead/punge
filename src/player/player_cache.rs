@@ -9,6 +9,7 @@ pub struct Cache {
     pub volume: f32,
     pub shuffle: bool,
     pub playlist: String,
+    pub length: usize,
 }
 
 pub fn fetch_cache() -> Cache {

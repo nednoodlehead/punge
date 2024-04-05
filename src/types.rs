@@ -6,13 +6,14 @@ use thiserror::Error as terror;
 use uuid::Uuid;
 // object that will be returned, used to input into the database, this object is the
 // object that will be returned from the whole process of deciding what is title, auth, album...
+
 #[derive(Clone)]
 pub struct PungeMusicObject {
     pub title: String,
     pub author: String,
     pub album: String,
     pub features: String,
-    pub length: String, // in seconds
+    pub length: usize, // in seconds
     pub savelocationmp3: String,
     pub savelocationjpg: String,
     pub datedownloaded: NaiveDate,
@@ -169,6 +170,7 @@ pub struct MusicData {
     pub playlist: String,
     pub threshold: u16,
     pub context: Context, // the context of the message being sent
+    pub length: usize,    // seconds, length of song
 }
 
 impl MusicData {
@@ -185,6 +187,7 @@ impl MusicData {
             playlist: "main".to_string(),
             threshold: 0,
             context: Context::Default,
+            length: 0,
         }
     }
 }

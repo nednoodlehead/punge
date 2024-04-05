@@ -29,6 +29,8 @@ pub enum ProgramCommands {
     SkipBackwards,
     StaticVolumeUp,
     StaticVolumeDown,
+    SkipToSeconds(u8),
+    MoveSlider(u8),
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),
@@ -45,14 +47,14 @@ pub enum ProgramCommands {
     PlaySong(String),              // unqiueid
     SelectSong(String, String),    // uniqueid and title, used to do stuff to the current song
     DeleteSong(String),
-    SyncHeader(scrollable::AbsoluteOffset),
+    SyncHeader(scrollable::AbsoluteOffset), // not used, could revamp table tbh..
     PlaylistSelected(String), // playlist uuid, would love to also pass in title, but cannot due to pick_list restrictions :(
     AddToPlaylist(Option<String>, Option<String>), // add song uniqueid and playlist uniqueid
     ToggleList,
     CreateBackup,
     UpdateWidgetText(TextType, String),
     SaveConfig,
-    NewPlaylist,                        // title, description, path_to_thumbnail
+    NewPlaylist,
     OpenSongEditPage(String),           // uuid
     UpdateSong(crate::gui::table::Row), // happens to be a convient type for this data
 }

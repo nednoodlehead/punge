@@ -5,8 +5,7 @@ use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
 use crate::player::interface::read_file_from_beginning;
 use crate::player::interface::{self};
-use crate::types::{Config, MusicData, PungeMusicObject};
-use crate::utils::cache::read_from_cache;
+use crate::types::{MusicData, PungeMusicObject};
 use arc_swap::ArcSwap;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 
@@ -36,6 +35,7 @@ const IDLE_STRINGS: &[&str] = &[
     "Piggin out",
     "Writing more stupid quips",
     "Doing a war attack",
+    "Right ear: Silence. Left ear: tinnitus",
 ];
 impl App {
     // difference between this database subscription is that no sender and receiver is needed, instead we check the status of self.current_obj every 20 seconds or so and do some calculations for inserting into db
@@ -161,7 +161,6 @@ impl App {
                 .await
                 .unwrap(); // send the sender to the gui !!
             let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
-            let mut config: Config = read_from_cache().unwrap();
             // maybe here  we need to get index of last song that was on?
             // send the data to the program
             let mut music_obj = interface::MusicPlayer::new(items);
@@ -178,6 +177,7 @@ impl App {
                     playlist: music_obj.playlist.clone(),
                     threshold: music_obj.current_object.threshold,
                     context: Context::Default,
+                    length: music_obj.current_object.length,
                 }))
                 .await
                 .unwrap();
@@ -212,13 +212,13 @@ impl App {
                                     playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
                                     context: Context::PlayPause,
+                                    length: music_obj.current_object.length,
                                 }))
                                 .await
                                 .unwrap();
                         }
                         PungeCommand::SkipForwards => {
                             // so i guess the answer is doing .stop()? not .clear(). ig cause .stop() also clears the queue
-                            let start = Instant::now();
                             music_obj.sink.stop();
                             println!("skip forards, top!!");
                             let old_id = music_obj.current_object.uniqueid.clone();
@@ -247,11 +247,10 @@ impl App {
                                     playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
                                     context: Context::SkippedForward,
+                                    length: music_obj.current_object.length,
                                 }))
                                 .await
                                 .unwrap();
-                            let end = Instant::now();
-                            println!("time elapsed: {:?}", end.duration_since(start));
                         }
                         PungeCommand::SkipBackwards => {
                             music_obj.sink.stop();
@@ -279,6 +278,7 @@ impl App {
                                     playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
                                     context: Context::SkippedBackwards,
+                                    length: music_obj.current_object.length,
                                 }))
                                 .await
                                 .unwrap();
@@ -317,6 +317,7 @@ impl App {
                                     playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
                                     context: Context::Seeked,
+                                    length: music_obj.current_object.length,
                                 }))
                                 .await
                                 .unwrap();
@@ -416,6 +417,7 @@ impl App {
                                                     playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::SkippedForward,
+                                                    length: music_obj.current_object.length,
                                                 }))
                                                 .await
                                                 .unwrap();
@@ -458,6 +460,7 @@ impl App {
                                                     playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::SkippedForward,
+                                                    length: music_obj.current_object.length,
                                                 }))
                                                 .await
                                                 .unwrap();
@@ -505,6 +508,7 @@ impl App {
                                                     playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::SkippedBackwards,
+                                                    length: music_obj.current_object.length,
                                                 }))
                                                 .await
                                                 .unwrap();
@@ -595,6 +599,7 @@ impl App {
                                                     playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
                                                     context: Context::Seeked,
+                                                    length: music_obj.current_object.length,
                                                 }))
                                                 .await
                                                 .unwrap();
@@ -640,6 +645,7 @@ impl App {
                                     playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
                                     context: Context::AutoPlay,
+                                    length: music_obj.current_object.length,
                                 }))
                                 .await
                                 .unwrap();
