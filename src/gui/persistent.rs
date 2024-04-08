@@ -67,11 +67,15 @@ impl App {
             .spacing(50.0),
             row![
                 horizontal_space(),
-                text(self.time_elapsed.clone()),
+                text(self.time_elapsed),
                 // slider also needs to have a dynamic range. 1 step should equal 1 second
-                slider(0..=200, self.scrubber, ProgramCommands::MoveSlider)
-                    .on_release(ProgramCommands::SkipToSeconds(self.scrubber)),
-                text(self.total_time.clone()),
+                slider(
+                    0..=self.total_time,
+                    self.scrubber,
+                    ProgramCommands::MoveSlider
+                )
+                .on_release(ProgramCommands::SkipToSeconds(self.scrubber)),
+                text(crate::utils::time::sec_to_time(self.total_time)), // todo conver to
                 horizontal_space()
             ]
             .spacing(10.0)

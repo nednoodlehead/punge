@@ -8,6 +8,8 @@ mod utils;
 mod yt;
 
 fn main() {
+    // db::create_db::create_table_defaults();
+    // utils::time::legacy_old_time_to_new();
     gui::start::begin().unwrap();
     //     println!(
     //         "{:?}",

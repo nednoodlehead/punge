@@ -4,7 +4,7 @@ use crate::types::DatabaseErrors;
 use crate::types::PungeMusicObject;
 use chrono::NaiveDate;
 
-pub fn sec_to_time(mut int: usize) -> String {
+pub fn sec_to_time(mut int: u32) -> String {
     // format: HH:MM:SS
     // hours are a special case, if there aren't any
     let (mut sec, mut min, mut hour) = (0, 0, 0);
@@ -28,6 +28,7 @@ pub fn sec_to_time(mut int: usize) -> String {
 pub fn legacy_old_time_to_new() -> Result<(), DatabaseErrors> {
     let all = get_all_main().unwrap();
     let mut new: Vec<PungeMusicObject> = Vec::new();
+    let conn = rusqlite::Connection::open("main.db").unwrap();
 
     for x in all {
         new.push(PungeMusicObject {
@@ -46,43 +47,44 @@ pub fn legacy_old_time_to_new() -> Result<(), DatabaseErrors> {
             weight: x.weight,
             threshold: x.threshold,
         });
-        crate::db::create_db::create_table_defaults().unwrap();
-        for y in new.clone().into_iter() {
-            add_to_main(y).unwrap();
-        }
+    }
+    for (count, y) in new.clone().into_iter().enumerate() {
+        println!("{} {:?}", count, &y);
+        bruhadd_to_main(&conn, y).unwrap();
     }
 
     Ok(())
 }
 
-pub fn time_to_sec(time: &str) -> usize {
+pub fn time_to_sec(time: &str) -> u32 {
     // should all be HH:MM:SS
     let times: Vec<&str> = time.split(":").collect();
-    let mut val: usize = 0;
+    let mut val: u32 = 0;
     for (count, x) in times.iter().enumerate() {
-        let num = x.parse::<usize>().unwrap();
+        let num = x.parse::<u32>().unwrap();
         if count == 0 {
-            val += num; // second :D
+            val += num * 3600 // hour
         }
         if count == 1 {
             val += num * 60 // minute
         }
         if count == 2 {
-            val += num * 3600 // hour
+            val += num; // second :D
         }
     }
     val
 }
 
-pub fn add_to_main(music_obj: PungeMusicObject) -> Result<String, DatabaseErrors> {
-    let conn = rusqlite::Connection::open("main.db")?;
+pub fn bruhadd_to_main(
+    conn: &rusqlite::Connection,
+    music_obj: PungeMusicObject,
+) -> Result<String, DatabaseErrors> {
     conn.execute("INSERT INTO main (title, author, album, features, length, savelocationmp3,\
                     savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays, weight, threshold)\
                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
                  rusqlite::params![music_obj.title, music_obj.author, music_obj.album, music_obj.features, music_obj.length, music_obj.savelocationmp3,
                  music_obj.savelocationjpg, music_obj.datedownloaded, music_obj.lastlistenedto, music_obj.ischild, music_obj.uniqueid,
                  music_obj.plays, music_obj.weight, music_obj.threshold])?;
-    conn.close().map_err(|(_, err)| err)?;
     Ok(format!("{} - {}", &music_obj.title, &music_obj.author))
 }
 

@@ -78,9 +78,9 @@ pub struct App {
     sender: Option<async_sender::UnboundedSender<PungeCommand>>, // was not an option before !
     pub volume: u8,
     pub shuffle: bool,
-    pub scrubber: u8,
-    pub time_elapsed: String, // for the bottom bar, time on the left
-    pub total_time: String,   // bottom bar too, time on right, total time of song
+    pub scrubber: u32,
+    pub time_elapsed: u32,
+    pub total_time: u32,
     current_view: Page,
     download_page: crate::gui::download_page::DownloadPage,
     pub setting_page: setting_page::SettingPage, // pub so src\gui\subscrip can see the user choosen value increments
@@ -133,8 +133,8 @@ impl Application for App {
                 volume: (player_cache.volume * 80.0) as u8, // 80 is out magic number from sink volume -> slider
                 shuffle: player_cache.shuffle,
                 scrubber: 0,
-                time_elapsed: "0:00".to_string(),
-                total_time: "1:00".to_string(),
+                time_elapsed: 0,
+                total_time: player_cache.length,
                 current_view: Page::Main,
                 download_page: download_page::DownloadPage::new(),
                 setting_page: setting_page::SettingPage::new(),
@@ -190,6 +190,7 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::NewData(data) => {
+                self.total_time = data.length;
                 println!(
                     "The new information given to update: {} {} {}",
                     data.author, data.title, data.album
@@ -212,7 +213,12 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::SkipToSeconds(num) => {
-                println!("lets skip to: {}", num);
+                println!("lets skip to: {}, len: {}", num, self.total_time);
+                self.sender
+                    .as_mut()
+                    .unwrap()
+                    .send(PungeCommand::SkipToSeconds(num))
+                    .unwrap();
                 Command::none()
             }
             Self::Message::StaticVolumeUp => {

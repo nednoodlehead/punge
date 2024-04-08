@@ -69,7 +69,7 @@ pub fn separate(
             weight: 0,
             threshold: crate::db::utilities::calc_thres(crate::utils::time::time_to_sec(
                 &length_map[count].clone(),
-            )) as u16,
+            ) as usize) as u16,
         };
         ret_vec.push(new_obj)
     }

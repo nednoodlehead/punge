@@ -61,7 +61,7 @@ pub async fn download_interface(
             jpg,
             mp3,
             details.video_id,
-            details.length_seconds.parse::<usize>().unwrap(),
+            details.length_seconds.parse::<u32>().unwrap(),
         )
         .await?;
         add_to_main(obj)?;
@@ -85,7 +85,7 @@ pub async fn download_interface(
             jpg,
             mp3,
             details.video_id,
-            details.length_seconds.parse::<usize>().unwrap(),
+            details.length_seconds.parse::<u32>().unwrap(),
         )
         .await?;
         update_empty_entries(obj)?; // update the entries because we made them already in Self::Message::Download
@@ -113,7 +113,7 @@ pub async fn download_interface(
             jpg.clone(),
             mp3.clone(),
             details.video_id.clone(),
-            details.length_seconds.parse::<usize>().unwrap(),
+            details.length_seconds.parse::<u32>().unwrap(),
         );
         let punge_iter = sep_video::separate(
             details.description,
@@ -145,7 +145,7 @@ pub async fn download_interface(
             jpg,
             mp3,
             details.video_id,
-            details.length_seconds.parse::<usize>().unwrap(),
+            details.length_seconds.parse::<u32>().unwrap(),
         )
         .await?;
         add_to_main(obj.clone())?;
@@ -165,7 +165,7 @@ pub async fn download_interface(
             jpg,
             mp3,
             details.video_id,
-            details.length_seconds.parse::<usize>().unwrap(),
+            details.length_seconds.parse::<u32>().unwrap(),
         )
         .await?;
         add_to_main(obj.clone())?;
@@ -216,7 +216,7 @@ async fn create_punge_obj(
     jpg_dir: String,
     mp3_dir: String,
     vid_id: String,
-    vid_length: usize, // pass in this and vid_id to avoid calling .await unnecessarily
+    vid_length: u32, // pass in this and vid_id to avoid calling .await unnecessarily
 ) -> Result<PungeMusicObject, AppError> {
     // downloads the video, thumbnail
     // creates the punge obj for further processing if needed (like one song -> whole album)
@@ -253,7 +253,7 @@ async fn create_punge_obj(
         uniqueid: vid_id,
         plays: 0,
         weight: 0,
-        threshold: crate::db::utilities::calc_thres(vid_length) as u16,
+        threshold: crate::db::utilities::calc_thres(vid_length as usize) as u16,
     })
 }
 

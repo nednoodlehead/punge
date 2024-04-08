@@ -10,7 +10,7 @@ pub enum PungeCommand {
     PlayOrPause,
     ChangeSong(String), // play this song's uuid, loop will find the index and swap to it
     NewVolume(u8),      // change volume to this amount (processed beforehand I think)
-    SkipToSeconds(usize), // intends to play current song from this time (bcs only active song can be target of this operation)
+    SkipToSeconds(u32), // intends to play current song from this time (bcs only active song can be target of this operation)
     SkipForwards,
     SkipBackwards,
     ToggleShuffle,          // will either shuffle or unshuffle the playlist
@@ -29,8 +29,8 @@ pub enum ProgramCommands {
     SkipBackwards,
     StaticVolumeUp,
     StaticVolumeDown,
-    SkipToSeconds(u8),
-    MoveSlider(u8),
+    SkipToSeconds(u32),
+    MoveSlider(u32),
     ChangePage(Page),
     UpdateDownloadEntry(String),
     Download(String),

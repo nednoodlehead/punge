@@ -3,8 +3,8 @@ use crate::db::fetch;
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
-use crate::player::interface::read_file_from_beginning;
 use crate::player::interface::{self};
+use crate::player::interface::{read_file_from_beginning, read_from_time};
 use crate::types::{MusicData, PungeMusicObject};
 use arc_swap::ArcSwap;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
@@ -325,8 +325,32 @@ impl App {
                         PungeCommand::GoToAlbum => {
                             println!("going 2 album!")
                         }
-                        PungeCommand::SkipToSeconds(_val) => {
-                            println!("skipping to seconds")
+                        PungeCommand::SkipToSeconds(val) => {
+                            println!("skipping to seconds. paused?");
+                            music_obj.sink.append(read_from_time(
+                                music_obj.list[music_obj.count as usize]
+                                    .savelocationmp3
+                                    .clone(),
+                                val,
+                            ));
+                            // no play, since we are paused
+                            sender
+                                .send(ProgramCommands::NewData(MusicData {
+                                    title: music_obj.current_object.title.clone(),
+                                    author: music_obj.current_object.author.clone(),
+                                    album: music_obj.current_object.album.clone(),
+                                    song_id: music_obj.current_object.uniqueid.clone(),
+                                    previous_id: None,
+                                    volume: music_obj.sink.volume(),
+                                    is_playing: true,
+                                    shuffle: music_obj.shuffle,
+                                    playlist: music_obj.playlist.clone(),
+                                    threshold: music_obj.current_object.threshold,
+                                    context: Context::Seeked,
+                                    length: music_obj.current_object.length,
+                                }))
+                                .await
+                                .unwrap();
                         }
                         PungeCommand::ToggleShuffle => {
                             println!("DEBUG HERE: {}", music_obj.list.len());
@@ -515,6 +539,38 @@ impl App {
                                         }
                                         PungeCommand::NewVolume(val) => {
                                             music_obj.sink.set_volume((val as f32) / 80.0)
+                                        }
+                                        PungeCommand::SkipToSeconds(val) => {
+                                            music_obj.sink.stop();
+                                            music_obj.sink.append(read_from_time(
+                                                music_obj.list[music_obj.count as usize]
+                                                    .savelocationmp3
+                                                    .clone(),
+                                                val,
+                                            ));
+                                            // play :D we are inside the playing loop
+                                            music_obj.to_play = true;
+                                            music_obj.sink.play();
+                                            sender
+                                                .send(ProgramCommands::NewData(MusicData {
+                                                    title: music_obj.current_object.title.clone(),
+                                                    author: music_obj.current_object.author.clone(),
+                                                    album: music_obj.current_object.album.clone(),
+                                                    song_id: music_obj
+                                                        .current_object
+                                                        .uniqueid
+                                                        .clone(),
+                                                    previous_id: None,
+                                                    volume: music_obj.sink.volume(),
+                                                    is_playing: true,
+                                                    shuffle: music_obj.shuffle,
+                                                    playlist: music_obj.playlist.clone(),
+                                                    threshold: music_obj.current_object.threshold,
+                                                    context: Context::Seeked,
+                                                    length: music_obj.current_object.length,
+                                                }))
+                                                .await
+                                                .unwrap();
                                         }
                                         PungeCommand::ToggleShuffle => {
                                             if music_obj.shuffle {

@@ -13,7 +13,7 @@ pub struct PungeMusicObject {
     pub author: String,
     pub album: String,
     pub features: String,
-    pub length: usize, // in seconds
+    pub length: u32, // in seconds
     pub savelocationmp3: String,
     pub savelocationjpg: String,
     pub datedownloaded: NaiveDate,
@@ -170,7 +170,7 @@ pub struct MusicData {
     pub playlist: String,
     pub threshold: u16,
     pub context: Context, // the context of the message being sent
-    pub length: usize,    // seconds, length of song
+    pub length: u32,      // seconds, length of song
 }
 
 impl MusicData {

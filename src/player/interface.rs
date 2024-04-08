@@ -51,16 +51,16 @@ impl MusicPlayer {
         }
     }
 
-    fn play_from_time(&mut self, time: usize) {
-        // time == seconds into it :D
-        // used when playing from the scrubbing bar
-        self.sink.stop(); // is this required? likely
-        self.sink.append(read_from_time(
-            self.list[self.count as usize].savelocationmp3.clone(),
-            time,
-        ));
-        // self.play_loop()
-    }
+    // fn play_from_time(&mut self, time: usize) {
+    //     // time == seconds into it :D
+    //     // used when playing from the scrubbing bar
+    //     self.sink.stop(); // is this required? likely
+    //     self.sink.append(read_from_time(
+    //         self.list[self.count as usize].savelocationmp3.clone(),
+    //         time,
+    //     ));
+    //     // self.play_loop()
+    // }
 }
 
 pub fn read_file_from_beginning(file: String) -> Decoder<BufReader<File>> {
@@ -71,9 +71,9 @@ pub fn read_file_from_beginning(file: String) -> Decoder<BufReader<File>> {
     Decoder::new(reader).unwrap()
 }
 
-pub fn read_from_time(file: String, time: usize) -> Decoder<BufReader<File>> {
+pub fn read_from_time(file: String, time: u32) -> Decoder<BufReader<File>> {
     let mut reader = BufReader::new(File::open(file).unwrap());
-    let sample_rate = 44100; // yt songs are always 44100
+    let sample_rate = 48000; // 44100 or 192k?
     let position = sample_rate * time;
     reader.seek(SeekFrom::Start(position as u64)).unwrap();
     let decoder: Decoder<BufReader<File>> = Decoder::new(reader).unwrap();
