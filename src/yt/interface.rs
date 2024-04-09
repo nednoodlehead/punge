@@ -88,6 +88,7 @@ pub async fn download_interface(
             details.length_seconds.parse::<u32>().unwrap(),
         )
         .await?;
+        println!("updating: {}", &obj.title);
         update_empty_entries(obj)?; // update the entries because we made them already in Self::Message::Download
         youtube_data
     } else if description_timestamp_check(details.description.as_str()) {

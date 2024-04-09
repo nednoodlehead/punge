@@ -305,7 +305,7 @@ impl Application for App {
                     // then, after the downloads have completed, we either update the entry with the data
                     // or remove the entry afterwards if it fails
                     for song in playlist.links {
-                        link_list.push(song.clone());
+                        link_list.push(song.clone()[28..].to_string());
                         self.download_list.push(song.clone());
                         let cmd = Command::perform(
                             download_interface(song.clone(), Some(playlist.title.clone())),
@@ -359,13 +359,13 @@ impl Application for App {
                 let feedback = match youtubedata {
                     Ok(t) => {
                         // if we are listening to main, update the playlist with the song we just added
-                        if self.current_song.load().playlist == "main" {
-                            self.sender
-                                .as_mut()
-                                .unwrap()
-                                .send(PungeCommand::ChangePlaylist(String::from("main")))
-                                .unwrap();
-                        }
+                        // if self.current_song.load().playlist == "main" {
+                        //     self.sender
+                        //         .as_mut()
+                        //         .unwrap()
+                        //         .send(PungeCommand::ChangePlaylist(String::from("main")))
+                        //         .unwrap();
+                        // }
                         format!("{} - {} Downloaded Successfully", t.title, t.author)
                     }
                     Err(e) => {
