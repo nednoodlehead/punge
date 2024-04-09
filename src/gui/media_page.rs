@@ -125,8 +125,11 @@ async fn download_youtube(
     } else {
         path
     };
-    let title = vid.get_basic_info()?.video_details.title;
-    let full_output = format!("{}{} - {}.mp4", path, &title, vid.get_video_url());
+    // clean the inputs :D
+    let title = crate::yt::interface::clean_inputs_for_win_saving(
+        vid.get_basic_info()?.video_details.title,
+    );
+    let full_output = format!("{}{} - {}{}", path, &title, vid.get_video_id(), mp3_4);
     let new_path = std::path::Path::new(&full_output);
     vid.download(new_path)?;
     Ok(format!("{} downloaded successfully!", title))
