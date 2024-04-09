@@ -20,6 +20,15 @@ fn create_alt_pattern(input: String) -> String {
     pattern
 }
 
+fn create_new_pattern(input: String) -> String {
+    let words = input.split(" ").collect::<Vec<&str>>();
+    let mut patt = String::new();
+    for word in words {
+        patt.push_str(format!("(.*{})", word).as_str());
+    }
+    patt
+}
+
 fn get_value_of_found(search_string: String, letters: String) -> u8 {
     // should probably divide total chars in search string, so you can actually find kendrick lamar - i through search
     // only does title + author rn
@@ -49,6 +58,13 @@ fn get_value_of_found(search_string: String, letters: String) -> u8 {
         }
     }
     score
+}
+
+pub async fn get_first_match_from_db(
+    playlist: String,
+    user_string: String,
+) -> Result<PungeMusicObject, AppError> {
+    // we actually just open a new connection to the db, and if an entry
 }
 
 pub async fn get_values_from_db(

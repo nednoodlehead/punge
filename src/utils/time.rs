@@ -4,25 +4,23 @@ use crate::types::DatabaseErrors;
 use crate::types::PungeMusicObject;
 use chrono::NaiveDate;
 
-pub fn sec_to_time(mut int: u32) -> String {
+pub fn sec_to_time(int: u32) -> String {
     // format: HH:MM:SS
-    // hours are a special case, if there aren't any
-    let (mut sec, mut min, mut hour) = (0, 0, 0);
-    while int != 0 {
-        sec += 1;
-        if sec == 60 {
-            min += 1
-        }
-        if min == 60 {
-            hour += 1
-        }
-        int -= 1;
-    }
-    if hour == 0 {
-        format!("{}:{}", min, sec)
+    // thanks ai, i literally forget about the usefulnes of the modulus operator everday
+    let hours = int / 3600;
+    let minutes = (int % 600) / 60;
+    let seconds = int % 60;
+    let hour_str = if hours == 0 {
+        String::new()
     } else {
-        format!("{}:{}:{}", hour, min, sec)
-    }
+        format!("{:02}:", hours)
+    };
+    let min_str = if hours > 0 && minutes < 10 {
+        format!("{:02}", minutes)
+    } else {
+        minutes.to_string()
+    };
+    format!("{}{}:{:02}", hour_str, min_str, seconds)
 }
 
 pub fn legacy_old_time_to_new() -> Result<(), DatabaseErrors> {

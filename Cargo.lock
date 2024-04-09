@@ -3678,7 +3678,6 @@ dependencies = [
  "iced",
  "iced_table",
  "itertools 0.10.5",
- "lazy_static",
  "log",
  "mp3-duration",
  "rand",

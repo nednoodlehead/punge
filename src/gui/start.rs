@@ -427,33 +427,13 @@ impl Application for App {
                 Command::none()
             }
 
-            Self::Message::GoToSong => {
-                Command::perform(
-                    get_values_from_db(
-                        self.current_song.load().playlist.clone(),
-                        self.search.clone(),
-                    ),
-                    ProgramCommands::SongFound,
-                )
-                // let val = get_values_from_db(
-                //     self.current_song.load().playlist.clone(),
-                //     self.search.clone(),
-                // );
-                // println!("GoToSong: {:?}", val);
-                // if val.is_empty() {
-                //     // if the user's search gives no results, tell them in the search box
-                //     self.search = format!("{} returned no results", self.search);
-                // } else {
-                //     self.sender
-                //         .as_ref()
-                //         .unwrap()
-                //         .send(PungeCommand::ChangeSong(
-                //             val[val.len() - 1].clone().1.uniqueid,
-                //         ))
-                //         .unwrap();
-                //     self.search = "".to_string()
-                // }
-            }
+            Self::Message::GoToSong => Command::perform(
+                get_values_from_db(
+                    self.current_song.load().playlist.clone(),
+                    self.search.clone(),
+                ),
+                ProgramCommands::SongFound,
+            ),
             Self::Message::PlaySong(song) => {
                 // this is only used from the 'play' buttons on the songs
                 if self.is_paused {
@@ -510,7 +490,7 @@ impl Application for App {
             Self::Message::DeleteSong(uuid) => {
                 if self.viewing_playlist == "main" {
                     match delete_record_and_file(uuid) {
-                        Ok(t) => {
+                        Ok(_t) => {
                             println!("epic delete moment")
                         }
                         Err(e) => {

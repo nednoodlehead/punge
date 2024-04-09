@@ -10,26 +10,24 @@ path = "./src/main.rs"
 
 [dependencies]
 rusqlite = { version = "0.27.0", features = ["bundled", "chrono"] }
-regex = "1.7.0"
-whoami = "1.5"
-# this version is needed to get around the youtube limiting problem :)
-rusty_ytdl = {version = "0.7", features = ["blocking"] }
-reqwest = {features = ["blocking"], version = "0.11.13"}
-serde_json = "1.0.89"
-itertools = "0.10.5"
-chrono = "0.4.24"
-thiserror = "1.0"
-uuid = {features = ["v4"], version = "1.3.1" }
-lazy_static = "1.4.0"
+regex = "1.7.0" # for finding words in the search algorithm
+whoami = "1.5"  # for default backup save locations
+rusty_ytdl = {version = "0.7", features = ["blocking"] }  # yt downloads, actually is updated
+reqwest = {features = ["blocking"], version = "0.11.13"}  # image downloads (soon) and html for playlist
+serde_json = "1.0.89" # json cache
+itertools = "0.10.5" # mostly for collect_vec()
+chrono = "0.4.24"  # date an time for db
+thiserror = "1.0"  # errors, should change this at some point
+uuid = {features = ["v4"], version = "1.3.1" }  # db uuids
 serde = {version ="1.0.160", features = ["derive"]}
-rodio = "0.17.3"
-iced = {version = "0.12", features = ["advanced", "lazy"] }  # lazy for the iced::wid::responsive
-tokio = {version = "1.29.0", features = ["time", "sync"]}
-async-std = "1.12.0"
-global-hotkey = "0.5.1"
-mp3-duration = "0.1.10"
-rand = "0.8"
-arc-swap = "1.6.0"
-iced_table = {git = "https://github.com/tarkah/iced_table"}
+rodio = "0.17.3"  # audio playback :)
+iced = {version = "0.12", features = ["advanced", "lazy"] }  # lazy for the iced::wid::responsive, needed in tarkah table
+tokio = {version = "1.29.0", features = ["time", "sync"]} # async sender
+async-std = "1.12.0"  # sleeping in subscriptions
+global-hotkey = "0.5.1"  # no explaination needed
+mp3-duration = "0.1.10"  # ditto ^
+rand = "0.8"  # shuffling the list
+arc-swap = "1.6.0" # allows MusicData to be in multiple places at once
+iced_table = {git = "https://github.com/tarkah/iced_table"}  # table widget
 log = "0.4.21"  # stinky crate conflict
-discord-rich-presence = "0.2.3"
+discord-rich-presence = "0.2.3" # this one is better than the others available
