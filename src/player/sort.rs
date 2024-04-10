@@ -60,12 +60,12 @@ fn get_value_of_found(search_string: String, letters: String) -> u8 {
     score
 }
 
-pub async fn get_first_match_from_db(
-    playlist: String,
-    user_string: String,
-) -> Result<PungeMusicObject, AppError> {
-    // we actually just open a new connection to the db, and if an entry
-}
+// pub async fn get_first_match_from_db(
+//     playlist: String,
+//     user_string: String,
+// ) -> Result<PungeMusicObject, AppError> {
+//     // we actually just open a new connection to the db, and if an entry
+// }
 
 pub async fn get_values_from_db(
     playlist: String, // uniqueid now

@@ -37,6 +37,8 @@ pub enum ProgramCommands {
     DownloadMedia(String, String, String), // link, path, mp3 or mp4
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
     UpdateMp3Or4Combobox(String),
+    SearchYouTube(String),
+    SearchYouTubeResults(Vec<rusty_ytdl::search::SearchResult>),
     Debug, // a message that has its associated action changed with the debug in question
     AddToDownloadFeedback(String, Result<YouTubeData, AppError>), // String = youtubelink, Result<string> = title - author
     InAppEvent(AppEvent),

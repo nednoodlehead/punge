@@ -347,6 +347,15 @@ impl Application for App {
                 Command::none()
             }
 
+            Self::Message::SearchYouTube(str) => Command::perform(
+                crate::yt::search::see_content("pusha t - daytona".to_string()),
+                |vals| ProgramCommands::SearchYouTubeResults(vals),
+            ),
+            Self::Message::SearchYouTubeResults(search) => {
+                self.download_page.youtube_content.extend(search);
+                Command::none()
+            }
+
             Self::Message::AddToDownloadFeedback(link, youtubedata) => {
                 // remove it from the download list, since it has either been downloaded, or failed to download
                 self.download_list.swap_remove(
@@ -359,13 +368,13 @@ impl Application for App {
                 let feedback = match youtubedata {
                     Ok(t) => {
                         // if we are listening to main, update the playlist with the song we just added
-                        // if self.current_song.load().playlist == "main" {
-                        //     self.sender
-                        //         .as_mut()
-                        //         .unwrap()
-                        //         .send(PungeCommand::ChangePlaylist(String::from("main")))
-                        //         .unwrap();
-                        // }
+                        if self.current_song.load().playlist == "main" {
+                            self.sender
+                                .as_mut()
+                                .unwrap()
+                                .send(PungeCommand::ChangePlaylist(String::from("main")))
+                                .unwrap();
+                        }
                         format!("{} - {} Downloaded Successfully", t.title, t.author)
                     }
                     Err(e) => {
