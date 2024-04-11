@@ -97,19 +97,39 @@ impl DownloadPage {
                     let col = match &results.duration {
                         Some(duration) => {
                             // these are normal videos
-                            column![
-                                text(results.title.clone()),
-                                text(results.author.clone()),
-                                text(duration.clone())
-                            ]
+                            column![row![
+                                column![
+                                    text(results.title.clone()),
+                                    text(results.author.clone()),
+                                    text(duration.clone())
+                                ]
+                                .width(Length::Fixed(500.0)),
+                                horizontal_space(),
+                                column![
+                                    button(text("Download!"))
+                                        .on_press(ProgramCommands::Download(results.link.clone())),
+                                    text("Stream!")
+                                ],
+                            ]]
+                            .padding(10.0)
                         }
                         None => {
                             // these are playlists
-                            column![
-                                text(results.title.clone()),
-                                text(results.author.clone()),
-                                text(results.videos.clone().unwrap())
-                            ]
+                            column![row![
+                                column![
+                                    text(results.title.clone()),
+                                    text(results.author.clone()),
+                                    text(results.videos.clone().unwrap())
+                                ]
+                                .width(500.0),
+                                horizontal_space(),
+                                column![
+                                    button(text("Download!"))
+                                        .on_press(ProgramCommands::Download(results.link.clone())),
+                                    text("Stream!")
+                                ],
+                            ]]
+                            .padding(10.0)
                         }
                     };
                     // push each iteration to the final scrollable

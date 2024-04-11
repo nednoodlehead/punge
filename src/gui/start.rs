@@ -306,6 +306,9 @@ impl Application for App {
                     // or remove the entry afterwards if it fails
                     for song in playlist.links {
                         link_list.push(song.clone()[28..].to_string());
+                        self.download_page
+                            .download_feedback
+                            .push(format!("Download started on {}", &link));
                         self.download_list.push(song.clone());
                         let cmd = Command::perform(
                             download_interface(song.clone(), Some(playlist.title.clone())),
@@ -318,6 +321,9 @@ impl Application for App {
                     Command::batch(list_cmd)
                 } else {
                     self.download_list.push(link.clone());
+                    self.download_page
+                        .download_feedback
+                        .push(format!("Download started on {}", &link));
                     Command::perform(download_interface(link.clone(), None), |yt_data| {
                         ProgramCommands::AddToDownloadFeedback(link, yt_data)
                     })
