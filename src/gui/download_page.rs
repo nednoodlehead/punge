@@ -5,7 +5,7 @@ use iced::widget::{
     button, column, container, horizontal_space, row, scrollable, text, text_input, Column,
     Container, Row,
 };
-use iced::{Alignment, Element, Length};
+use iced::{Element, Length};
 
 pub struct DownloadPage {
     pub search_text: String,
@@ -24,26 +24,6 @@ impl DownloadPage {
         }
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
-        // let feedback_and_search = row![container(self.create_scrollable()), scrollable];
-        let search_test =
-            button(text("YOUTUBE")).on_press(ProgramCommands::SearchYouTube("".to_string()));
-        // let input_field = text_input("Paste YouTube links here!", self.text.as_str())
-        //     .on_input(ProgramCommands::UpdateDownloadEntry)
-        //     .width(Length::Fixed(400.0));
-        // let confirm_button =
-        //     button(text("Download!")).on_press(ProgramCommands::Download(self.text.clone()));
-        // let download_row = row![
-        //     horizontal_space(),
-        //     input_field,
-        //     confirm_button,
-        //     horizontal_space()
-        // ]
-        // .align_items(Alignment::End);
-        // let feedback_scrollable = row![
-        //     horizontal_space(),
-        //     container(self.create_scrollable()),
-        //     horizontal_space()
-        // ];
         Container::new(
             column![
                 persistent::render_top_buttons(Page::Download),
@@ -68,10 +48,9 @@ impl DownloadPage {
                                 .on_press(ProgramCommands::Download(self.text.clone()))
                         ],
                         self.create_feedback_scrollable(),
-                    ],
+                    ]
                 ], // download_row,
-                // feedback_scrollable,
-                search_test,
+                   // feedback_scrollable,
             ]
             .spacing(10.0),
         )
@@ -121,7 +100,7 @@ impl DownloadPage {
                                     text(results.author.clone()),
                                     text(results.videos.clone().unwrap())
                                 ]
-                                .width(500.0),
+                                .width(Length::Fixed(500.0)),
                                 horizontal_space(),
                                 column![
                                     button(text("Download!"))

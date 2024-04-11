@@ -305,7 +305,7 @@ impl Application for App {
                     // then, after the downloads have completed, we either update the entry with the data
                     // or remove the entry afterwards if it fails
                     for song in playlist.links {
-                        link_list.push(song.clone()[28..].to_string());
+                        link_list.push(song.clone()[28..].to_string()); // this is the uniqueid
                         self.download_page
                             .download_feedback
                             .push(format!("Download started on {}", &link));
@@ -623,6 +623,10 @@ impl Application for App {
                     self.download_page.search_text = txt;
                     Command::none()
                 }
+                TextType::MediaPath => {
+                    self.setting_page.media_path = txt;
+                    Command::none()
+                }
             },
 
             Self::Message::SaveConfig => {
@@ -645,6 +649,7 @@ impl Application for App {
                     jpg_path: self.setting_page.jpg_path_text.clone(),
                     static_increment,
                     static_reduction,
+                    media_path: self.setting_page.media_path.clone(),
                 };
                 match cache::write_to_cache(obj) {
                     Ok(_t) => {

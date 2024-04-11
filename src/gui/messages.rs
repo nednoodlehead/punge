@@ -80,6 +80,7 @@ pub enum TextType {
     AlbumChange,        // song edit
     DownloadLinkInput,  // download page, input your own link
     YouTubeSearchInput, // download page, search for content on youtube
+    MediaPath,          // settings page
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

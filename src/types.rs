@@ -199,6 +199,7 @@ pub struct Config {
     pub jpg_path: String,
     pub static_increment: usize,
     pub static_reduction: usize,
+    pub media_path: String, // default location for media
 }
 
 // used in src/yt to move data around in an easier / simpler format

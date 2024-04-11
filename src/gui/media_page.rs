@@ -16,9 +16,10 @@ pub struct MediaPage {
 }
 impl MediaPage {
     pub fn new() -> Self {
+        let config = crate::utils::cache::read_from_cache().unwrap();
         MediaPage {
             download_input: "".to_string(),
-            download_to_location: "".to_string(),
+            download_to_location: config.media_path,
             download_feedback: Vec::new(),
             mp3_and_4: combo_box::State::new(vec![".mp3".to_string(), ".mp4".to_string()]),
             download_type: ".mp4".to_string(),

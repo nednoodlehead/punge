@@ -15,6 +15,7 @@ pub struct SettingPage {
     pub jpg_path_text: String,
     pub static_increment: String, // the increments are converted into u8 when cache is being wrote
     pub static_reduction: String, // if there is a `counter` type of widget, we can use that, and this can be `u8`
+    pub media_path: String,
 }
 
 impl SettingPage {
@@ -29,6 +30,7 @@ impl SettingPage {
                     jpg_path: String::from("C:/"),
                     static_increment: 1,
                     static_reduction: 1,
+                    media_path: String::from("C:/"),
                 }
             }
         };
@@ -38,6 +40,7 @@ impl SettingPage {
             jpg_path_text: config_obj.jpg_path.clone(),
             static_increment: config_obj.static_increment.to_string(),
             static_reduction: config_obj.static_reduction.to_string(),
+            media_path: config_obj.media_path.clone(),
         }
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
@@ -64,19 +67,25 @@ impl SettingPage {
             ]
             .padding(10.0),
             row![
-                text("Static increment bind amount (1=default): "),
+                text("Static increment bind amount (1 = default): "),
                 text_input(&self.static_increment, &self.static_increment).on_input(|txt| {
                     ProgramCommands::UpdateWidgetText(TextType::StaticIncrement, txt)
                 })
             ]
             .padding(10.0),
             row![
-                text("Static reduction bind amount (1=default): "),
+                text("Static reduction bind amount (1 = default): "),
                 text_input(&self.static_reduction, &self.static_reduction).on_input(|txt| {
                     ProgramCommands::UpdateWidgetText(TextType::StaticReduction, txt)
                 })
             ]
             .padding(10.0),
+            row![
+                text("Default Media Download location: "),
+                text_input(&self.media_path, &self.media_path).on_input(|txt| {
+                    ProgramCommands::UpdateWidgetText(TextType::MediaPath, txt)
+                })
+            ],
             row![button(text("Save!")).on_press(ProgramCommands::SaveConfig)]
         ])
         .into()
