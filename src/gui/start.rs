@@ -347,10 +347,11 @@ impl Application for App {
                 Command::none()
             }
 
-            Self::Message::SearchYouTube(str) => Command::perform(
-                crate::yt::search::see_content("pusha t - daytona".to_string()),
-                |vals| ProgramCommands::SearchYouTubeResults(vals),
-            ),
+            Self::Message::SearchYouTube(str) => {
+                Command::perform(crate::yt::search::content_to_text(str), |vals| {
+                    ProgramCommands::SearchYouTubeResults(vals)
+                })
+            }
             Self::Message::SearchYouTubeResults(search) => {
                 self.download_page.youtube_content.extend(search);
                 Command::none()
@@ -378,18 +379,24 @@ impl Application for App {
                         format!("{} - {} Downloaded Successfully", t.title, t.author)
                     }
                     Err(e) => {
+                        println!("ERROR DOWNLOADING: {:?} {:?}", e, &link);
                         // if the problem occured from playlist, there is an existing entry for the obj, but if it failed, we want to
                         // remove that, since it will cause a panic on null fields.
-                        match crate::db::update::delete_from_uuid(
-                            link[link.len() - 11..].to_string(), // last 11 chars of the url, aka uniqueid
-                        ) {
-                            Ok(_t) => {
-                                println!("Deleted successfully: {}", &link);
-                            }
-                            Err(_e) => {
-                                println!("nothin to delete")
-                            }
-                        };
+                        // so case where the link is less than 11 chars, it will panic on subtract overflow..
+                        if link.len() < 12 {
+                            println!("ignoring potential delte action, link is too short");
+                        } else {
+                            match crate::db::update::delete_from_uuid(
+                                link[link.len() - 11..].to_string(), // last 11 chars of the url, aka uniqueid
+                            ) {
+                                Ok(_t) => {
+                                    println!("Deleted successfully: {}", &link);
+                                }
+                                Err(_e) => {
+                                    println!("nothin to delete")
+                                }
+                            };
+                        }
                         format!("Error downloading: {}\n{:?}", link, e)
                     }
                 };
@@ -600,6 +607,14 @@ impl Application for App {
                 }
                 TextType::AlbumChange => {
                     self.song_edit_page.album = txt;
+                    Command::none()
+                }
+                TextType::DownloadLinkInput => {
+                    self.download_page.text = txt;
+                    Command::none()
+                }
+                TextType::YouTubeSearchInput => {
+                    self.download_page.search_text = txt;
                     Command::none()
                 }
             },

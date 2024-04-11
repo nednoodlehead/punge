@@ -38,7 +38,7 @@ pub enum ProgramCommands {
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
     UpdateMp3Or4Combobox(String),
     SearchYouTube(String),
-    SearchYouTubeResults(Vec<rusty_ytdl::search::SearchResult>),
+    SearchYouTubeResults(Vec<crate::types::YouTubeSearchResult>),
     Debug, // a message that has its associated action changed with the debug in question
     AddToDownloadFeedback(String, Result<YouTubeData, AppError>), // String = youtubelink, Result<string> = title - author
     InAppEvent(AppEvent),
@@ -65,19 +65,21 @@ pub enum ProgramCommands {
 pub enum TextType {
     // enum used in ProgramCommands::UpdateWidgetText(widget, text)
     // used to update the gui, and not need a bunch of different messages to get it done
-    BackupText,       // settings
-    Mp3Text,          // settings
-    JpgText,          // settings
-    StaticIncrement,  // settings
-    StaticReduction,  // settings
-    UserTitle,        // playlist
-    UserDescription,  // playlist
-    UserThumbnail,    // playlist
-    Mp4DownloadInput, // media
-    Mp4PathInput,     // media
-    TitleChange,      // song edit
-    AuthorChange,     // song edit
-    AlbumChange,      // song edit
+    BackupText,         // settings
+    Mp3Text,            // settings
+    JpgText,            // settings
+    StaticIncrement,    // settings
+    StaticReduction,    // settings
+    UserTitle,          // playlist
+    UserDescription,    // playlist
+    UserThumbnail,      // playlist
+    Mp4DownloadInput,   // media
+    Mp4PathInput,       // media
+    TitleChange,        // song edit
+    AuthorChange,       // song edit
+    AlbumChange,        // song edit
+    DownloadLinkInput,  // download page, input your own link
+    YouTubeSearchInput, // download page, search for content on youtube
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

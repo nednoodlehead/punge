@@ -209,3 +209,14 @@ pub struct YouTubeData {
     pub album: String,
     pub url: String,
 }
+
+#[derive(Debug, Clone)]
+pub struct YouTubeSearchResult {
+    pub title: String,
+    pub author: String,
+    pub views: u64,
+    pub duration: Option<String>, // duration of video "10:10", "2:45"
+    pub videos: Option<String>,   // format: {} Videos, videos.len()
+    pub thumbnail: String,        // path to the thumbnail
+    pub link: String,
+}

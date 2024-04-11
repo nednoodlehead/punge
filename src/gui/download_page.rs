@@ -1,5 +1,6 @@
-use crate::gui::messages::{Page, ProgramCommands};
+use crate::gui::messages::{Page, ProgramCommands, TextType};
 use crate::gui::persistent;
+use crate::types::YouTubeSearchResult;
 use iced::widget::{
     button, column, container, horizontal_space, row, scrollable, text, text_input, Column,
     Container, Row,
@@ -7,14 +8,16 @@ use iced::widget::{
 use iced::{Alignment, Element, Length};
 
 pub struct DownloadPage {
+    pub search_text: String,
     pub text: String,
     pub download_feedback: Vec<String>, // feedback to the user to tell them if song was downloaded successfully or not
-    pub youtube_content: Vec<rusty_ytdl::search::SearchResult>, // dyncamically created boxes
+    pub youtube_content: Vec<YouTubeSearchResult>, // dyncamically created boxes
 }
 
 impl DownloadPage {
     pub fn new() -> Self {
         DownloadPage {
+            search_text: "".to_string(),
             text: "".to_string(),
             download_feedback: vec![],
             youtube_content: vec![],
@@ -45,8 +48,27 @@ impl DownloadPage {
             column![
                 persistent::render_top_buttons(Page::Download),
                 row![
-                    self.create_feedback_scrollable(),
-                    self.create_searcher_scrollable()
+                    column![
+                        row![
+                            text_input(&self.search_text, &self.search_text).on_input(|txt| {
+                                ProgramCommands::UpdateWidgetText(TextType::YouTubeSearchInput, txt)
+                            }),
+                            button(text("Search!"))
+                                .on_press(ProgramCommands::SearchYouTube(self.search_text.clone()))
+                        ],
+                        self.create_searcher_scrollable(),
+                    ]
+                    .spacing(15.0),
+                    column![
+                        row![
+                            text_input(&self.text, &self.text).on_input(|txt| {
+                                ProgramCommands::UpdateWidgetText(TextType::DownloadLinkInput, txt)
+                            }),
+                            button(text("Download!"))
+                                .on_press(ProgramCommands::Download(self.text.clone()))
+                        ],
+                        self.create_feedback_scrollable(),
+                    ],
                 ], // download_row,
                 // feedback_scrollable,
                 search_test,
@@ -72,31 +94,30 @@ impl DownloadPage {
             self.youtube_content
                 .iter()
                 .fold(Column::new(), |item, results| {
-                    // custom type ?
-                    let col = match results {
-                        rusty_ytdl::blocking::search::SearchResult::Video(vid) => column![
-                            text(vid.title.clone()),
-                            text(vid.channel.name.clone()),
-                            text(vid.duration_raw.clone()),
-                            // text(vid.uploaded_at.clone().unwrap())
-                        ],
-                        rusty_ytdl::blocking::search::SearchResult::Playlist(playlist) => {
-                            // ok this actually works...?
-                            let play = rusty_ytdl::blocking::search::Playlist::get(playlist.url.clone(), None).unwrap();
+                    let col = match &results.duration {
+                        Some(duration) => {
+                            // these are normal videos
                             column![
-                                text(playlist.name.clone()),
-                                text(playlist.channel.name.clone()),
-                                text(format!("{} Videos", play.videos.len())),
+                                text(results.title.clone()),
+                                text(results.author.clone()),
+                                text(duration.clone())
                             ]
                         }
-                        rusty_ytdl::blocking::search::SearchResult::Channel(_chn) => {
-                            // can we ignore this !?
-                            column![]
+                        None => {
+                            // these are playlists
+                            column![
+                                text(results.title.clone()),
+                                text(results.author.clone()),
+                                text(results.videos.clone().unwrap())
+                            ]
                         }
                     };
+                    // push each iteration to the final scrollable
                     item.push(col)
                 }),
         )
+        .width(Length::Fixed(600.0))
+        .height(Length::Fixed(500.0))
         .into()
     }
 }

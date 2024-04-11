@@ -82,4 +82,17 @@ impl App {
         ])
         .into()
     }
+    // pub fn render_search_result_box(
+    //     &self,
+    //     title: String,
+    //     channel_name: String,
+    //     views: String,
+    //     duration: String,
+    //     link: String,
+    //     thumbnail: String,
+    // ) -> Element<'_, ProgramCommands> {
+    //     // create a container that holds all of the stuff relating to a download
+    //     // also downloads the images. they should be flushed on each search
+    //     container()
+    // }
 }
