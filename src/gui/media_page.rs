@@ -1,6 +1,7 @@
 use crate::gui::messages::{Page, ProgramCommands, TextType};
 use crate::gui::persistent;
 use crate::types::AppError;
+use crate::types::Config;
 use rusty_ytdl::{self, VideoOptions};
 
 use iced::widget::{button, column, combo_box, horizontal_space, row, text, text_input, Container};
@@ -15,11 +16,10 @@ pub struct MediaPage {
     pub download_type: String, // mp3 or mp4
 }
 impl MediaPage {
-    pub fn new() -> Self {
-        let config = crate::utils::cache::read_from_cache().unwrap();
+    pub fn new(config: &Config) -> Self {
         MediaPage {
             download_input: "".to_string(),
-            download_to_location: config.media_path,
+            download_to_location: config.media_path.clone(),
             download_feedback: Vec::new(),
             mp3_and_4: combo_box::State::new(vec![".mp3".to_string(), ".mp4".to_string()]),
             download_type: ".mp4".to_string(),

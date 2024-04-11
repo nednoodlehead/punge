@@ -125,6 +125,20 @@ impl Application for App {
         manager.register(hotkey_5).unwrap();
         manager.register(hotkey_6).unwrap();
         let player_cache = player_cache::fetch_cache();
+        let config_cache = match cache::read_from_cache() {
+            Ok(t) => t,
+            Err(e) => {
+                println!("error gettin cache {:?}", e);
+                Config {
+                    backup_path: format!("C:/Users/{}/Documents/", whoami::username()),
+                    mp3_path: String::from("C:/"),
+                    jpg_path: String::from("C:/"),
+                    static_increment: 1,
+                    static_reduction: 1,
+                    media_path: String::from("C:/"),
+                }
+            }
+        };
         (
             App {
                 is_paused: true,
@@ -137,8 +151,8 @@ impl Application for App {
                 total_time: player_cache.length,
                 current_view: Page::Main,
                 download_page: download_page::DownloadPage::new(),
-                setting_page: setting_page::SettingPage::new(),
-                media_page: crate::gui::media_page::MediaPage::new(),
+                setting_page: setting_page::SettingPage::new(&config_cache),
+                media_page: crate::gui::media_page::MediaPage::new(&config_cache),
                 playlist_page: crate::gui::new_playlist_page::PlaylistPage::new(None),
                 song_edit_page: crate::gui::song_edit_page::SongEditPage::new(),
                 download_list: vec![],

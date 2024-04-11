@@ -19,28 +19,14 @@ pub struct SettingPage {
 }
 
 impl SettingPage {
-    pub fn new() -> Self {
-        let config_obj = match cache::read_from_cache() {
-            Ok(t) => t,
-            Err(e) => {
-                println!("error gettin cache {:?}", e);
-                Config {
-                    backup_path: format!("C:/Users/{}/Documents/", whoami::username()),
-                    mp3_path: String::from("C:/"),
-                    jpg_path: String::from("C:/"),
-                    static_increment: 1,
-                    static_reduction: 1,
-                    media_path: String::from("C:/"),
-                }
-            }
-        };
+    pub fn new(config: &Config) -> Self {
         SettingPage {
-            backup_text: config_obj.backup_path.clone(),
-            mp3_path_text: config_obj.mp3_path.clone(),
-            jpg_path_text: config_obj.jpg_path.clone(),
-            static_increment: config_obj.static_increment.to_string(),
-            static_reduction: config_obj.static_reduction.to_string(),
-            media_path: config_obj.media_path.clone(),
+            backup_text: config.backup_path.clone(),
+            mp3_path_text: config.mp3_path.clone(),
+            jpg_path_text: config.jpg_path.clone(),
+            static_increment: config.static_increment.to_string(),
+            static_reduction: config.static_reduction.to_string(),
+            media_path: config.media_path.clone(),
         }
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
