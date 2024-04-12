@@ -15,12 +15,24 @@ pub async fn see_content(search: String) -> Vec<rusty_ytdl::search::SearchResult
     yt.search(search, Some(&options)).unwrap()
 }
 
-pub async fn content_to_text(search: String) -> Vec<YouTubeSearchResult> {
+pub async fn content_to_text(
+    search: String,
+    videos: bool,
+    playlists: bool,
+) -> Vec<YouTubeSearchResult> {
     // we use our own youtube search result so we dont need to fetch the videos in the playlist
     // each time the scrollable is re-rendered
     let yt = YouTube::new().unwrap();
+    // search based on the checkboxes
+    let search_type = if videos && playlists {
+        rusty_ytdl::search::SearchType::All
+    } else if videos {
+        rusty_ytdl::search::SearchType::Video
+    } else {
+        rusty_ytdl::search::SearchType::Playlist
+    };
     let options = rusty_ytdl::search::SearchOptions {
-        search_type: rusty_ytdl::search::SearchType::All,
+        search_type,
         limit: 20,
         safe_search: true,
     };

@@ -4,7 +4,7 @@ use crate::db::fetch::{
 };
 use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
 use crate::db::update::{delete_from_playlist, update_song};
-use crate::gui::messages::{AppEvent, Page, ProgramCommands, PungeCommand, TextType};
+use crate::gui::messages::{AppEvent, CheckBoxType, Page, ProgramCommands, PungeCommand, TextType};
 use crate::gui::persistent;
 use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
@@ -367,13 +367,16 @@ impl Application for App {
                 Command::none()
             }
 
-            Self::Message::SearchYouTube(str) => {
-                Command::perform(crate::yt::search::content_to_text(str), |vals| {
-                    ProgramCommands::SearchYouTubeResults(vals)
-                })
-            }
+            Self::Message::SearchYouTube(str) => Command::perform(
+                crate::yt::search::content_to_text(
+                    str,
+                    self.download_page.include_videos,
+                    self.download_page.include_playlists,
+                ),
+                |vals| ProgramCommands::SearchYouTubeResults(vals),
+            ),
             Self::Message::SearchYouTubeResults(search) => {
-                self.download_page.youtube_content.extend(search);
+                self.download_page.youtube_content = search;
                 Command::none()
             }
 
@@ -639,6 +642,16 @@ impl Application for App {
                 }
                 TextType::MediaPath => {
                     self.setting_page.media_path = txt;
+                    Command::none()
+                }
+            },
+            Self::Message::CheckBoxEvent(checkbox, val) => match checkbox {
+                CheckBoxType::IncludeVideos => {
+                    self.download_page.include_videos = val;
+                    Command::none()
+                }
+                CheckBoxType::IncludePlaylists => {
+                    self.download_page.include_playlists = val;
                     Command::none()
                 }
             },

@@ -32,6 +32,7 @@ pub enum ProgramCommands {
     SkipToSeconds(u32),
     MoveSlider(u32),
     ChangePage(Page),
+    CheckBoxEvent(CheckBoxType, bool),
     UpdateDownloadEntry(String),
     Download(String),
     DownloadMedia(String, String, String), // link, path, mp3 or mp4
@@ -81,6 +82,12 @@ pub enum TextType {
     DownloadLinkInput,  // download page, input your own link
     YouTubeSearchInput, // download page, search for content on youtube
     MediaPath,          // settings page
+}
+
+#[derive(Clone, Debug)]
+pub enum CheckBoxType {
+    IncludeVideos,    // download page
+    IncludePlaylists, // download page
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

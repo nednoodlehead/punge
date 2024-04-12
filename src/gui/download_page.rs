@@ -1,9 +1,9 @@
-use crate::gui::messages::{Page, ProgramCommands, TextType};
+use crate::gui::messages::{CheckBoxType, Page, ProgramCommands, TextType};
 use crate::gui::persistent;
 use crate::types::YouTubeSearchResult;
 use iced::widget::{
-    button, column, container, horizontal_space, row, scrollable, text, text_input, Column,
-    Container, Row,
+    button, checkbox, column, container, horizontal_space, row, scrollable, text, text_input,
+    Column, Container, Row,
 };
 use iced::{Element, Length};
 
@@ -12,6 +12,8 @@ pub struct DownloadPage {
     pub text: String,
     pub download_feedback: Vec<String>, // feedback to the user to tell them if song was downloaded successfully or not
     pub youtube_content: Vec<YouTubeSearchResult>, // dyncamically created boxes
+    pub include_videos: bool,
+    pub include_playlists: bool,
 }
 
 impl DownloadPage {
@@ -21,6 +23,8 @@ impl DownloadPage {
             text: "".to_string(),
             download_feedback: vec![],
             youtube_content: vec![],
+            include_videos: true,
+            include_playlists: true,
         }
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
@@ -37,6 +41,19 @@ impl DownloadPage {
                                 .on_press(ProgramCommands::SearchYouTube(self.search_text.clone()))
                         ],
                         self.create_searcher_scrollable(),
+                        row![
+                            checkbox("Include Videos", self.include_videos).on_toggle(|val| {
+                                ProgramCommands::CheckBoxEvent(CheckBoxType::IncludeVideos, val)
+                            }),
+                            checkbox("Include Playlists", self.include_playlists).on_toggle(
+                                |val| {
+                                    ProgramCommands::CheckBoxEvent(
+                                        CheckBoxType::IncludePlaylists,
+                                        val,
+                                    )
+                                }
+                            )
+                        ]
                     ]
                     .spacing(15.0),
                     column![
