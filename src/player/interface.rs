@@ -11,7 +11,7 @@ pub struct MusicPlayer {
     pub list: Vec<PungeMusicObject>,
     pub playlist: String,
     pub sink: rodio::Sink,
-    pub count: isize,
+    pub count: usize,
     pub shuffle: bool,
     pub to_play: bool,
     pub stream: rodio::OutputStream,
@@ -20,6 +20,14 @@ pub struct MusicPlayer {
 // ngl i aint know too much, but im pretty sure this could cause problems, but it makes the program work, so...
 unsafe impl Send for MusicPlayer {}
 unsafe impl Sync for MusicPlayer {}
+
+impl std::fmt::Debug for MusicPlayer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "list.len:{}\nplaylist:{}\nsink? {:?}\ncount={}\nshuffle={}\nto_play={}\ncurrent_obj={:?}\n",
+            
+        self.list.len(), self.playlist, "bruh", self.count, self.shuffle, self.to_play, self.current_object)
+    }
+}
 
 impl MusicPlayer {
     pub fn new(mut list: Vec<PungeMusicObject>) -> MusicPlayer {
@@ -43,24 +51,13 @@ impl MusicPlayer {
             list,
             playlist: cache.playlist,
             sink,
-            count: count as isize,
+            count,
             shuffle: cache.shuffle,
             to_play: false,
             stream,
             current_object,
         }
     }
-
-    // fn play_from_time(&mut self, time: usize) {
-    //     // time == seconds into it :D
-    //     // used when playing from the scrubbing bar
-    //     self.sink.stop(); // is this required? likely
-    //     self.sink.append(read_from_time(
-    //         self.list[self.count as usize].savelocationmp3.clone(),
-    //         time,
-    //     ));
-    //     // self.play_loop()
-    // }
 }
 
 pub fn read_file_from_beginning(file: String) -> Decoder<BufReader<File>> {
