@@ -90,7 +90,7 @@ pub async fn download_content(
     // string returned is what the user will see, either an error or download success
     // i dont really see a reason to be able to download playlists like this. who wants to download videos in batch like that? idk idc
     if link.contains("youtube") {
-        download_youtube(link, download_path, mp3_4).await?;
+        download_youtube(link.clone(), download_path, mp3_4).await?;
     } else if link.contains("instagram") {
         download_insta()?;
     } else {
@@ -98,7 +98,7 @@ pub async fn download_content(
             "Link does not contain 'instagram' or 'youtube'".to_string(),
         ));
     }
-    todo!()
+    Ok(format!("{} downloaded!", link))
 }
 
 async fn download_youtube(
@@ -114,8 +114,8 @@ async fn download_youtube(
         }
     } else {
         VideoOptions {
-            quality: rusty_ytdl::VideoQuality::HighestVideo,
-            filter: rusty_ytdl::VideoSearchOptions::Video,
+            quality: rusty_ytdl::VideoQuality::Highest,
+            filter: rusty_ytdl::VideoSearchOptions::VideoAudio,
             ..Default::default()
         }
     };
