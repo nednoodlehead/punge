@@ -4,8 +4,9 @@
 use crate::types::{AppError, PungeMusicObject};
 use crate::types::{MusicData, YouTubeData};
 use iced::widget::scrollable;
+use serde::{ser, Deserialize, Serialize};
 use tokio::sync::mpsc as async_sender;
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PungeCommand {
     PlayOrPause,
     ChangeSong(String), // play this song's uuid, loop will find the index and swap to it
@@ -38,6 +39,7 @@ pub enum ProgramCommands {
     DownloadMedia(String, String, String), // link, path, mp3 or mp4
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
     UpdateMp3Or4Combobox(String),
+    UpdateCombobox(ComboBoxType, String), // little ugly lol. cause the type is a const
     SearchYouTube(String),
     SearchYouTubeResults(Vec<crate::types::YouTubeSearchResult>),
     Debug, // a message that has its associated action changed with the debug in question
@@ -90,6 +92,31 @@ pub enum CheckBoxType {
     IncludePlaylists, // download page
 }
 
+#[derive(Clone, Debug)]
+pub enum ComboBoxType {
+    PlayKey,
+    PlayModifier1,
+    PlayModifier2,
+    ForwardKey,
+    ForwardModifer1,
+    ForwardModifer2,
+    BackwardKey,
+    BackwardModifier1,
+    BackwardModifier2,
+    ShuffleKey,
+    ShuffleModifier1,
+    ShuffleModifier2,
+    StaticUpKey,
+    StaticUpModifier1,
+    StaticUpModifier2,
+    StaticDownKey,
+    StaticDownModifier1,
+    StaticDownModifier2,
+    GoToAlbumKey,
+    GoToAlbumModifier1,
+    GoToAlbumModifer2,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Page {
     Main,
@@ -114,4 +141,52 @@ pub enum Context {
 pub enum AppEvent {
     // will include in-app keybinds at some point...
     CloseRequested,
+}
+
+// this is only for the "PungeCommand"-like variants, PlayOrPause, ShuffleToggle..
+// its so we can save these in cache
+impl Serialize for ProgramCommands {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            ProgramCommands::ShuffleToggle => {
+                serializer.serialize_str("ProgramCommands::ShuffleToggle")
+            }
+            ProgramCommands::PlayToggle => serializer.serialize_str("ProgramCommands::PlayToggle"),
+            ProgramCommands::SkipForwards => {
+                serializer.serialize_str("ProgramCommands::SkipForwards")
+            }
+            ProgramCommands::SkipBackwards => {
+                serializer.serialize_str("ProgramCommands::SkipBackwards")
+            }
+            ProgramCommands::StaticVolumeUp => {
+                serializer.serialize_str("ProgramCommands::StaticVolumeUp")
+            }
+            ProgramCommands::StaticVolumeDown => {
+                serializer.serialize_str("ProgramCommands::StaticVolumeDown")
+            }
+            _ => Err(ser::Error::custom(
+                "Unsupported serialization of ProgramCommands member",
+            )),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for ProgramCommands {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = <String>::deserialize(deserializer)?;
+        match s.as_str() {
+            "ProgramCommands::PlayToggle" => Ok(ProgramCommands::PlayToggle),
+            "ProgramCommands::SkipForwards" => Ok(ProgramCommands::SkipForwards),
+            "ProgramCommands::SkipBackwards" => Ok(ProgramCommands::SkipBackwards),
+            "ProgramCommands::StaticVolumeUp" => Ok(ProgramCommands::StaticVolumeUp),
+            "ProgramCommands::StaticVolumeDown" => Ok(ProgramCommands::StaticVolumeDown),
+            _ => Ok(ProgramCommands::Debug),
+        }
+    }
 }

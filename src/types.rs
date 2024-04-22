@@ -1,6 +1,8 @@
 use chrono::{Local, NaiveDate};
+use global_hotkey::hotkey::{Code, Modifiers};
 use rusqlite::{types::FromSqlError, Error};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt;
 use thiserror::Error as terror;
 use uuid::Uuid;
@@ -155,7 +157,7 @@ impl From<rusqlite::Error> for DatabaseErrors {
         DatabaseErrors::FromSqlError(e.to_string())
     }
 }
-use crate::gui::messages::Context;
+use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 #[derive(Clone, Debug)]
 pub struct MusicData {
     // passed from music subscription -> main thread
@@ -191,7 +193,7 @@ impl MusicData {
         }
     }
 }
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Config {
     // no light mode will be made . final decision
     pub backup_path: String,
@@ -200,6 +202,19 @@ pub struct Config {
     pub static_increment: usize,
     pub static_reduction: usize,
     pub media_path: String, // default location for media
+    // this should be all the information needed for serialization. man its ugly
+    // i don't think we can go from u32 -> code / modifiers (whole point of hashes anyways?)
+    // so we need to include the Code and Modifiers, so we can populate the settings page with
+    // correct content. it should stay consistent with what is registered with the manager
+    pub keybinds: HashMap<u32, PungeKeyBind>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PungeKeyBind {
+    pub code: Option<Code>,
+    pub mod1: Option<Modifiers>,
+    pub mod2: Option<Modifiers>,
+    pub command: ProgramCommands,
 }
 
 // used in src/yt to move data around in an easier / simpler format

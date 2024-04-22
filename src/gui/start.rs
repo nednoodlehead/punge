@@ -4,7 +4,9 @@ use crate::db::fetch::{
 };
 use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
 use crate::db::update::{delete_from_playlist, update_song};
-use crate::gui::messages::{AppEvent, CheckBoxType, Page, ProgramCommands, PungeCommand, TextType};
+use crate::gui::messages::{
+    AppEvent, CheckBoxType, ComboBoxType, Page, ProgramCommands, PungeCommand, TextType,
+};
 use crate::gui::persistent;
 use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
@@ -23,14 +25,13 @@ use global_hotkey::{
     hotkey::{Code, HotKey, Modifiers},
     GlobalHotKeyManager,
 };
-
 use iced::subscription::Subscription;
 use iced::widget::{
-    button, column, container, horizontal_space, pick_list, responsive, row, scrollable, slider,
-    text, vertical_space,
+    button, column, container, horizontal_space, pick_list, responsive, row, scrollable, text,
+    vertical_space,
 };
 use iced::Command;
-use iced::{executor, Alignment, Application, Element, Length, Settings, Theme};
+use iced::{executor, Application, Element, Length, Settings, Theme};
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
 pub fn begin() -> iced::Result {
@@ -90,6 +91,7 @@ pub struct App {
     download_list: Vec<String>, // full link, songs are removed when finished / errored. Used so multiple downloads are not started
     last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
+    pub config: Arc<ArcSwap<Config>>, // also contains hotkeys :D
     pub search: String,
     viewing_playlist: String, // could derive from cache soon... just the uniqueid rn
     side_menu_song_select: (String, String), // title, uniqueid. these two are for adding to playlists
@@ -112,21 +114,25 @@ impl Application for App {
     fn new(_flags: Self::Flags) -> (App, iced::Command<Self::Message>) {
         // hotkey management and this is where new keybinds are to be added
         let manager = GlobalHotKeyManager::new().unwrap();
-        let hotkey_1 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowRight);
-        let hotkey_2 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowLeft);
-        let hotkey_3 = HotKey::new(Some(Modifiers::CONTROL), Code::End);
-        let hotkey_4 = HotKey::new(Some(Modifiers::CONTROL), Code::PageDown);
-        let hotkey_5 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowUp);
-        let hotkey_6 = HotKey::new(Some(Modifiers::CONTROL), Code::ArrowDown);
-        manager.register(hotkey_1).unwrap();
-        manager.register(hotkey_2).unwrap();
-        manager.register(hotkey_3).unwrap();
-        manager.register(hotkey_4).unwrap();
-        manager.register(hotkey_5).unwrap();
-        manager.register(hotkey_6).unwrap();
         let player_cache = player_cache::fetch_cache();
         let config_cache = match cache::read_from_cache() {
-            Ok(t) => t,
+            Ok(t) => {
+                // what abt no mods? maybe should check
+                for (_, bind) in t.keybinds.iter() {
+                    let hotkey = if bind.mod1.is_none() {
+                        HotKey::new(bind.mod2, bind.code.unwrap())
+                    } else if bind.mod2.is_none() {
+                        HotKey::new(bind.mod1, bind.code.unwrap())
+                    } else {
+                        HotKey::new(
+                            Some(bind.mod1.unwrap() | bind.mod2.unwrap()),
+                            bind.code.unwrap(),
+                        )
+                    };
+                    manager.register(hotkey).unwrap();
+                }
+                t
+            }
             Err(e) => {
                 println!("error gettin cache {:?}", e);
                 Config {
@@ -136,6 +142,7 @@ impl Application for App {
                     static_increment: 1,
                     static_reduction: 1,
                     media_path: String::from("C:/"),
+                    keybinds: std::collections::HashMap::new(), // empty!
                 }
             }
         };
@@ -158,6 +165,7 @@ impl Application for App {
                 download_list: vec![],
                 last_id: 0,
                 manager,
+                config: Arc::new(ArcSwap::from_pointee(config_cache)),
                 search: "".to_string(),
                 viewing_playlist: "main".to_string(),
                 side_menu_song_select: ("".to_string(), "".to_string()),
@@ -655,6 +663,75 @@ impl Application for App {
                     Command::none()
                 }
             },
+            Self::Message::UpdateCombobox(boxtype, txt) => {
+                // is there any merit in making a hashmap and matching?
+                match boxtype {
+                    ComboBoxType::PlayKey => {
+                        self.setting_page.play_key_value = txt;
+                    }
+                    ComboBoxType::PlayModifier1 => {
+                        self.setting_page.play_mod1_value = txt;
+                    }
+                    ComboBoxType::PlayModifier2 => {
+                        self.setting_page.play_mod2_value = txt;
+                    }
+                    ComboBoxType::ForwardKey => {
+                        self.setting_page.forward_key_value = txt;
+                    }
+                    ComboBoxType::ForwardModifer1 => {
+                        self.setting_page.forward_mod1_value = txt;
+                    }
+                    ComboBoxType::ForwardModifer2 => {
+                        self.setting_page.forward_mod2_value = txt;
+                    }
+                    ComboBoxType::BackwardKey => {
+                        self.setting_page.backward_key_value = txt;
+                    }
+                    ComboBoxType::BackwardModifier1 => {
+                        self.setting_page.backward_mod1_value = txt;
+                    }
+                    ComboBoxType::BackwardModifier2 => {
+                        self.setting_page.backward_mod2_value = txt;
+                    }
+                    ComboBoxType::ShuffleKey => {
+                        self.setting_page.shuffle_key_value = txt;
+                    }
+                    ComboBoxType::ShuffleModifier1 => {
+                        self.setting_page.shuffle_mod1_value = txt;
+                    }
+                    ComboBoxType::ShuffleModifier2 => {
+                        self.setting_page.shuffle_mod2_value = txt;
+                    }
+                    ComboBoxType::StaticUpKey => {
+                        self.setting_page.staticup_key_value = txt;
+                    }
+                    ComboBoxType::StaticUpModifier1 => {
+                        self.setting_page.staticup_mod1_value = txt;
+                    }
+                    ComboBoxType::StaticUpModifier2 => {
+                        self.setting_page.staticup_mod2_value = txt;
+                    }
+                    ComboBoxType::StaticDownKey => {
+                        self.setting_page.staticdown_key_value = txt;
+                    }
+                    ComboBoxType::StaticDownModifier1 => {
+                        self.setting_page.staticdown_mod1_value = txt;
+                    }
+                    ComboBoxType::StaticDownModifier2 => {
+                        self.setting_page.staticdown_mod2_value = txt;
+                    }
+                    ComboBoxType::GoToAlbumKey => {
+                        self.setting_page.gotoalbum_key_value = txt;
+                    }
+                    ComboBoxType::GoToAlbumModifier1 => {
+                        self.setting_page.gotoalbum_mod1_value = txt;
+                    }
+                    ComboBoxType::GoToAlbumModifer2 => {
+                        self.setting_page.gotoalbum_mod2_value = txt;
+                    }
+                }
+                Command::none()
+            }
 
             Self::Message::SaveConfig => {
                 let static_increment = self
@@ -669,6 +746,99 @@ impl Application for App {
                     .clone()
                     .parse::<usize>()
                     .unwrap();
+                let binds = vec![
+                    (
+                        self.setting_page.play_key_value.clone(),
+                        self.setting_page.play_mod1_value.clone(),
+                        self.setting_page.play_mod2_value.clone(),
+                    ),
+                    (
+                        self.setting_page.forward_key_value.clone(),
+                        self.setting_page.forward_mod1_value.clone(),
+                        self.setting_page.forward_mod2_value.clone(),
+                    ),
+                    (
+                        self.setting_page.backward_key_value.clone(),
+                        self.setting_page.backward_mod1_value.clone(),
+                        self.setting_page.backward_mod2_value.clone(),
+                    ),
+                    (
+                        self.setting_page.shuffle_key_value.clone(),
+                        self.setting_page.shuffle_mod1_value.clone(),
+                        self.setting_page.shuffle_mod2_value.clone(),
+                    ),
+                    (
+                        self.setting_page.staticup_key_value.clone(),
+                        self.setting_page.staticup_mod1_value.clone(),
+                        self.setting_page.staticup_mod2_value.clone(),
+                    ),
+                    (
+                        self.setting_page.staticdown_key_value.clone(),
+                        self.setting_page.staticdown_mod1_value.clone(),
+                        self.setting_page.staticdown_mod2_value.clone(),
+                    ),
+                    (
+                        self.setting_page.gotoalbum_key_value.clone(),
+                        self.setting_page.gotoalbum_mod1_value.clone(),
+                        self.setting_page.gotoalbum_mod2_value.clone(),
+                    ),
+                ];
+                let curr_hotkeys = self
+                    .config
+                    .load()
+                    .keybinds
+                    .iter()
+                    .map(|key| {
+                        if key.1.mod1.is_none() {
+                            HotKey::new(key.1.mod2, key.1.code.unwrap())
+                        } else if key.1.mod2.is_none() {
+                            HotKey::new(key.1.mod1, key.1.code.unwrap())
+                        } else {
+                            HotKey::new(
+                                Some(key.1.mod1.unwrap() | key.1.mod2.unwrap()),
+                                key.1.code.unwrap(),
+                            )
+                        }
+                    })
+                    .collect::<Vec<HotKey>>();
+                // get all current hotkeys in config and unbind them
+                self.manager.unregister_all(&curr_hotkeys).unwrap();
+                // this is the order that the bind types are collected
+                let cmd_order = vec![
+                    ProgramCommands::PlayToggle,
+                    ProgramCommands::SkipForwards,
+                    ProgramCommands::SkipBackwards,
+                    ProgramCommands::ShuffleToggle,
+                    ProgramCommands::StaticVolumeUp,
+                    ProgramCommands::StaticVolumeDown,
+                    ProgramCommands::GoToSong,
+                ];
+                // will hold the final config
+                let mut bind_config = std::collections::HashMap::from([]);
+                // loop through our potential binds
+                for (count, (key, va1, va2)) in binds.iter().enumerate() {
+                    // if the key isn't nothing, lets do something
+                    if key != &"" {
+                        let val = crate::gui::setting_page::strings_to_hashmap(
+                            key.clone(),
+                            va1.clone(),
+                            va2.clone(),
+                            cmd_order[count].clone(),
+                        );
+                        bind_config.insert(val.0, val.1.clone());
+                        let newkey = if val.1.mod1.is_none() {
+                            HotKey::new(val.1.mod2, val.1.code.unwrap())
+                        } else if val.1.mod2.is_none() {
+                            HotKey::new(val.1.mod1, val.1.code.unwrap())
+                        } else {
+                            HotKey::new(
+                                Some(val.1.mod1.unwrap() | val.1.mod2.unwrap()),
+                                val.1.code.unwrap(),
+                            )
+                        };
+                        self.manager.register(newkey).unwrap();
+                    }
+                }
 
                 let obj = Config {
                     backup_path: self.setting_page.backup_text.clone(),
@@ -677,10 +847,13 @@ impl Application for App {
                     static_increment,
                     static_reduction,
                     media_path: self.setting_page.media_path.clone(),
+                    keybinds: bind_config,
                 };
+                // mostly useful for updating keybinds in real time
+                self.config.store(Arc::new(obj.clone())); // refresh the config with this data :D
                 match cache::write_to_cache(obj) {
                     Ok(_t) => {
-                        println!("config written successfully")
+                        println!("config written successfully: {:?}", &self.config.load())
                     }
                     Err(e) => {
                         println!("Config failed! {:?}", e)
@@ -822,7 +995,7 @@ impl Application for App {
     fn subscription(&self) -> Subscription<Self::Message> {
         iced::subscription::Subscription::batch(vec![
             self.music_loop(),
-            self.hotkey_loop(),
+            self.hotkey_loop(self.config.clone()),
             self.database_subscription(self.current_song.clone()),
             self.close_app_sub(),
             self.discord_loop(self.current_song.clone()), // self.database_sub(database_receiver),

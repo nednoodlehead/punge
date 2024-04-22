@@ -137,6 +137,7 @@ async fn download_youtube(
 }
 
 fn download_insta() -> Result<String, AppError> {
+    // we could use the pypi instaloader from cmd to do this ?
     Err(AppError::SearchError(
         "Instagram downloads are unimplmented".to_string(),
     ))

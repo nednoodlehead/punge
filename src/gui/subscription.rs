@@ -1,11 +1,10 @@
 use crate::db::fetch;
-
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
 use crate::player::interface::{self};
 use crate::player::interface::{read_file_from_beginning, read_from_time};
-use crate::types::{MusicData, PungeMusicObject};
+use crate::types::{Config, MusicData, PungeMusicObject};
 use arc_swap::ArcSwap;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 
@@ -77,64 +76,33 @@ impl App {
         })
     }
 
-    pub fn hotkey_loop(&self) -> Subscription<ProgramCommands> {
+    pub fn hotkey_loop(&self, config: Arc<ArcSwap<Config>>) -> Subscription<ProgramCommands> {
         iced::subscription::channel(5, 32, |mut sender| async move {
+            // so can we have a hashmap, that can be updated, and the loop here will do a hashmap lookup
+            // for those types and find the associated command, and send it?
+            // so map {
+            //     9181: SkipForwards,
+            // }
             loop {
+                // config needs to be refreshed each loop, cause if it isn't, it won't get updates for new binds
+                // wish this could be done better?
+                // println!("da config: {:?}", &config.load());
                 match GlobalHotKeyEvent::receiver().try_recv() {
                     Ok(hotkey) => {
-                        // handle global keybinds
-                        println!("new keybind incming: {:?}", hotkey);
-                        match hotkey {
-                            GlobalHotKeyEvent {
-                                id: 4121890298,
-                                state: HotKeyState::Released,
-                            } => {
-                                // right arrow
-                                sender.send(ProgramCommands::SkipForwards).await.unwrap();
-                            }
-                            GlobalHotKeyEvent {
-                                id: 2037224482,
-                                state: HotKeyState::Released,
-                            } => {
-                                // up arrow
-                                sender.send(ProgramCommands::StaticVolumeUp).await.unwrap();
-                            }
-                            GlobalHotKeyEvent {
-                                id: 1912779161,
-                                state: HotKeyState::Released,
-                            } => {
-                                // left arrow??
-                                sender.send(ProgramCommands::SkipBackwards).await.unwrap();
-                            }
-                            GlobalHotKeyEvent {
-                                id: 4174001518,
-                                state: HotKeyState::Released,
-                            } => {
-                                // down arrow!
+                        if hotkey.state == HotKeyState::Pressed {
+                            // only do something when it is pressed
+                            // handle global keybinds
+                            println!("new keybind incming: {:?}\n\n{:?}", hotkey, config.load());
+                            let id = hotkey.id.clone();
+                            // if the keybind is registered!
+                            if config.load().keybinds.contains_key(&id) {
                                 sender
-                                    .send(ProgramCommands::StaticVolumeDown)
+                                    .send(config.load().keybinds[&id].command.clone())
                                     .await
                                     .unwrap();
                             }
-                            GlobalHotKeyEvent {
-                                id: 3520754938,
-                                state: HotKeyState::Released,
-                            } => {
-                                // page down (shuffle)
-                                sender.send(ProgramCommands::ShuffleToggle).await.unwrap();
-                            }
-                            GlobalHotKeyEvent {
-                                id: 3009842507,
-                                state: HotKeyState::Released,
-                            } => {
-                                // end (pause)
-                                sender.send(ProgramCommands::PlayToggle).await.unwrap()
-                            }
-
-                            _ => {
-                                println!("anything else")
-                            }
                         }
+                        // send the keybind back to main gui
                     }
                     Err(_e) => {
                         // erm, ignore

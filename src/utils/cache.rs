@@ -14,7 +14,7 @@ pub fn write_to_cache(config: Config) -> Result<(), std::io::Error> {
         .write(true)
         .truncate(true)
         .open("./cache/config.json")?;
-    let serial = serde_json::to_string(&config)?;
+    let serial = serde_json::to_string_pretty(&config)?;
     file.write_all(serial.as_bytes())?;
     Ok(())
 }
