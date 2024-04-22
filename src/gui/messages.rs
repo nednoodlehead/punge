@@ -34,7 +34,6 @@ pub enum ProgramCommands {
     MoveSlider(u32),
     ChangePage(Page),
     CheckBoxEvent(CheckBoxType, bool),
-    UpdateDownloadEntry(String),
     Download(String),
     DownloadMedia(String, String, String), // link, path, mp3 or mp4
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns

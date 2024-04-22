@@ -21,10 +21,7 @@ use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
 use std::sync::Arc;
 
-use global_hotkey::{
-    hotkey::{Code, HotKey, Modifiers},
-    GlobalHotKeyManager,
-};
+use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::subscription::Subscription;
 use iced::widget::{
     button, column, container, horizontal_space, pick_list, responsive, row, scrollable, text,
@@ -89,7 +86,6 @@ pub struct App {
     playlist_page: crate::gui::new_playlist_page::PlaylistPage,
     song_edit_page: crate::gui::song_edit_page::SongEditPage,
     download_list: Vec<String>, // full link, songs are removed when finished / errored. Used so multiple downloads are not started
-    last_id: usize,
     manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
     pub config: Arc<ArcSwap<Config>>, // also contains hotkeys :D
     pub search: String,
@@ -100,7 +96,7 @@ pub struct App {
     // tarkah table stuff
     header: scrollable::Id,
     body: scrollable::Id,
-    footer: scrollable::Id,
+    _footer: scrollable::Id,
     columns: Vec<Column>,
     rows: Vec<Row>,
 }
@@ -163,7 +159,6 @@ impl Application for App {
                 playlist_page: crate::gui::new_playlist_page::PlaylistPage::new(None),
                 song_edit_page: crate::gui::song_edit_page::SongEditPage::new(),
                 download_list: vec![],
-                last_id: 0,
                 manager,
                 config: Arc::new(ArcSwap::from_pointee(config_cache)),
                 search: "".to_string(),
@@ -173,7 +168,7 @@ impl Application for App {
                 user_playlists: get_all_playlists().unwrap(), // im addicted to unwraping
                 header: scrollable::Id::unique(),
                 body: scrollable::Id::unique(),
-                footer: scrollable::Id::unique(),
+                _footer: scrollable::Id::unique(),
                 columns: vec![
                     Column::new(ColumnKind::PlayButton),
                     Column::new(ColumnKind::Author),
@@ -311,10 +306,6 @@ impl Application for App {
             }
             Self::Message::ChangePage(page) => {
                 self.current_view = page;
-                Command::none()
-            }
-            Self::Message::UpdateDownloadEntry(string) => {
-                self.download_page.text = string;
                 Command::none()
             }
             Self::Message::Download(link) => {

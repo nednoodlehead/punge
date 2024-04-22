@@ -2,8 +2,8 @@ use crate::gui::messages::{CheckBoxType, Page, ProgramCommands, TextType};
 use crate::gui::persistent;
 use crate::types::YouTubeSearchResult;
 use iced::widget::{
-    button, checkbox, column, container, horizontal_space, row, scrollable, text, text_input,
-    Column, Container, Row,
+    button, checkbox, column, horizontal_space, row, scrollable, text, text_input,
+    Column, Container,
 };
 use iced::{Element, Length};
 

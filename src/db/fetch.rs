@@ -69,7 +69,7 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     Ok(ret_vec)
 }
 
-pub fn exists_in_db(uniqueid: String) -> bool {
+pub fn _exists_in_db(uniqueid: String) -> bool {
     let conn = Connection::open("main.db").unwrap();
     let mut stmt = conn
         .prepare("SELECT title FROM main WHERE uniqueid = ?")
@@ -94,7 +94,7 @@ pub fn get_uuid_from_name(playlist_name: String) -> String {
     result
 }
 // ok i made this function misinterpreting what we have from ProgramCommands::PlaylistSelected(string)
-pub fn get_name_from_uuid(playlist_uuid: String) -> String {
+pub fn _get_name_from_uuid(playlist_uuid: String) -> String {
     let conn = Connection::open("main.db").unwrap();
     println!("{}", &playlist_uuid);
     let mut stmt = conn

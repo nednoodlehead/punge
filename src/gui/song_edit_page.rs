@@ -1,6 +1,6 @@
 use crate::gui::messages::{Page, ProgramCommands, TextType};
 use crate::gui::persistent::render_top_buttons;
-use iced::widget::{button, column, container, row, text, text_input};
+use iced::widget::{button, column, row, text, text_input};
 use iced::Element;
 
 pub struct SongEditPage {

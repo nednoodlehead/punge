@@ -1,9 +1,9 @@
 // in this file, we are adding a new field to our db "threshold", which is calculated from existing values
 // the purpose is for our src\gui\subscription.rs database subscription to read a value from db (instead of doing an unneeded calculation to get it)
 
-use crate::types::PungeMusicObject;
 
-use rusqlite::{params, Connection};
+
+
 
 // pub fn convert() {
 //     let conn = Connection::open("main.db").unwrap();
@@ -64,6 +64,6 @@ pub fn calc_thres(len: usize) -> usize {
     if len / 15 == 0 {
         0
     } else {
-        ((len / 15) - 1).into()
+        (len / 15) - 1
     }
 }

@@ -123,7 +123,7 @@ pub enum AppError {
     FfmpegError(String),
     FileError(String),
     InvalidUrlError(String),
-    YouTubeError(String),
+    _YouTubeError(String),
     SearchError(String),
 }
 
@@ -157,7 +157,7 @@ impl From<rusqlite::Error> for DatabaseErrors {
         DatabaseErrors::FromSqlError(e.to_string())
     }
 }
-use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
+use crate::gui::messages::{Context, ProgramCommands};
 #[derive(Clone, Debug)]
 pub struct MusicData {
     // passed from music subscription -> main thread

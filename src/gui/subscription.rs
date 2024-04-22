@@ -93,7 +93,7 @@ impl App {
                             let open_con = config.load();
                             // only do something when it is pressed
                             // handle global keybinds
-                            let id = hotkey.id.clone();
+                            let id = hotkey.id;
                             // if the keybind is registered!
                             if open_con.keybinds.contains_key(&id) {
                                 sender
@@ -366,7 +366,7 @@ impl App {
                         println!("inside our palying loop!");
                         // process commands (maybe turn it into a function i guess?, would sort of suck to copy and paste to make work)
                         if music_obj.count == 0 {
-                            music_obj.count = music_obj.list.len() + music_obj.count;
+                            music_obj.count += music_obj.list.len();
                         }
                         if music_obj.count >= (music_obj.list.len()) {
                             music_obj.count = 0;

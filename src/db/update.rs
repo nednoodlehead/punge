@@ -1,7 +1,7 @@
 use crate::types::{DatabaseErrors, PungeMusicObject};
 use rusqlite::{params, Connection};
 
-pub fn update_playlist(
+pub fn _update_playlist(
     old_title: String,
     new_title: String,
     description: String,
@@ -31,7 +31,7 @@ pub fn update_song(
     Ok(())
 }
 
-pub fn quick_swap_title_author(
+pub fn _quick_swap_title_author(
     author: String,
     title: String,
     uniqueid: String,

@@ -19,7 +19,7 @@ song is played fully and naturally transposes to the next song
 // edit: now runs on a subscription, it is much faster :D
 
 // for times when the player just autoplays to the next song, user liked it enough to let it play
-pub fn on_passive_play(uniqueid: String) -> Result<(), AppError> {
+pub fn _on_passive_play(uniqueid: String) -> Result<(), AppError> {
     let conn = Connection::open("main.db")?;
     let stmt = "UPDATE main SET plays = plays +1, weight = weight + 2 WHERE uniqueid = ?";
     conn.execute(stmt, params![uniqueid])?;
@@ -27,7 +27,7 @@ pub fn on_passive_play(uniqueid: String) -> Result<(), AppError> {
     Ok(())
 }
 // for times when the user seeks out the song. add more to weight, since user probably likes this song
-pub fn on_seek(uniqueid: String) -> Result<(), AppError> {
+pub fn _on_seek(uniqueid: String) -> Result<(), AppError> {
     let conn = Connection::open("main.db")?;
     let stmt = "UPDATE main SET weight = weight + 5 WHERE uniqueid = ?";
     conn.execute(stmt, params![uniqueid])?;
@@ -36,7 +36,7 @@ pub fn on_seek(uniqueid: String) -> Result<(), AppError> {
 }
 
 // i think it makes sense if this is only for forward skips. so its like "no i dont want that one", backwards skip is more like "i know what song i want and am going back to it"
-pub fn skipped_song(uniqueid: String) -> Result<(), AppError> {
+pub fn _skipped_song(uniqueid: String) -> Result<(), AppError> {
     let conn = Connection::open("main.db")?;
     let stmt = "UPDATE main SET weight = weight -1 WHERE uniqueid =?";
     conn.execute(stmt, params![uniqueid])?;

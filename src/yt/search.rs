@@ -1,11 +1,9 @@
-use crate::gui::messages::ProgramCommands;
 use crate::types::YouTubeSearchResult;
-use iced::widget::{button, column, container, row, text};
-use iced::{Alignment, Element};
+
 use rusty_ytdl::blocking::search::SearchResult;
 use rusty_ytdl::blocking::search::YouTube;
 
-pub async fn see_content(search: String) -> Vec<rusty_ytdl::search::SearchResult> {
+pub async fn _see_content(search: String) -> Vec<rusty_ytdl::search::SearchResult> {
     let yt = YouTube::new().unwrap();
     let options = rusty_ytdl::search::SearchOptions {
         search_type: rusty_ytdl::search::SearchType::All,
@@ -59,7 +57,7 @@ pub async fn content_to_text(
                 let n = YouTubeSearchResult {
                     title: playlist.name.to_string(),
                     author: playlist.channel.name.clone(),
-                    views: playlist.views.clone(),
+                    views: playlist.views,
                     duration: None,
                     videos: Some(format!("{} Videos", play.videos.len())),
                     thumbnail: playlist.thumbnails[0].url.clone(),

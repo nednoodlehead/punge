@@ -10,7 +10,7 @@ fn search_string(to_search: String, pattern: String) -> bool {
     regex.is_match(to_search.as_str())
 }
 
-fn create_alt_pattern(input: String) -> String {
+fn _create_alt_pattern(input: String) -> String {
     // if works,
     let escaped_regex = regex::escape(input.as_str());
     let mut pattern = String::from(r"(?i)");
@@ -21,7 +21,7 @@ fn create_alt_pattern(input: String) -> String {
 }
 
 fn create_new_pattern(input: String) -> String {
-    let words = input.split(" ").collect::<Vec<&str>>();
+    let words = input.split(' ').collect::<Vec<&str>>();
     let mut patt = String::new();
     for word in words {
         patt.push_str(format!("(.*{})", word).as_str());
@@ -76,7 +76,7 @@ pub async fn get_values_from_db(
     } else {
         get_all_from_playlist(playlist.as_str()).unwrap()
     };
-    let regex_patt = create_alt_pattern(user_string.clone());
+    let regex_patt = create_new_pattern(user_string.clone());
     println!("pattern: {}", &regex_patt);
     let mut found_values: Vec<(u8, PungeMusicObject)> = Vec::new();
     for music_entry in playlist_values {

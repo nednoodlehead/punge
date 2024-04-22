@@ -1,13 +1,12 @@
-use crate::gui::messages::{ComboBoxType, Page, ProgramCommands, PungeCommand, TextType};
+use crate::gui::messages::{ComboBoxType, Page, ProgramCommands, TextType};
 use crate::gui::persistent;
 use crate::types::{Config, PungeKeyBind};
-use crate::utils::key::{self, mod_to_string};
-use global_hotkey::hotkey::{Code, Modifiers};
+use crate::utils::key::{self};
+
 use iced::widget::{button, column, combo_box, row, text, text_input, Container};
 use iced::Element;
-use itertools::Itertools;
 use std::hash::Hash;
-use std::str::FromStr;
+
 // all bind options: staticvolup, staticvoldown, forward, bckwards, play/pause, shuffle, gotoalbum
 // optional cool binds: add current song to playlist[x]. so main = 0, energy = 1...
 // search for song from keyboard input, stop keyboard input via 'enter' event.
@@ -75,12 +74,12 @@ pub fn strings_to_hashmap(
     cmd: ProgramCommands,
 ) -> (u32, PungeKeyBind) {
     let temp_hash = generate_hash([mod1.clone(), mod2.clone()], key.clone());
-    let modifer_1 = if &mod1 == "" {
+    let modifer_1 = if mod1.is_empty() {
         None
     } else {
         Some(key::string_to_modifiers(mod1))
     };
-    let modifer_2 = if &mod2 == "" {
+    let modifer_2 = if mod2.is_empty() {
         None
     } else {
         Some(key::string_to_modifiers(mod2))
@@ -134,46 +133,34 @@ impl SettingPage {
             match bind.command {
                 ProgramCommands::PlayToggle => {
                     pg.play_key_value = bind.code.unwrap().to_string();
-                    pg.play_mod1_value =
-                        bind.mod1.map_or("".to_string(), |v| key::mod_to_string(v));
-                    pg.play_mod2_value =
-                        bind.mod2.map_or("".to_string(), |v| key::mod_to_string(v));
+                    pg.play_mod1_value = bind.mod1.map_or("".to_string(), key::mod_to_string);
+                    pg.play_mod2_value = bind.mod2.map_or("".to_string(), key::mod_to_string);
                 }
                 ProgramCommands::SkipForwards => {
                     pg.forward_key_value = bind.code.unwrap().to_string();
-                    pg.forward_mod1_value =
-                        bind.mod1.map_or("".to_string(), |v| key::mod_to_string(v));
-                    pg.forward_mod2_value =
-                        bind.mod2.map_or("".to_string(), |v| key::mod_to_string(v));
+                    pg.forward_mod1_value = bind.mod1.map_or("".to_string(), key::mod_to_string);
+                    pg.forward_mod2_value = bind.mod2.map_or("".to_string(), key::mod_to_string);
                 }
                 ProgramCommands::SkipBackwards => {
                     pg.backward_key_value = bind.code.unwrap().to_string();
-                    pg.backward_mod1_value =
-                        bind.mod1.map_or("".to_string(), |v| key::mod_to_string(v));
-                    pg.backward_mod2_value =
-                        bind.mod2.map_or("".to_string(), |v| key::mod_to_string(v));
+                    pg.backward_mod1_value = bind.mod1.map_or("".to_string(), key::mod_to_string);
+                    pg.backward_mod2_value = bind.mod2.map_or("".to_string(), key::mod_to_string);
                 }
                 ProgramCommands::ShuffleToggle => {
                     pg.shuffle_key_value = bind.code.unwrap().to_string();
-                    pg.shuffle_mod1_value =
-                        bind.mod1.map_or("".to_string(), |v| key::mod_to_string(v));
-                    pg.shuffle_mod2_value =
-                        bind.mod2.map_or("".to_string(), |v| key::mod_to_string(v));
+                    pg.shuffle_mod1_value = bind.mod1.map_or("".to_string(), key::mod_to_string);
+                    pg.shuffle_mod2_value = bind.mod2.map_or("".to_string(), key::mod_to_string);
                 }
                 ProgramCommands::StaticVolumeUp => {
                     pg.staticup_key_value = bind.code.unwrap().to_string();
-                    pg.staticup_mod1_value =
-                        bind.mod1.map_or("".to_string(), |v| key::mod_to_string(v));
-                    pg.staticup_mod2_value =
-                        bind.mod2.map_or("".to_string(), |v| key::mod_to_string(v));
+                    pg.staticup_mod1_value = bind.mod1.map_or("".to_string(), key::mod_to_string);
+                    pg.staticup_mod2_value = bind.mod2.map_or("".to_string(), key::mod_to_string);
                 }
 
                 ProgramCommands::StaticVolumeDown => {
                     pg.staticdown_key_value = bind.code.unwrap().to_string();
-                    pg.staticdown_mod1_value =
-                        bind.mod1.map_or("".to_string(), |v| key::mod_to_string(v));
-                    pg.staticdown_mod2_value =
-                        bind.mod2.map_or("".to_string(), |v| key::mod_to_string(v));
+                    pg.staticdown_mod1_value = bind.mod1.map_or("".to_string(), key::mod_to_string);
+                    pg.staticdown_mod2_value = bind.mod2.map_or("".to_string(), key::mod_to_string);
                 }
                 _ => {}
             }
