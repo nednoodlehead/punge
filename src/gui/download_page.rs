@@ -2,8 +2,8 @@ use crate::gui::messages::{CheckBoxType, Page, ProgramCommands, TextType};
 use crate::gui::persistent;
 use crate::types::YouTubeSearchResult;
 use iced::widget::{
-    button, checkbox, column, horizontal_space, row, scrollable, text, text_input,
-    Column, Container,
+    button, checkbox, column, horizontal_space, row, scrollable, text, text_input, Column,
+    Container,
 };
 use iced::{Element, Length};
 
@@ -133,7 +133,7 @@ impl DownloadPage {
                 }),
         )
         .width(Length::Fixed(600.0))
-        .height(Length::Fixed(500.0))
+        .height(Length::Fixed(450.0))
         .into()
     }
 }

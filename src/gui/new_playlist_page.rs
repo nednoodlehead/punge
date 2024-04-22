@@ -1,5 +1,3 @@
-
-
 use crate::gui::messages::{Page, ProgramCommands, TextType};
 use crate::gui::persistent;
 use iced::widget::{button, column, container, row, text, text_input};
@@ -46,7 +44,8 @@ impl PlaylistPage {
         container::Container::new(column![
             persistent::render_top_buttons(Page::Playlist),
             rows_and_labels,
-            button(text("Create!")).on_press(ProgramCommands::NewPlaylist)
+            button(text("Create!")).on_press(ProgramCommands::NewPlaylist),
+            container(text("")).height(360)
         ])
         .into()
     }

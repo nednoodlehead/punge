@@ -3,7 +3,7 @@
 use crate::gui::messages::{Page, ProgramCommands};
 use crate::gui::start::App;
 use iced::widget::{
-    button, column, container, horizontal_space, row, slider, text, Row,
+    button, column, container, horizontal_space, row, slider, text, vertical_space, Row,
 };
 use iced::{Alignment, Element, Length};
 

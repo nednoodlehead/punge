@@ -975,11 +975,41 @@ impl Application for App {
             // which page to display
             // Page::Main => row![main_page, self.render_sidebar()].into(), // this format makes it a bit easier to deal with all contents
             Page::Main => main_page_2.into(),
-            Page::Download => self.download_page.view(),
-            Page::Settings => self.setting_page.view(),
-            Page::Media => self.media_page.view(),
-            Page::Playlist => self.playlist_page.view(),
-            Page::SongEdit => self.song_edit_page.view(),
+            Page::Download => column![
+                self.download_page.view(),
+                vertical_space(),
+                self.render_bottom_bar(),
+                vertical_space()
+            ]
+            .into(),
+            Page::Settings => column![
+                self.setting_page.view(),
+                vertical_space(),
+                self.render_bottom_bar(),
+                vertical_space()
+            ]
+            .into(),
+            Page::Media => column![
+                self.media_page.view(),
+                vertical_space(),
+                self.render_bottom_bar(),
+                vertical_space()
+            ]
+            .into(),
+            Page::Playlist => column![
+                self.playlist_page.view(),
+                vertical_space(),
+                self.render_bottom_bar(),
+                vertical_space()
+            ]
+            .into(),
+            Page::SongEdit => column![
+                self.song_edit_page.view(),
+                vertical_space(),
+                self.render_bottom_bar(),
+                vertical_space()
+            ]
+            .into(),
         }
     }
 

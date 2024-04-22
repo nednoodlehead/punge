@@ -4,7 +4,9 @@ use crate::types::AppError;
 use crate::types::Config;
 use rusty_ytdl::{self, VideoOptions};
 
-use iced::widget::{button, column, combo_box, horizontal_space, row, text, text_input, Container};
+use iced::widget::{
+    button, column, combo_box, container, horizontal_space, row, text, text_input, Container,
+};
 
 use iced::{Alignment, Element};
 
@@ -54,8 +56,8 @@ impl MediaPage {
                 horizontal_space(),
                 combo_box(
                     &self.mp3_and_4,
-                    self.download_type.as_str(),
-                    None,
+                    "",
+                    Some(&self.download_type),
                     ProgramCommands::UpdateMp3Or4Combobox
                 )
                 .width(50.0),
@@ -73,7 +75,8 @@ impl MediaPage {
         Container::new(
             column![
                 persistent::render_top_buttons(Page::Media),
-                buttons_and_labels.align_items(Alignment::Center)
+                buttons_and_labels.align_items(Alignment::Center),
+                container(text("")).height(350), // empty space..
             ]
             .spacing(15),
         )
