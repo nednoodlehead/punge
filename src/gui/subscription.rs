@@ -90,14 +90,14 @@ impl App {
                 match GlobalHotKeyEvent::receiver().try_recv() {
                     Ok(hotkey) => {
                         if hotkey.state == HotKeyState::Pressed {
+                            let open_con = config.load();
                             // only do something when it is pressed
                             // handle global keybinds
-                            println!("new keybind incming: {:?}\n\n{:?}", hotkey, config.load());
                             let id = hotkey.id.clone();
                             // if the keybind is registered!
-                            if config.load().keybinds.contains_key(&id) {
+                            if open_con.keybinds.contains_key(&id) {
                                 sender
-                                    .send(config.load().keybinds[&id].command.clone())
+                                    .send(open_con.keybinds[&id].command.clone())
                                     .await
                                     .unwrap();
                             }
