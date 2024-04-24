@@ -361,11 +361,6 @@ impl Application for App {
                 self.media_page.download_feedback.push(val);
                 Command::none()
             }
-            Self::Message::UpdateMp3Or4Combobox(choosen) => {
-                self.media_page.download_type = choosen;
-                Command::none()
-            }
-
             Self::Message::SearchYouTube(str) => Command::perform(
                 crate::yt::search::content_to_text(
                     str,
@@ -719,6 +714,9 @@ impl Application for App {
                     }
                     ComboBoxType::GoToAlbumModifer2 => {
                         self.setting_page.gotoalbum_mod2_value = txt;
+                    }
+                    ComboBoxType::Mp3Or4 => {
+                        self.media_page.download_type = txt;
                     }
                 }
                 Command::none()

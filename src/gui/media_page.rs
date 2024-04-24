@@ -1,4 +1,4 @@
-use crate::gui::messages::{Page, ProgramCommands, TextType};
+use crate::gui::messages::{ComboBoxType, Page, ProgramCommands, TextType};
 use crate::gui::persistent;
 use crate::types::AppError;
 use crate::types::Config;
@@ -54,12 +54,9 @@ impl MediaPage {
             .padding(10.0),
             row![
                 horizontal_space(),
-                combo_box(
-                    &self.mp3_and_4,
-                    "",
-                    Some(&self.download_type),
-                    ProgramCommands::UpdateMp3Or4Combobox
-                )
+                combo_box(&self.mp3_and_4, "", Some(&self.download_type), |txt| {
+                    ProgramCommands::UpdateCombobox(ComboBoxType::Mp3Or4, txt)
+                })
                 .width(50.0),
                 button(text("Download!"))
                     .on_press(ProgramCommands::DownloadMedia(

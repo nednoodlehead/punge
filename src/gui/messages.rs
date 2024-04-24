@@ -37,8 +37,7 @@ pub enum ProgramCommands {
     Download(String),
     DownloadMedia(String, String, String), // link, path, mp3 or mp4
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
-    UpdateMp3Or4Combobox(String),
-    UpdateCombobox(ComboBoxType, String), // little ugly lol. cause the type is a const
+    UpdateCombobox(ComboBoxType, String),  // little ugly lol. cause the type is a const
     SearchYouTube(String),
     SearchYouTubeResults(Vec<crate::types::YouTubeSearchResult>),
     Debug, // a message that has its associated action changed with the debug in question
@@ -114,6 +113,7 @@ pub enum ComboBoxType {
     GoToAlbumKey,
     GoToAlbumModifier1,
     GoToAlbumModifer2,
+    Mp3Or4, // media page
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

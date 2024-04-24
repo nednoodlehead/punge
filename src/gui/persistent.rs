@@ -2,9 +2,7 @@
 // such as the 'current playing' bar at the bottom, and the buttons at the top to change pages
 use crate::gui::messages::{Page, ProgramCommands};
 use crate::gui::start::App;
-use iced::widget::{
-    button, column, container, horizontal_space, row, slider, text, vertical_space, Row,
-};
+use iced::widget::{button, column, container, horizontal_space, row, slider, text, Row};
 use iced::{Alignment, Element, Length};
 
 pub fn render_top_buttons(ignore: Page) -> Element<'static, ProgramCommands> {
