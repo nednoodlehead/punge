@@ -51,7 +51,7 @@ pub enum ProgramCommands {
     SelectSong(String, bool, usize), // uniqueid is_checked, row #, used to do stuff to the current song
     DeleteSong(String), // TODO do this interface.. probably want some type of confirmation..
     SyncHeader(scrollable::AbsoluteOffset), // not used, could revamp table tbh..
-    AddToPlaylist, // choosen song is based on checkboxes, playlist is determined by viewing list
+    AddToPlaylist(String), // uuid of playlist choosen song is based on checkboxes, playlist is determined by viewing list
     ToggleList,
     CreateBackup,
     UpdateWidgetText(TextType, String),

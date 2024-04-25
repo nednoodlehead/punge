@@ -504,6 +504,12 @@ impl Application for App {
                 self.selected_songs.clear(); // clear them! (so we dont select some, switch playlist and edit unintentionally)
                                              // main should be treated just like a regular playlist !?
                 self.refresh_playlist();
+                println!(
+                    "rows? {} | {:?} name: {}",
+                    self.rows.len(),
+                    self.rows,
+                    &playlist
+                );
                 Command::none()
             }
             Self::Message::SelectSong(uniqueid, boolean, row) => {
@@ -523,13 +529,10 @@ impl Application for App {
                 // maybe buttons should bring title with it??? idk
                 Command::none()
             }
-            Self::Message::AddToPlaylist => {
-                println!(
-                    "we will add: {:?} to {}",
-                    &self.selected_songs, &self.viewing_playlist
-                );
+            Self::Message::AddToPlaylist(playlist) => {
+                println!("we will add: {:?} to {}", &self.selected_songs, &playlist);
                 for song in &self.selected_songs {
-                    match add_to_playlist(&self.viewing_playlist, song) {
+                    match add_to_playlist(&playlist, song) {
                         Ok(_) => {}
                         Err(e) => {
                             println!("error! {:?}", e)
@@ -945,7 +948,8 @@ impl Application for App {
                     .iter()
                     .map(|p| {
                         Item::new(
-                            button(text(p.title.clone())).on_press(ProgramCommands::AddToPlaylist),
+                            button(text(p.title.clone()))
+                                .on_press(ProgramCommands::AddToPlaylist(p.uniqueid.clone())),
                         )
                     })
                     .collect(),
@@ -1071,7 +1075,7 @@ impl Application for App {
 
 impl App {
     fn refresh_playlist(&mut self) {
-        if self.viewing_playlist == "main" {
+        if self.viewing_playlist.to_lowercase() == "main" {
             let new = get_all_main().unwrap();
             self.rows = new
                 .into_iter()
@@ -1085,6 +1089,7 @@ impl App {
                 .collect();
         } else {
             let new = get_all_from_playlist(&self.viewing_playlist).unwrap();
+            println!("vi {}", &self.viewing_playlist);
             self.rows = new
                 .into_iter()
                 .map(|item| Row {
