@@ -1,6 +1,7 @@
 // can we rename this to lib.rs at some point maybe??
 use crate::db::fetch::{
-    get_all_from_playlist, get_all_main, get_all_playlists, get_uuid_from_name, song_from_uuid,
+    get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid, get_uuid_from_name,
+    song_from_uuid,
 };
 use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
 use crate::db::update::{delete_from_playlist, update_song};
@@ -29,6 +30,8 @@ use iced::widget::{
 };
 use iced::Command;
 use iced::{executor, Application, Element, Length, Settings, Theme};
+use iced_aw::menu::{Item, Menu};
+use iced_aw::{menu_bar, menu_items};
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
 pub fn begin() -> iced::Result {
@@ -90,8 +93,7 @@ pub struct App {
     pub config: Arc<ArcSwap<Config>>, // also contains hotkeys :D
     pub search: String,
     viewing_playlist: String, // could derive from cache soon... just the uniqueid rn
-    side_menu_song_select: (String, String), // title, uniqueid. these two are for adding to playlists
-    side_menu_playlist_select: (String, String), // title, uniqueid
+    selected_songs: Vec<String>, // song(s) that the user is going to edit
     user_playlists: Vec<UserPlaylist>,
     // tarkah table stuff
     header: scrollable::Id,
@@ -163,8 +165,7 @@ impl Application for App {
                 config: Arc::new(ArcSwap::from_pointee(config_cache)),
                 search: "".to_string(),
                 viewing_playlist: "main".to_string(),
-                side_menu_song_select: ("".to_string(), "".to_string()),
-                side_menu_playlist_select: ("".to_string(), "".to_string()),
+                selected_songs: vec![],
                 user_playlists: get_all_playlists().unwrap(), // im addicted to unwraping
                 header: scrollable::Id::unique(),
                 body: scrollable::Id::unique(),
@@ -184,6 +185,7 @@ impl Application for App {
                         author: item.author,
                         album: item.album,
                         uniqueid: item.uniqueid,
+                        ischecked: false,
                     })
                     .collect(), // get it from the other file lol
             },
@@ -347,10 +349,16 @@ impl Application for App {
                 download
                 // Command::none()
             }
-            Self::Message::DownloadMedia(link, path, mp3_4) => Command::perform(
-                crate::gui::media_page::download_content(link, path, mp3_4),
-                ProgramCommands::DownloadMediaWorked,
-            ),
+            Self::Message::DownloadMedia(link, path, mp3_4) => {
+                self.media_page
+                    .download_feedback
+                    .push(format!("Starting download on {}", &link));
+                self.media_page.download_input = "".to_string();
+                Command::perform(
+                    crate::gui::media_page::download_content(link, path, mp3_4),
+                    ProgramCommands::DownloadMediaWorked,
+                )
+            }
             Self::Message::DownloadMediaWorked(maybe) => {
                 let val = match maybe {
                     Ok(t) => t,
@@ -493,34 +501,49 @@ impl Application for App {
             Self::Message::ChangeViewingPlaylist(playlist) => {
                 // we will change the current view to the playlist view, and pass in the playlist to fill the content
                 self.viewing_playlist = playlist.clone();
-
-                // main should be treated just like a regular playlist !?
+                self.selected_songs.clear(); // clear them! (so we dont select some, switch playlist and edit unintentionally)
+                                             // main should be treated just like a regular playlist !?
                 self.refresh_playlist();
                 Command::none()
             }
-            Self::Message::SelectSong(uniqueid, song) => {
+            Self::Message::SelectSong(uniqueid, boolean, row) => {
                 // when the song is selected from the table, update the song in the top right
-                self.side_menu_song_select = (song, uniqueid);
+                if boolean {
+                    self.selected_songs.push(uniqueid);
+                    self.rows[row].ischecked = !self.rows[row].ischecked;
+                } else {
+                    self.selected_songs.swap_remove(
+                        self.selected_songs
+                            .iter()
+                            .position(|t| t == &uniqueid)
+                            .unwrap(),
+                    ); // remove it?
+                    self.rows[row].ischecked = !self.rows[row].ischecked;
+                }
                 // maybe buttons should bring title with it??? idk
                 Command::none()
             }
-            Self::Message::PlaylistSelected(name) => {
-                // set playlist uuid string to uniqueid and set side to the title of that uuid
-                let uniqueid = get_uuid_from_name(name.clone());
-                self.side_menu_playlist_select = (name, uniqueid);
-                Command::none()
-            }
-            Self::Message::AddToPlaylist(song_id, playlist_id) => {
-                if song_id.is_none() | playlist_id.is_none() {
-                    println!("fail!")
-                } else {
-                    add_to_playlist(playlist_id.unwrap(), song_id.unwrap()).unwrap(); // what abt duplicate addigs?
-                                                                                      // clear the song once it was added :)
-                    self.side_menu_song_select = ("".to_string(), "".to_string())
+            Self::Message::AddToPlaylist => {
+                println!(
+                    "we will add: {:?} to {}",
+                    &self.selected_songs, &self.viewing_playlist
+                );
+                for song in &self.selected_songs {
+                    match add_to_playlist(&self.viewing_playlist, song) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            println!("error! {:?}", e)
+                        }
+                    };
                 }
+                for row in &mut self.rows {
+                    row.ischecked = false; // close all!
+                }
+                // add_to_playlist(playlist_id.unwrap(), song_id.unwrap()).unwrap(); // what abt duplicate addigs?
                 Command::none()
             }
             Self::Message::DeleteSong(uuid) => {
+                // should ask user if they are sure ?
                 if self.viewing_playlist == "main" {
                     match delete_record_and_file(uuid) {
                         Ok(_t) => {
@@ -548,6 +571,7 @@ impl Application for App {
                             author: item.author,
                             album: item.album,
                             uniqueid: item.uniqueid,
+                            ischecked: false,
                         })
                         .collect();
                 } else {
@@ -556,6 +580,7 @@ impl Application for App {
                         author: "Be fixed soon".to_string(),
                         album: "I promise".to_string(),
                         uniqueid: "".to_string(),
+                        ischecked: false,
                     }]
                 }
                 Command::none()
@@ -863,14 +888,32 @@ impl Application for App {
                 // also refresh the buttons!
                 Command::none()
             }
-            Self::Message::OpenSongEditPage(uniqueid) => {
+            Self::Message::OpenSongEditPage => {
                 // empty uniqueid will crash program, check against it
-                if !uniqueid.is_empty() {
-                    let item = song_from_uuid(&uniqueid).unwrap();
-                    self.song_edit_page
-                        .update_info(item.0, item.1, item.2, uniqueid);
-                    self.current_view = Page::SongEdit;
-                }
+                // uhhh we dont know the status of the checked...
+                // if !uniqueid.is_empty() {
+                //     let item = song_from_uuid(&uniqueid).unwrap();
+                //     self.song_edit_page
+                //         // TODO how can we get the "checked" status?
+                //         .update_info(item.0, item.1, item.2, uniqueid, false);
+                //     self.current_view = Page::SongEdit;
+                // }
+                let data = if self.selected_songs.len() == 0 {
+                    let info = self.current_song.load();
+                    (
+                        info.title.clone(),
+                        info.author.clone(),
+                        info.album.clone(),
+                        info.song_id.clone(),
+                    )
+                } else {
+                    let info = get_obj_from_uuid(&self.selected_songs[0]).unwrap(); // no real guarentee that this is the right one
+                                                                                    // since we use remove_swap...
+                    (info.title, info.author, info.album, info.uniqueid)
+                };
+                self.song_edit_page
+                    .update_info(data.0, data.1, data.2, data.3, false);
+                self.current_view = Page::SongEdit;
                 Command::none()
             }
             Self::Message::UpdateSong(row) => {
@@ -895,6 +938,21 @@ impl Application for App {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
+        let playlist_add_to_menu = Item::with_menu(
+            text("Add to:"),
+            Menu::new(
+                self.user_playlists
+                    .iter()
+                    .map(|p| {
+                        Item::new(
+                            button(text(p.title.clone())).on_press(ProgramCommands::AddToPlaylist),
+                        )
+                    })
+                    .collect(),
+            )
+            .max_width(150.0)
+            .offset(10.0),
+        );
         let table = responsive(|_size| {
             let table = iced_table::table(
                 self.header.clone(),
@@ -910,29 +968,6 @@ impl Application for App {
         // user should always have the 'main' playlist
 
         all_playlists_but_main.remove(0);
-        let actions_cont = container(column![
-            text(self.side_menu_song_select.0.clone()),
-            button(text("Add to:")).on_press(ProgramCommands::AddToPlaylist(
-                Some(self.side_menu_song_select.1.clone()),
-                Some(self.side_menu_playlist_select.1.clone())
-            )),
-            // need to have main not show up here that makes no sense..
-            pick_list(
-                all_playlists_but_main
-                    .iter()
-                    .map(|pl| pl.title.clone())
-                    .collect::<Vec<String>>(),
-                Some(self.side_menu_playlist_select.0.clone()),
-                ProgramCommands::PlaylistSelected
-            ),
-            button(text("Edit!")).on_press(ProgramCommands::OpenSongEditPage(
-                self.side_menu_song_select.1.clone()
-            )),
-            button(text("DELETE!")).on_press(ProgramCommands::DeleteSong(
-                self.side_menu_song_select.1.clone()
-            )),
-        ])
-        .padding(15);
         let buttons: Vec<Element<ProgramCommands>> = self
             .user_playlists
             .iter()
@@ -953,16 +988,28 @@ impl Application for App {
                     persistent::render_top_buttons(Page::Main),
                     button(text("Toggle table")).on_press(ProgramCommands::ToggleList)
                 ]
-                .spacing(10),
+                .spacing(10)
+                .padding(10.0),
                 horizontal_space(),
                 // self.render_sidebar()
             ],
             row![
-                table_cont,
                 column![
-                    actions_cont,
+                    iced_aw::menu_bar!((
+                        button("Edit Song"),
+                        Menu::new(vec![
+                            Item::new(
+                                button(text("Full Edit"))
+                                    .on_press(ProgramCommands::OpenSongEditPage) // pass in song!?
+                            ),
+                            Item::new(button(text("Title"))),
+                            playlist_add_to_menu,
+                        ])
+                        .max_width(180.0)
+                    )),
                     iced::widget::Column::with_children(buttons).spacing(10.0)
-                ]
+                ],
+                table_cont,
             ],
             // vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
             vertical_space(),
@@ -1033,6 +1080,7 @@ impl App {
                     author: item.author,
                     album: item.album,
                     uniqueid: item.uniqueid,
+                    ischecked: false,
                 })
                 .collect();
         } else {
@@ -1044,6 +1092,7 @@ impl App {
                     author: item.author,
                     album: item.album,
                     uniqueid: item.uniqueid,
+                    ischecked: false,
                 })
                 .collect();
         }

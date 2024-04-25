@@ -36,7 +36,7 @@ pub fn create_playlist(new_playlist: UserPlaylist) -> Result<(), DatabaseErrors>
     Ok(())
 }
 
-pub fn add_to_playlist(playlist_uuid: String, uniqueid: String) -> Result<(), DatabaseErrors> {
+pub fn add_to_playlist(playlist_uuid: &str, uniqueid: &str) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
     conn.execute(
         "INSERT INTO playlist_relations (playlist_id, song_id) VALUES (?1, ?2)",

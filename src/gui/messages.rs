@@ -48,17 +48,16 @@ pub enum ProgramCommands {
     SongFound(Result<PungeMusicObject, AppError>), // when the song is found from GoToSong, this is called
     ChangeViewingPlaylist(String), // pass only the unqiueid i guess. problem was making self.viewing_playlist
     PlaySong(String),              // unqiueid
-    SelectSong(String, String),    // uniqueid and title, used to do stuff to the current song
-    DeleteSong(String),
+    SelectSong(String, bool, usize), // uniqueid is_checked, row #, used to do stuff to the current song
+    DeleteSong(String), // TODO do this interface.. probably want some type of confirmation..
     SyncHeader(scrollable::AbsoluteOffset), // not used, could revamp table tbh..
-    PlaylistSelected(String), // playlist uuid, would love to also pass in title, but cannot due to pick_list restrictions :(
-    AddToPlaylist(Option<String>, Option<String>), // add song uniqueid and playlist uniqueid
+    AddToPlaylist, // choosen song is based on checkboxes, playlist is determined by viewing list
     ToggleList,
     CreateBackup,
     UpdateWidgetText(TextType, String),
     SaveConfig,
     NewPlaylist,
-    OpenSongEditPage(String),           // uuid
+    OpenSongEditPage,
     UpdateSong(crate::gui::table::Row), // happens to be a convient type for this data
 }
 

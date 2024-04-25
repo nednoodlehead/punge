@@ -5,7 +5,8 @@ use crate::types::Config;
 use rusty_ytdl::{self, VideoOptions};
 
 use iced::widget::{
-    button, column, combo_box, container, horizontal_space, row, text, text_input, Container,
+    button, column, combo_box, horizontal_space, row, scrollable, text, text_input, Column,
+    Container,
 };
 
 use iced::{Alignment, Element};
@@ -73,7 +74,16 @@ impl MediaPage {
             column![
                 persistent::render_top_buttons(Page::Media),
                 buttons_and_labels.align_items(Alignment::Center),
-                container(text("")).height(350), // empty space..
+                row![
+                    horizontal_space(),
+                    scrollable(
+                        self.download_feedback
+                            .iter()
+                            .fold(Column::new(), |item, str| { item.push(text(str)) })
+                    ),
+                    horizontal_space()
+                ]
+                .height(350), // empty space..
             ]
             .spacing(15),
         )
@@ -92,7 +102,7 @@ pub async fn download_content(
     if link.contains("youtube") {
         download_youtube(link.clone(), download_path, mp3_4).await?;
     } else if link.contains("instagram") {
-        download_insta()?;
+        download_insta(link.clone()).await?;
     } else {
         return Err(AppError::InvalidUrlError(
             "Link does not contain 'instagram' or 'youtube'".to_string(),
@@ -136,9 +146,22 @@ async fn download_youtube(
     Ok(format!("{} downloaded successfully!", title))
 }
 
-fn download_insta() -> Result<String, AppError> {
+async fn download_insta(link: String) -> Result<String, AppError> {
     // we could use the pypi instaloader from cmd to do this ?
-    Err(AppError::SearchError(
-        "Instagram downloads are unimplmented".to_string(),
-    ))
+    // also, by default, (sort of dumb) it sets the date of the download to the date it was
+    // uploaded to insta, so we can rename it near the end to change that..
+    // --no-video-thumbnails --no-captions --no-metadata-json
+    // links look like: https://www.instagram.com/p/123456789 10 11
+    let unique: &str = &link[..11];
+    std::process::Command::new("instaloader")
+        .args([
+            "--",
+            format!("-{}", unique).as_str(),
+            "--no-video-thumbnails", // tbh we dont really care about the rest..
+            "--no-captions",
+            "--no-metadata-json",
+        ])
+        .spawn()
+        .expect("Instagram download failed, do you have instaloader on your path?");
+    Ok(link)
 }

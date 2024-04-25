@@ -1,7 +1,7 @@
 // shoutout to github.com/tarkah for this banger !!!
 // and we will sit here praying until https://github.com/iced-rs/iced/issues/160 comes out!
 use crate::gui::messages::ProgramCommands;
-use iced::widget::{button, container, horizontal_space, text};
+use iced::widget::{button, checkbox, container, horizontal_space, text};
 use iced::Element;
 use iced::{Length, Renderer, Theme};
 use iced_table::table;
@@ -49,7 +49,7 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
     fn cell(
         &'a self,
         _col_index: usize,
-        _row_index: usize,
+        row_index: usize,
         row: &'a Self::Row,
     ) -> Element<'a, ProgramCommands> {
         let content: Element<_> = match self.kind {
@@ -59,11 +59,10 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
             ColumnKind::Author => text(row.author.clone()).into(),
             ColumnKind::Title => text(row.title.clone()).into(),
             ColumnKind::Album => text(row.album.clone()).into(),
-            ColumnKind::Edit => button(text("^"))
-                .on_press(ProgramCommands::SelectSong(
-                    row.uniqueid.clone(),
-                    row.title.clone(),
-                ))
+            ColumnKind::Edit => checkbox("edit", row.ischecked)
+                .on_toggle(move |bol| {
+                    ProgramCommands::SelectSong(row.uniqueid.clone(), bol, row_index)
+                })
                 .into(),
         };
 
@@ -113,4 +112,5 @@ pub struct Row {
     pub author: String,
     pub album: String,
     pub uniqueid: String,
+    pub ischecked: bool,
 }

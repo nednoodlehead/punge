@@ -34,7 +34,7 @@ impl DownloadPage {
                 row![
                     column![
                         row![
-                            text_input(&self.search_text, &self.search_text).on_input(|txt| {
+                            text_input("Search YouTube!", &self.search_text).on_input(|txt| {
                                 ProgramCommands::UpdateWidgetText(TextType::YouTubeSearchInput, txt)
                             }),
                             button(text("Search!"))
@@ -58,7 +58,7 @@ impl DownloadPage {
                     .spacing(15.0),
                     column![
                         row![
-                            text_input(&self.text, &self.text).on_input(|txt| {
+                            text_input("Enter YouTube link here: ", &self.text).on_input(|txt| {
                                 ProgramCommands::UpdateWidgetText(TextType::DownloadLinkInput, txt)
                             }),
                             button(text("Download!"))

@@ -1,6 +1,6 @@
 use crate::gui::messages::{Page, ProgramCommands, TextType};
 use crate::gui::persistent::render_top_buttons;
-use iced::widget::{button, column, row, text, text_input};
+use iced::widget::{button, column, container, row, text, text_input};
 use iced::Element;
 
 pub struct SongEditPage {
@@ -8,6 +8,7 @@ pub struct SongEditPage {
     pub author: String,
     pub album: String,
     pub uniqueid: String,
+    pub ischecked: bool,
     // features !?
     // also count column, once that happens ...
 }
@@ -19,13 +20,22 @@ impl SongEditPage {
             author: "".to_string(),
             album: "".to_string(),
             uniqueid: "".to_string(),
+            ischecked: false,
         }
     }
-    pub fn update_info(&mut self, title: String, author: String, album: String, uniqueid: String) {
+    pub fn update_info(
+        &mut self,
+        title: String,
+        author: String,
+        album: String,
+        uniqueid: String,
+        ischecked: bool,
+    ) {
         self.title = title;
         self.author = author;
         self.album = album;
         self.uniqueid = uniqueid;
+        self.ischecked = ischecked;
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
         let update_or_leave_buttons = row![
@@ -33,7 +43,8 @@ impl SongEditPage {
                 title: self.title.clone(),
                 author: self.author.clone(),
                 album: self.album.clone(),
-                uniqueid: self.uniqueid.clone()
+                uniqueid: self.uniqueid.clone(),
+                ischecked: self.ischecked,
             })),
             button(text("Discard")).on_press(ProgramCommands::ChangePage(Page::Main))
         ]
@@ -55,8 +66,12 @@ impl SongEditPage {
         ]
         .spacing(15.0);
         let main_content = row![text_part, input_part];
-        column![render_top_buttons(Page::SongEdit), main_content]
-            .spacing(50.0)
-            .into()
+        column![
+            render_top_buttons(Page::SongEdit),
+            main_content,
+            container(text("")).height(300)
+        ]
+        .spacing(50.0)
+        .into()
     }
 }
