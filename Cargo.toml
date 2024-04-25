@@ -21,7 +21,7 @@ thiserror = "1.0"  # errors, should change this at some point
 uuid = {features = ["v4"], version = "1.3.1" }  # db uuids
 serde = {version ="1.0.160", features = ["derive"]}
 rodio = "0.17.3"  # audio playback :)
-iced = {version = "0.12", features = ["advanced", "lazy", "image"] }  # lazy for the iced::wid::responsive, needed in tarkah table
+iced = {version = "0.12.1", features = ["advanced", "lazy", "image"] }  # lazy for the iced::wid::responsive, needed in tarkah table
 tokio = {version = "1.29.0", features = ["time", "sync"]} # async sender
 async-std = "1.12.0"  # sleeping in subscriptions
 global-hotkey = "0.5.1"  # no explaination needed
@@ -29,5 +29,6 @@ mp3-duration = "0.1.10"  # ditto ^
 rand = "0.8"  # shuffling the list
 arc-swap = "1.6.0" # allows MusicData to be in multiple places at once
 iced_table = {git = "https://github.com/tarkah/iced_table"}  # table widget
+iced_aw = {version = "0.8", default-features = false, features = ["menu", "quad", "icons"]} # additional widgets :D (menu my beloved)
 log = "0.4.21"  # stinky crate conflict
 discord-rich-presence = "0.2.3" # this one is better than the others available
