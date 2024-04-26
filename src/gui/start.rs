@@ -56,7 +56,7 @@ pub fn begin() -> iced::Result {
             decorations: true,
             transparent: false,
             level: iced::window::Level::Normal,
-            icon: None, // will add soon i think
+            icon: Some(iced::window::icon::from_file("./img/punge icon.ico").unwrap()), // will add soon i think
             platform_specific: iced::window::settings::PlatformSpecific {
                 parent: None,
                 drag_and_drop: false,
