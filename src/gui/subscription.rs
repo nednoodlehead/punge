@@ -4,7 +4,7 @@ use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
 use crate::player::interface::{self};
 use crate::player::interface::{read_file_from_beginning, read_from_time};
-use crate::types::{Config, MusicData, PungeMusicObject};
+use crate::types::{Config, MusicData, PungeMusicObject, ShuffleType};
 use arc_swap::ArcSwap;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 
@@ -120,7 +120,7 @@ impl App {
         // nvmd i got it back
     }
 
-    pub fn music_loop(&self) -> Subscription<ProgramCommands> {
+    pub fn music_loop(&self, config: Arc<ArcSwap<Config>>) -> Subscription<ProgramCommands> {
         iced::subscription::channel(0, 32, |mut sender| async move {
             // sender to give to the gui, and the receiver is used here to listen for clicking of buttons
             let (gui_send, mut gui_rec) = tokio::sync::mpsc::unbounded_channel();
@@ -329,8 +329,18 @@ impl App {
                                 music_obj.count = index;
                                 music_obj.shuffle = false;
                             } else {
-                                let mut rng = rand::thread_rng();
-                                music_obj.list.shuffle(&mut rng);
+                                // now, we match from the config
+                                music_obj.list = match config.load().shuffle_type {
+                                    ShuffleType::Regular => {
+                                        crate::player::sort::regular_shuffle(music_obj.list)
+                                    }
+                                    ShuffleType::WeightBias => {
+                                        crate::player::sort::shuffle_weight_bias(music_obj.list)
+                                    }
+                                    ShuffleType::TrueRandom => {
+                                        crate::player::sort::true_random_shuffle(music_obj.list)
+                                    }
+                                };
                                 music_obj.shuffle = true;
                                 // ok this seems to fix #33, but why does the non-paused version not need this?
                                 // i probably would've noticed something by now...
@@ -556,8 +566,23 @@ impl App {
                                                 music_obj.count = index;
                                                 music_obj.shuffle = false;
                                             } else {
-                                                let mut rng = rand::thread_rng();
-                                                music_obj.list.shuffle(&mut rng);
+                                                music_obj.list = match config.load().shuffle_type {
+                                                    ShuffleType::Regular => {
+                                                        crate::player::sort::regular_shuffle(
+                                                            music_obj.list,
+                                                        )
+                                                    }
+                                                    ShuffleType::WeightBias => {
+                                                        crate::player::sort::shuffle_weight_bias(
+                                                            music_obj.list,
+                                                        )
+                                                    }
+                                                    ShuffleType::TrueRandom => {
+                                                        crate::player::sort::true_random_shuffle(
+                                                            music_obj.list,
+                                                        )
+                                                    }
+                                                };
                                                 music_obj.shuffle = true;
                                             }
                                         }

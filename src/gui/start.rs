@@ -13,7 +13,7 @@ use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::player_cache;
 use crate::player::sort::get_values_from_db;
-use crate::types::{Config, MusicData, UserPlaylist};
+use crate::types::{Config, MusicData, ShuffleType, UserPlaylist};
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
 use crate::utils::delete::delete_record_and_file;
@@ -31,7 +31,6 @@ use iced::widget::{
 use iced::Command;
 use iced::{executor, Application, Element, Length, Settings, Theme};
 use iced_aw::menu::{Item, Menu};
-use iced_aw::{menu_bar, menu_items};
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
 pub fn begin() -> iced::Result {
@@ -141,6 +140,7 @@ impl Application for App {
                     static_reduction: 1,
                     media_path: String::from("C:/"),
                     keybinds: std::collections::HashMap::new(), // empty!
+                    shuffle_type: ShuffleType::Regular,
                 }
             }
         };
@@ -746,6 +746,9 @@ impl Application for App {
                     ComboBoxType::Mp3Or4 => {
                         self.media_page.download_type = txt;
                     }
+                    ComboBoxType::ShuffleType => {
+                        self.setting_page.shuffle_type = txt;
+                    }
                 }
                 Command::none()
             }
@@ -865,6 +868,7 @@ impl Application for App {
                     static_reduction,
                     media_path: self.setting_page.media_path.clone(),
                     keybinds: bind_config,
+                    shuffle_type: ShuffleType::from_str(&self.setting_page.shuffle_type),
                 };
                 // mostly useful for updating keybinds in real time
                 self.config.store(Arc::new(obj.clone())); // refresh the config with this data :D
@@ -998,6 +1002,7 @@ impl Application for App {
                 // self.render_sidebar()
             ],
             row![
+                table_cont,
                 column![
                     iced_aw::menu_bar!((
                         button("Edit Song"),
@@ -1012,8 +1017,8 @@ impl Application for App {
                         .max_width(180.0)
                     )),
                     iced::widget::Column::with_children(buttons).spacing(10.0)
-                ],
-                table_cont,
+                ]
+                .spacing(30.0),
             ],
             // vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
             vertical_space(),
@@ -1064,7 +1069,7 @@ impl Application for App {
 
     fn subscription(&self) -> Subscription<Self::Message> {
         iced::subscription::Subscription::batch(vec![
-            self.music_loop(),
+            self.music_loop(self.config.clone()),
             self.hotkey_loop(self.config.clone()),
             self.database_subscription(self.current_song.clone()),
             self.close_app_sub(),

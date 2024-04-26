@@ -3,21 +3,13 @@
 // quite inspired by helix's regex
 use crate::db::fetch::{get_all_from_playlist, get_all_main};
 use crate::types::{AppError, PungeMusicObject};
+use rand::seq::SliceRandom;
+use rand::Rng;
 use regex::Regex;
 
 fn search_string(to_search: String, pattern: String) -> bool {
     let regex = Regex::new(&pattern).unwrap();
     regex.is_match(to_search.as_str())
-}
-
-fn _create_alt_pattern(input: String) -> String {
-    // if works,
-    let escaped_regex = regex::escape(input.as_str());
-    let mut pattern = String::from(r"(?i)");
-    for letter in escaped_regex.chars() {
-        pattern.push_str(&format!(".*{}.*", letter));
-    }
-    pattern
 }
 
 fn create_new_pattern(input: String) -> String {
@@ -99,4 +91,56 @@ pub async fn get_values_from_db(
     }
     found_values.sort_by_key(|item| item.0);
     Ok(found_values[0].1.clone())
+}
+
+// different shuffle modes..
+
+// shuffle, have a bias towards songs with a higher weight
+pub fn shuffle_weight_bias(grabbed: Vec<PungeMusicObject>) -> Vec<PungeMusicObject> {
+    // let mut grabbed = get_all_main().unwrap();
+    let mut grabbed = grabbed.clone(); // gotta be moronic
+    let len = grabbed.len();
+    grabbed.sort_unstable_by_key(|x| x.weight);
+    let mut rng = rand::thread_rng();
+    // divide the list into 6. shuffle those 6 individually, then re-insert back in place
+    let mut new = vec![];
+    // if total songs are less than 6... bruh. stupid edge case
+    if grabbed.len() < 7 {
+        grabbed
+    } else {
+        for chunk in grabbed.chunks_mut(len / 6) {
+            chunk.shuffle(&mut rng);
+            for k in chunk {
+                new.push(k.to_owned())
+            }
+        }
+        new
+    }
+}
+
+// pure random shuffle, does not matter weight or anything. default choice..
+pub fn regular_shuffle(grabbed: Vec<PungeMusicObject>) -> Vec<PungeMusicObject> {
+    // let mut grabbed = get_all_main().unwrap();
+    let mut grabbed = grabbed.clone(); // chat is this stupid ?
+    let mut rng = rand::thread_rng();
+    grabbed.shuffle(&mut rng);
+    grabbed
+}
+
+// cant be used since the player tries to grab the location of the uuid in the list,
+// but this method does not guarentee that there will be that value
+// stupid, i would never personally use it, can cause duplicate songs.. let the user choose tho
+pub fn true_random_shuffle(grabbed: Vec<PungeMusicObject>) -> Vec<PungeMusicObject> {
+    // let grabbed = get_all_main().unwrap();
+    // let mut rng = rand::thread_rng();
+    // let mut new = vec![];
+    // for _ in grabbed.iter() {
+    //     new.push(grabbed[rng.gen_range(0..grabbed.len())].clone())
+    // }
+    // new
+    // temp replacement, or maybe forever idk
+    let mut grabbed = grabbed.clone(); // chat is this stupid ?
+    let mut rng = rand::thread_rng();
+    grabbed.shuffle(&mut rng);
+    grabbed
 }

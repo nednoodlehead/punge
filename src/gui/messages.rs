@@ -113,6 +113,7 @@ pub enum ComboBoxType {
     GoToAlbumModifier1,
     GoToAlbumModifer2,
     Mp3Or4, // media page
+    ShuffleType,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -207,6 +207,7 @@ pub struct Config {
     // so we need to include the Code and Modifiers, so we can populate the settings page with
     // correct content. it should stay consistent with what is registered with the manager
     pub keybinds: HashMap<u32, PungeKeyBind>,
+    pub shuffle_type: ShuffleType,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -235,4 +236,28 @@ pub struct YouTubeSearchResult {
     pub videos: Option<String>,   // format: {} Videos, videos.len()
     pub thumbnail: String,        // path to the thumbnail
     pub link: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Copy)]
+pub enum ShuffleType {
+    Regular,    // shuffle the list in place
+    WeightBias, // order by weight, divide by 6, shuffle in sections, re-enter in sections
+    TrueRandom,
+}
+impl ShuffleType {
+    pub fn to_string(&self) -> String {
+        match self {
+            ShuffleType::Regular => "Normal shuffle".to_string(),
+            ShuffleType::TrueRandom => "True random".to_string(),
+            ShuffleType::WeightBias => "Weighted".to_string(),
+        }
+    }
+    pub fn from_str(name: &str) -> Self {
+        match name {
+            "Normal shuffle" => ShuffleType::Regular,
+            "True random" => ShuffleType::TrueRandom,
+            "Weighted" => ShuffleType::WeightBias,
+            _ => ShuffleType::Regular, // fail!
+        }
+    }
 }

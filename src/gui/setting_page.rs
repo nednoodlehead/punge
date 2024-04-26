@@ -1,9 +1,9 @@
 use crate::gui::messages::{ComboBoxType, Page, ProgramCommands, TextType};
 use crate::gui::persistent;
-use crate::types::{Config, PungeKeyBind};
+use crate::types::{Config, PungeKeyBind, ShuffleType};
 use crate::utils::key::{self};
 
-use iced::widget::{button, column, combo_box, row, text, text_input, Container};
+use iced::widget::{button, column, combo_box, row, text, text_input, ComboBox, Container};
 use iced::Element;
 use std::hash::Hash;
 
@@ -23,6 +23,7 @@ pub struct SettingPage {
     pub media_path: String,
     pub key_options: combo_box::State<String>,
     pub mod_options: combo_box::State<String>,
+    pub shuffle_types: combo_box::State<String>,
     pub play_key_value: String,
     pub play_mod1_value: String,
     pub play_mod2_value: String,
@@ -44,6 +45,7 @@ pub struct SettingPage {
     pub gotoalbum_key_value: String,
     pub gotoalbum_mod1_value: String,
     pub gotoalbum_mod2_value: String,
+    pub shuffle_type: String,
 }
 // how the hotkey numbers are created !!!
 pub fn generate_hash(mods: [String; 2], key: String) -> u32 {
@@ -107,6 +109,11 @@ impl SettingPage {
             // we tried being funny and having the user dynamically add binds, but it sucks to code
             key_options: combo_box::State::new(key::all_codes()),
             mod_options: combo_box::State::new(key::get_all_modifiers()),
+            shuffle_types: combo_box::State::new(vec![
+                "Normal shuffle".to_string(),
+                "True random".to_string(),
+                "Weighted".to_string(),
+            ]),
             play_key_value: "".to_string(),
             play_mod1_value: "".to_string(),
             play_mod2_value: "".to_string(),
@@ -128,6 +135,7 @@ impl SettingPage {
             gotoalbum_key_value: "".to_string(),
             gotoalbum_mod1_value: "".to_string(),
             gotoalbum_mod2_value: "".to_string(),
+            shuffle_type: config.shuffle_type.to_string(),
         };
         for (_, bind) in &config.keybinds {
             match bind.command {
@@ -210,8 +218,17 @@ impl SettingPage {
                     ProgramCommands::UpdateWidgetText(TextType::MediaPath, txt)
                 })
             ],
+            row![
+                text("Shuffle type"),
+                combo_box(
+                    &self.shuffle_types,
+                    "Shuffle type!",
+                    Some(&self.shuffle_type),
+                    |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::ShuffleType, txt) }
+                )
+            ],
+            self.render_keybinds(),
             row![button(text("Save!")).on_press(ProgramCommands::SaveConfig)],
-            self.render_keybinds()
         ])
         .into()
     }
