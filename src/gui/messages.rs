@@ -185,6 +185,7 @@ impl<'de> Deserialize<'de> for ProgramCommands {
             "ProgramCommands::SkipBackwards" => Ok(ProgramCommands::SkipBackwards),
             "ProgramCommands::StaticVolumeUp" => Ok(ProgramCommands::StaticVolumeUp),
             "ProgramCommands::StaticVolumeDown" => Ok(ProgramCommands::StaticVolumeDown),
+            "ProgramCommands::ShuffleToggle" => Ok(ProgramCommands::ShuffleToggle),
             _ => Ok(ProgramCommands::Debug),
         }
     }
