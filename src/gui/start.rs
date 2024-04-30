@@ -116,6 +116,7 @@ impl Application for App {
             Ok(t) => {
                 // what abt no mods? maybe should check
                 for (_, bind) in t.keybinds.iter() {
+                    println!("binding {:?}", bind.command);
                     let hotkey = if bind.mod1.is_none() {
                         HotKey::new(bind.mod2, bind.code.unwrap())
                     } else if bind.mod2.is_none() {
