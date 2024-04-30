@@ -14,7 +14,7 @@ fn search_string(to_search: String, pattern: String) -> bool {
 
 fn create_new_pattern(input: String) -> String {
     let words = input.split(' ').collect::<Vec<&str>>();
-    let mut patt = String::new();
+    let mut patt = String::from("(?i)");
     for word in words {
         patt.push_str(format!("(.*{})", word).as_str());
     }
@@ -143,4 +143,24 @@ pub fn true_random_shuffle(grabbed: Vec<PungeMusicObject>) -> Vec<PungeMusicObje
     let mut rng = rand::thread_rng();
     grabbed.shuffle(&mut rng);
     grabbed
+}
+
+pub fn cluster_shuffle(grabbed: Vec<PungeMusicObject>) -> Vec<PungeMusicObject> {
+    // sort of like weighted shuffle, but the 'weight' in this case is just based off the order
+    // this is literally just taken from that, nevermind the ordering on weight part.
+    let mut grabbed = grabbed.clone();
+    let len = grabbed.len();
+    let mut rng = rand::thread_rng();
+    let mut new = vec![];
+    if grabbed.len() < 7 {
+        grabbed
+    } else {
+        for chunk in grabbed.chunks_mut(len / 6) {
+            chunk.shuffle(&mut rng);
+            for k in chunk {
+                new.push(k.to_owned())
+            }
+        }
+        new
+    }
 }
