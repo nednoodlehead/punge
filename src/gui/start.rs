@@ -4,7 +4,7 @@ use crate::db::fetch::{
     song_from_uuid,
 };
 use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
-use crate::db::update::{delete_from_playlist, update_song};
+use crate::db::update::{delete_from_playlist, update_auth_album, update_song};
 use crate::gui::messages::{
     AppEvent, CheckBoxType, ComboBoxType, Page, ProgramCommands, PungeCommand, TextType,
 };
@@ -919,13 +919,28 @@ impl Application for App {
                                                                                     // since we use remove_swap...
                     (info.title, info.author, info.album, info.uniqueid)
                 };
-                self.song_edit_page
-                    .update_info(data.0, data.1, data.2, data.3, false);
+                self.song_edit_page.update_info(
+                    data.0,
+                    data.1,
+                    data.2,
+                    data.3,
+                    false,
+                    self.selected_songs.len() > 1, // are multiple songs selected?
+                );
                 self.current_view = Page::SongEdit;
                 Command::none()
             }
             Self::Message::UpdateSong(row) => {
-                update_song(row.author, row.title, row.album, row.uniqueid).unwrap();
+                if self.song_edit_page.multi_select {
+                    // if multiple songs are selected
+                    for id in self.selected_songs.iter() {
+                        update_auth_album(row.author.clone(), row.album.clone(), id.to_string())
+                            .unwrap();
+                    }
+                } else {
+                    update_song(row.author, row.title, row.album, row.uniqueid).unwrap();
+                }
+                self.selected_songs.clear();
                 self.refresh_playlist();
                 // update the active playlists in memory with the new name, im not sure if there is a better way
                 // to do this, just reload the playlist ig

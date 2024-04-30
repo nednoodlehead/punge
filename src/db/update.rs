@@ -69,3 +69,17 @@ pub fn delete_from_playlist(uniqueid: String, playlistid: String) -> Result<(), 
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
+
+pub fn update_auth_album(
+    author: String,
+    album: String,
+    uniqueid: String,
+) -> Result<(), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    conn.execute(
+        "UPDATE main SET author = ?, album = ? WHERE uniqueid = ?",
+        params![author, album, uniqueid],
+    )?;
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}

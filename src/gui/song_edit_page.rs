@@ -9,6 +9,7 @@ pub struct SongEditPage {
     pub album: String,
     pub uniqueid: String,
     pub ischecked: bool,
+    pub multi_select: bool,
     // features !?
     // also count column, once that happens ...
 }
@@ -21,6 +22,7 @@ impl SongEditPage {
             album: "".to_string(),
             uniqueid: "".to_string(),
             ischecked: false,
+            multi_select: false, // if multiple songs are selected, grey out 'title'
         }
     }
     pub fn update_info(
@@ -30,12 +32,14 @@ impl SongEditPage {
         album: String,
         uniqueid: String,
         ischecked: bool,
+        multi_select: bool,
     ) {
         self.title = title;
         self.author = author;
         self.album = album;
         self.uniqueid = uniqueid;
         self.ischecked = ischecked;
+        self.multi_select = multi_select;
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
         let update_or_leave_buttons = row![
@@ -49,6 +53,13 @@ impl SongEditPage {
             button(text("Discard")).on_press(ProgramCommands::ChangePage(Page::Main))
         ]
         .spacing(10.0);
+        // if multiple songs are selected, we don't want to change the title!!
+        let conditional_title = if self.multi_select {
+            text_input("", "Multiple selected, title unavailable")
+        } else {
+            text_input(&self.title, &self.title)
+                .on_input(|txt| ProgramCommands::UpdateWidgetText(TextType::TitleChange, txt))
+        };
         let text_part = column![
             text("Title"),
             text("Artist"),
@@ -57,8 +68,7 @@ impl SongEditPage {
         ]
         .spacing(30.0);
         let input_part = column![
-            text_input(&self.title, &self.title)
-                .on_input(|txt| { ProgramCommands::UpdateWidgetText(TextType::TitleChange, txt) }),
+            conditional_title,
             text_input(&self.author, &self.author)
                 .on_input(|txt| { ProgramCommands::UpdateWidgetText(TextType::AuthorChange, txt) }),
             text_input(&self.album, &self.album)
