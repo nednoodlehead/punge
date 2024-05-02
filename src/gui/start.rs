@@ -4,7 +4,7 @@ use crate::db::fetch::{
     song_from_uuid,
 };
 use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
-use crate::db::update::{delete_from_playlist, update_auth_album, update_song};
+use crate::db::update::{delete_from_playlist, update_auth_album, update_song, update_title_auth};
 use crate::gui::messages::{
     AppEvent, CheckBoxType, ComboBoxType, Page, ProgramCommands, PungeCommand, TextType,
 };
@@ -546,19 +546,30 @@ impl Application for App {
                 // add_to_playlist(playlist_id.unwrap(), song_id.unwrap()).unwrap(); // what abt duplicate addigs?
                 Command::none()
             }
-            Self::Message::DeleteSong(uuid) => {
+            Self::Message::DeleteSong => {
                 // should ask user if they are sure ?
+                let to_delete: Vec<String> = if self.selected_songs.is_empty() {
+                    vec![self.current_song.load().song_id.clone()]
+                } else {
+                    self.selected_songs.clone()
+                };
+                // seems mildly more simple than handling 1 vs multiple, just put in vec and iter
+                // also iced has no type of 'conformation' screen i dont think. Might be more hassle than not to add
                 if self.viewing_playlist == "main" {
-                    match delete_record_and_file(uuid) {
-                        Ok(_t) => {
-                            println!("epic delete moment")
-                        }
-                        Err(e) => {
-                            println!("error deleting {:?}", e)
+                    for uuid in to_delete {
+                        match delete_record_and_file(uuid) {
+                            Ok(_t) => {
+                                println!("epic delete moment")
+                            }
+                            Err(e) => {
+                                println!("error deleting {:?}", e)
+                            }
                         }
                     }
                 } else {
-                    delete_from_playlist(uuid, self.viewing_playlist.clone()).unwrap();
+                    for uuid in to_delete {
+                        delete_from_playlist(uuid, self.viewing_playlist.clone()).unwrap();
+                    }
                 }
                 // refresh current playlist
                 // should i function this? used twice..
@@ -944,12 +955,23 @@ impl Application for App {
                 self.refresh_playlist();
                 // update the active playlists in memory with the new name, im not sure if there is a better way
                 // to do this, just reload the playlist ig
-                self.sender
-                    .as_mut()
-                    .unwrap()
-                    .send(PungeCommand::ChangePlaylist(self.viewing_playlist.clone()))
-                    .unwrap();
+                self.refresh_playlist();
                 self.current_view = Page::Main;
+                Command::none()
+            }
+            ProgramCommands::QuickSwapTitleAuthor => {
+                // if none are selected, do current song
+                if self.selected_songs.is_empty() {
+                    update_title_auth(&self.current_song.load().song_id.clone()).unwrap();
+                } else {
+                    for id in self.selected_songs.iter() {
+                        update_title_auth(id).unwrap();
+                    }
+                    self.selected_songs.clear();
+                    // clear the checkmarks?
+                    // refresh the playlist
+                }
+                self.refresh_playlist();
                 Command::none()
             }
 
@@ -1027,7 +1049,13 @@ impl Application for App {
                                 button(text("Full Edit"))
                                     .on_press(ProgramCommands::OpenSongEditPage) // pass in song!?
                             ),
-                            Item::new(button(text("Title"))),
+                            Item::new(
+                                button(text("Swap Title & Author"))
+                                    .on_press(ProgramCommands::QuickSwapTitleAuthor)
+                            ),
+                            Item::new(
+                                button(text("Delete!!")).on_press(ProgramCommands::DeleteSong)
+                            ),
                             playlist_add_to_menu,
                         ])
                         .max_width(180.0)

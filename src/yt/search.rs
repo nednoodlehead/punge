@@ -1,7 +1,7 @@
 use crate::types::YouTubeSearchResult;
 
-use rusty_ytdl::blocking::search::SearchResult;
-use rusty_ytdl::blocking::search::YouTube;
+use rusty_ytdl::search::SearchResult;
+use rusty_ytdl::search::YouTube;
 
 pub async fn _see_content(search: String) -> Vec<rusty_ytdl::search::SearchResult> {
     let yt = YouTube::new().unwrap();
@@ -10,7 +10,7 @@ pub async fn _see_content(search: String) -> Vec<rusty_ytdl::search::SearchResul
         limit: 20, // configurable at some point !?
         safe_search: true,
     };
-    yt.search(search, Some(&options)).unwrap()
+    yt.search(search, Some(&options)).await.unwrap()
 }
 
 pub async fn content_to_text(
@@ -35,7 +35,7 @@ pub async fn content_to_text(
         safe_search: true,
     };
     let mut ret = vec![];
-    let results = yt.search(search, Some(&options)).unwrap();
+    let results = yt.search(search, Some(&options)).await.unwrap();
     for result in results {
         match result {
             SearchResult::Video(vid) => {
@@ -52,7 +52,8 @@ pub async fn content_to_text(
             }
             SearchResult::Playlist(playlist) => {
                 // this is required to get the videos, without it, using playlist.videos, returns 0 every time
-                let play = rusty_ytdl::blocking::search::Playlist::get(playlist.url.clone(), None)
+                let play = rusty_ytdl::search::Playlist::get(playlist.url.clone(), None)
+                    .await
                     .unwrap();
                 let n = YouTubeSearchResult {
                     title: playlist.name.to_string(),

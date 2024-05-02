@@ -20,7 +20,7 @@ pub async fn download_interface(
         download_options: rusty_ytdl::DownloadOptions::default(),
         request_options: rusty_ytdl::RequestOptions::default(),
     };
-    let video = rusty_ytdl::blocking::Video::new_with_options(url.clone(), vid_opt)?; // url check
+    let video = rusty_ytdl::Video::new_with_options(url.clone(), vid_opt)?; // url check
     println!("is one? {}", playlist_title.is_none());
     if check_if_exists(video.get_video_id()) && playlist_title.is_none() {
         // if the entry exists already
@@ -29,7 +29,7 @@ pub async fn download_interface(
             DatabaseErrors::DatabaseEntryExistsError,
         ));
     }
-    let details = video.get_basic_info().unwrap().video_details;
+    let details = video.get_basic_info().await.unwrap().video_details;
     let (mp3, jpg) = fetch_json();
 
     // different cases for videos:
@@ -211,7 +211,7 @@ fn fetch_json() -> (String, String) {
 }
 
 async fn create_punge_obj(
-    vid: rusty_ytdl::blocking::Video,
+    vid: rusty_ytdl::Video,
     youtube_data: YouTubeData,
     features: String,
     jpg_dir: String,
@@ -271,7 +271,7 @@ pub fn clean_inputs_for_win_saving(to_check: String) -> String {
 }
 
 async fn download_to_punge(
-    vid: rusty_ytdl::blocking::Video,
+    vid: rusty_ytdl::Video,
     mp3_path: String,
     _jpg_path: String,
     new_mp3_name: String,
@@ -279,7 +279,7 @@ async fn download_to_punge(
 ) -> Result<(), AppError> {
     // let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
     // first we downlaod it as '.mp4' then ffmpeg it over to mp3
-    let id = vid.get_basic_info().unwrap();
+    let id = vid.get_basic_info().await.unwrap();
     let mp4_name = format!(
         "{}{}.mp4",
         mp3_path.clone(),
@@ -296,7 +296,7 @@ async fn download_to_punge(
     // the unwrap can fail sometimes. so we loop 5 times, sleeping for 3 seconds inbetween so it will try again
     println!("startin download!");
     let before = std::time::Instant::now();
-    match vid.download(path_download) {
+    match vid.download(path_download).await {
         Ok(_t) => {
             println!("Download finsihed in: {:.2?}", before.elapsed());
             // convert the old file to (webm) to mp3 and rename

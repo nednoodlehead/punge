@@ -80,6 +80,16 @@ pub fn update_auth_album(
         "UPDATE main SET author = ?, album = ? WHERE uniqueid = ?",
         params![author, album, uniqueid],
     )?;
+
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}
+pub fn update_title_auth(uniqueid: &str) -> Result<(), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    conn.execute(
+        "UPDATE main SET author = title, title = author WHERE uniqueid = ?",
+        params![uniqueid],
+    )?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
