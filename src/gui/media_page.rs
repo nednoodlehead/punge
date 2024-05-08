@@ -129,7 +129,7 @@ async fn download_youtube(
             ..Default::default()
         }
     };
-    let vid = rusty_ytdl::blocking::Video::new_with_options(link, settings)?;
+    let vid = rusty_ytdl::Video::new_with_options(link, settings)?;
     // make the path end with a slash
     path = if !path.ends_with('\\') | !path.ends_with('/') {
         format!("{}/", path)
@@ -138,11 +138,11 @@ async fn download_youtube(
     };
     // clean the inputs :D
     let title = crate::yt::interface::clean_inputs_for_win_saving(
-        vid.get_basic_info()?.video_details.title,
+        vid.get_basic_info().await?.video_details.title,
     );
     let full_output = format!("{}{} - {}{}", path, &title, vid.get_video_id(), mp3_4);
     let new_path = std::path::Path::new(&full_output);
-    vid.download(new_path)?;
+    vid.download(new_path).await?;
     Ok(format!("{} downloaded successfully!", title))
 }
 
