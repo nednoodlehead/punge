@@ -285,10 +285,13 @@ impl App {
                         }
                         PungeCommand::SkipToSeconds(val) => {
                             println!("skipping to seconds. paused?");
-                            music_obj.sink.append(read_from_time(
+                            music_obj.sink.append(read_file_from_beginning(
                                 music_obj.list[music_obj.count].savelocationmp3.clone(),
-                                val,
                             ));
+                            music_obj
+                                .sink
+                                .try_seek(std::time::Duration::from_secs(val as u64))
+                                .unwrap();
                             // no play, since we are paused
                             sender
                                 .send(ProgramCommands::NewData(MusicData {
@@ -514,12 +517,17 @@ impl App {
                                         }
                                         PungeCommand::SkipToSeconds(val) => {
                                             music_obj.sink.stop();
-                                            music_obj.sink.append(read_from_time(
+                                            music_obj.sink.append(read_file_from_beginning(
                                                 music_obj.list[music_obj.count]
                                                     .savelocationmp3
                                                     .clone(),
-                                                val,
                                             ));
+                                            music_obj
+                                                .sink
+                                                .try_seek(std::time::Duration::from_secs(
+                                                    val as u64,
+                                                ))
+                                                .unwrap();
                                             // play :D we are inside the playing loop
                                             music_obj.to_play = true;
                                             music_obj.sink.play();

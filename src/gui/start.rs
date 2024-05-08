@@ -1,8 +1,5 @@
 // can we rename this to lib.rs at some point maybe??
-use crate::db::fetch::{
-    get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid, get_uuid_from_name,
-    song_from_uuid,
-};
+use crate::db::fetch::{get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid};
 use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
 use crate::db::update::{delete_from_playlist, update_auth_album, update_song, update_title_auth};
 use crate::gui::messages::{
@@ -25,11 +22,9 @@ use std::sync::Arc;
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::subscription::Subscription;
 use iced::widget::{
-    button, column, container, horizontal_space, pick_list, responsive, row, scrollable, text,
-    vertical_space,
+    button, column, container, horizontal_space, responsive, row, scrollable, text, vertical_space,
 };
-use iced::Command;
-use iced::{executor, Application, Element, Length, Settings, Theme};
+use iced::{executor, Application, Command, Element, Length, Settings, Theme};
 use iced_aw::menu::{Item, Menu};
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
@@ -79,7 +74,7 @@ pub struct App {
     pub volume: u8,
     pub shuffle: bool,
     pub scrubber: u32,
-    pub time_elapsed: u32,
+    pub time_elapsed: u32, // needs to be a u32 im pretty sure
     pub total_time: u32,
     current_view: Page,
     download_page: crate::gui::download_page::DownloadPage,
