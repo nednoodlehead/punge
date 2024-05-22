@@ -3,7 +3,7 @@ use crate::db::fetch::{get_all_from_playlist, get_all_main, get_all_playlists, g
 use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
 use crate::db::update::{delete_from_playlist, update_auth_album, update_song, update_title_auth};
 use crate::gui::messages::{
-    AppEvent, CheckBoxType, ComboBoxType, Page, ProgramCommands, PungeCommand, TextType,
+    AppEvent, CheckBoxType, ComboBoxType, Context, Page, ProgramCommands, PungeCommand, TextType,
 };
 use crate::gui::persistent;
 use crate::gui::table::{Column, ColumnKind, Row};
@@ -197,7 +197,6 @@ impl Application for App {
     }
 
     fn update(&mut self, msg: Self::Message) -> iced::Command<ProgramCommands> {
-        println!("MATCHING MSG: {:?}", &msg);
         match msg {
             Self::Message::UpdateSender(sender) => {
                 println!("updated sender!");
@@ -206,11 +205,22 @@ impl Application for App {
             }
             Self::Message::NewData(data) => {
                 self.total_time = data.length;
+                match &data.context {
+                    &Context::Default => {}
+                    &Context::PlayPause => {}
+                    &Context::Seeked => {}
+
+                    _ => {
+                        println!("resetting scrubber to 0");
+                        self.scrubber = 0;
+                    }
+                }
                 println!(
                     "The new information given to update: {} {} {}",
                     data.author, data.title, data.album
                 );
                 self.current_song.store(Arc::new(data));
+                // should we reset the scrubbing bar?
                 Command::none()
             }
             Self::Message::VolumeChange(val) => {
@@ -969,6 +979,10 @@ impl Application for App {
                 self.refresh_playlist();
                 Command::none()
             }
+            ProgramCommands::PushScrubber => {
+                self.scrubber += 1;
+                Command::none()
+            }
 
             _ => {
                 println!("inumplmented");
@@ -1113,6 +1127,7 @@ impl Application for App {
             self.database_subscription(self.current_song.clone()),
             self.close_app_sub(),
             self.discord_loop(self.current_song.clone()), // self.database_sub(database_receiver),
+            self.scrubbing_bar_sub(self.current_song.clone()),
         ]) // is two batches required?? prolly not
     }
 }

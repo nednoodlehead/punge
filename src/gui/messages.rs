@@ -60,6 +60,7 @@ pub enum ProgramCommands {
     OpenSongEditPage,
     UpdateSong(crate::gui::table::Row), // happens to be a convient type for this data
     QuickSwapTitleAuthor,               // uniqueid
+    PushScrubber,
 }
 
 #[derive(Debug, Copy, Clone)]

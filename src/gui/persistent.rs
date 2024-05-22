@@ -68,11 +68,11 @@ impl App {
                 text(self.time_elapsed),
                 // slider also needs to have a dynamic range. 1 step should equal 1 second
                 slider(
-                    0..=self.total_time,
+                    0..=self.total_time * 10,
                     self.scrubber,
                     ProgramCommands::MoveSlider
                 )
-                .on_release(ProgramCommands::SkipToSeconds(self.scrubber)),
+                .on_release(ProgramCommands::SkipToSeconds(self.scrubber / 10)),
                 text(crate::utils::time::sec_to_time(self.total_time)), // todo conver to
                 horizontal_space()
             ]

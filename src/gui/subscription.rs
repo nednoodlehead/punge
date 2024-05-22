@@ -284,6 +284,7 @@ impl App {
                             println!("going 2 album!")
                         }
                         PungeCommand::SkipToSeconds(val) => {
+                            // TODO WHY DOES IT PLAY HERE ?!?!
                             println!("skipping to seconds. paused?");
                             music_obj.sink.append(read_file_from_beginning(
                                 music_obj.list[music_obj.count].savelocationmp3.clone(),
@@ -301,7 +302,7 @@ impl App {
                                     song_id: music_obj.current_object.uniqueid.clone(),
                                     previous_id: None,
                                     volume: music_obj.sink.volume(),
-                                    is_playing: true,
+                                    is_playing: false,
                                     shuffle: music_obj.shuffle,
                                     playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
@@ -415,7 +416,7 @@ impl App {
                                                     shuffle: music_obj.shuffle,
                                                     playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
-                                                    context: Context::SkippedForward,
+                                                    context: Context::PlayPause,
                                                     length: music_obj.current_object.length,
                                                 }))
                                                 .await
@@ -424,9 +425,6 @@ impl App {
                                             music_obj.to_play = false
                                         }
                                         PungeCommand::SkipForwards => {
-                                            let start = Instant::now();
-                                            println!("skippin forrards");
-                                            println!("obj skip forwards: {:?}", &music_obj);
                                             music_obj.sink.stop(); // why was this not here before and how did it even work !?
                                             let old_id = music_obj.current_object.uniqueid.clone();
                                             music_obj.count = change_count(
@@ -463,11 +461,6 @@ impl App {
                                                 }))
                                                 .await
                                                 .unwrap();
-                                            let end = Instant::now();
-                                            println!(
-                                                "time elapsed (lower) {:?}",
-                                                end.duration_since(start)
-                                            )
                                         }
                                         PungeCommand::SkipBackwards => {
                                             // music_obj.count -= 1; // do check for smaller than music_obj.len()?
@@ -747,6 +740,28 @@ impl App {
                 }
                 async_std::task::sleep(std::time::Duration::from_secs(5)).await;
             }
+        })
+    }
+    pub fn scrubbing_bar_sub(&self, obj: Arc<ArcSwap<MusicData>>) -> Subscription<ProgramCommands> {
+        iced::subscription::channel(4, 32, |mut sender| async move {
+            // every second, check if the song is playing, if the song is playing, push the bar.
+            // if it is not playing. Do not push the bar.
+            loop {
+                if obj.load().is_playing {
+                    // remember: the total len is total song (in sec) divided by 4
+                    sender.send(ProgramCommands::PushScrubber).await.unwrap();
+                } else {
+                    loop {
+                        if obj.load().is_playing {
+                            sender.send(ProgramCommands::PushScrubber).await.unwrap();
+                            break;
+                        }
+                        async_std::task::sleep(std::time::Duration::from_millis(10)).await;
+                    }
+                }
+                async_std::task::sleep(std::time::Duration::from_millis(95)).await;
+            }
+            // is this stupid? accounting for the time to run the code for accurate pushing?
         })
     }
 }
