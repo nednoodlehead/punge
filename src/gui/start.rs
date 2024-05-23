@@ -6,6 +6,7 @@ use crate::gui::messages::{
     AppEvent, CheckBoxType, ComboBoxType, Context, Page, ProgramCommands, PungeCommand, TextType,
 };
 use crate::gui::persistent;
+use crate::gui::style::button::JustText;
 use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::player_cache;
@@ -901,15 +902,18 @@ impl Application for App {
             }
             Self::Message::NewPlaylist => {
                 // TODO we should be doing a check for updating an existing playlist vs making a new one
-                let playlist = UserPlaylist::new(
-                    self.playlist_page.user_title.clone(),
-                    self.playlist_page.user_description.clone(),
-                    self.playlist_page.user_thumbnail.clone(),
-                    false,
-                );
-                create_playlist(playlist).unwrap();
-                self.user_playlists = get_all_playlists().unwrap();
-                // also refresh the buttons!
+                if self.playlist_page.user_title != "" {
+                    // check to see if it is empty..
+                    let playlist = UserPlaylist::new(
+                        self.playlist_page.user_title.clone(),
+                        self.playlist_page.user_description.clone(),
+                        self.playlist_page.user_thumbnail.clone(),
+                        false,
+                    );
+                    create_playlist(playlist).unwrap();
+                    self.user_playlists = get_all_playlists().unwrap();
+                    // also refresh the buttons!
+                }
                 Command::none()
             }
             Self::Message::OpenSongEditPage => {
@@ -1031,6 +1035,7 @@ impl Application for App {
                     .on_press(ProgramCommands::ChangeViewingPlaylist(
                         playlist.uniqueid.clone(),
                     ))
+                    .style(iced::theme::Button::Custom(Box::new(JustText)))
                     .height(Length::Fixed(32.5)) // playlist button height :)
                     .into()
             })
@@ -1042,9 +1047,7 @@ impl Application for App {
                 row![
                     persistent::render_top_buttons(Page::Main),
                     button(text("Toggle table")).on_press(ProgramCommands::ToggleList)
-                ]
-                .spacing(10)
-                .padding(10.0),
+                ],
                 horizontal_space(),
                 // self.render_sidebar()
             ],

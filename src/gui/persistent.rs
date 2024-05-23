@@ -2,6 +2,8 @@
 // such as the 'current playing' bar at the bottom, and the buttons at the top to change pages
 use crate::gui::messages::{Page, ProgramCommands};
 use crate::gui::start::App;
+use crate::gui::style::scrubber::ScrubberStyle;
+use crate::gui::style::volume::VolumeStyle;
 use iced::widget::{button, column, container, horizontal_space, row, slider, text, Row};
 use iced::{Alignment, Element, Length};
 
@@ -54,7 +56,9 @@ impl App {
                 )))
                 .on_press(ProgramCommands::ShuffleToggle),
                 column![
-                    slider(0..=30, self.volume, ProgramCommands::VolumeChange).width(150),
+                    slider(0..=30, self.volume, ProgramCommands::VolumeChange)
+                        .width(150)
+                        .style(iced::theme::Slider::Custom(Box::new(VolumeStyle))),
                     search_container
                 ]
                 .align_items(Alignment::Center)
@@ -72,6 +76,7 @@ impl App {
                     self.scrubber,
                     ProgramCommands::MoveSlider
                 )
+                .style(iced::theme::Slider::Custom(Box::new(ScrubberStyle)))
                 .on_release(ProgramCommands::SkipToSeconds(self.scrubber / 10)),
                 text(crate::utils::time::sec_to_time(self.total_time)), // todo conver to
                 horizontal_space()
