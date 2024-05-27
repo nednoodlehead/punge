@@ -89,7 +89,7 @@ pub struct App {
     pub search: String,
     viewing_playlist: String, // could derive from cache soon... just the uniqueid rn
     selected_songs: Vec<String>, // song(s) that the user is going to edit
-    user_playlists: Vec<UserPlaylist>,
+    pub user_playlists: Vec<UserPlaylist>,
     // tarkah table stuff
     header: scrollable::Id,
     body: scrollable::Id,
@@ -233,8 +233,8 @@ impl Application for App {
                     .expect("failure sending msg");
                 Command::none()
             }
-            Self::Message::MoveSlider(num) => {
-                self.scrubber = num;
+            Self::Message::MoveSlider(val) => {
+                self.scrubber = val;
                 // change self.time_elapsed so it makes sense... might be too laggy to calc
                 Command::none()
             }
@@ -507,6 +507,7 @@ impl Application for App {
             }
             Self::Message::ChangeViewingPlaylist(playlist) => {
                 // we will change the current view to the playlist view, and pass in the playlist to fill the content
+                self.current_view = Page::Main;
                 self.viewing_playlist = playlist.clone();
                 self.selected_songs.clear(); // clear them! (so we dont select some, switch playlist and edit unintentionally)
                                              // main should be treated just like a regular playlist !?
@@ -996,22 +997,22 @@ impl Application for App {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        let playlist_add_to_menu = Item::with_menu(
-            text("Add to:"),
-            Menu::new(
-                self.user_playlists
-                    .iter()
-                    .map(|p| {
-                        Item::new(
-                            button(text(p.title.clone()))
-                                .on_press(ProgramCommands::AddToPlaylist(p.uniqueid.clone())),
-                        )
-                    })
-                    .collect(),
-            )
-            .max_width(150.0)
-            .offset(10.0),
-        );
+        // let playlist_add_to_menu = Item::with_menu(
+        //     text("Add to:"),
+        //     Menu::new(
+        //         self.user_playlists
+        //             .iter()
+        //             .map(|p| {
+        //                 Item::new(
+        //                     button(text(p.title.clone()))
+        //                         .on_press(ProgramCommands::AddToPlaylist(p.uniqueid.clone())),
+        //                 )
+        //             })
+        //             .collect(),
+        //     )
+        //     .max_width(150.0)
+        //     .offset(10.0),
+        // );
         let table = responsive(|_size| {
             let table = iced_table::table(
                 self.header.clone(),
@@ -1027,97 +1028,54 @@ impl Application for App {
         // user should always have the 'main' playlist
 
         all_playlists_but_main.remove(0);
-        let buttons: Vec<Element<ProgramCommands>> = self
-            .user_playlists
-            .iter()
-            .map(|playlist| {
-                button(text(playlist.title.clone()))
-                    .on_press(ProgramCommands::ChangeViewingPlaylist(
-                        playlist.uniqueid.clone(),
-                    ))
-                    .style(iced::theme::Button::Custom(Box::new(JustText)))
-                    .height(Length::Fixed(32.5)) // playlist button height :)
-                    .into()
-            })
-            .collect();
-        let table_cont = container(table).height(Length::Fixed(540.0)).padding(20);
+        let table_cont = container(table).height(Length::Fill).padding(5);
 
-        let main_page_2 = container(row![column![
-            row![
-                row![
-                    persistent::render_top_buttons(Page::Main),
-                    button(text("Toggle table")).on_press(ProgramCommands::ToggleList)
-                ],
-                horizontal_space(),
-                // self.render_sidebar()
-            ],
-            row![
-                table_cont,
-                column![
-                    iced_aw::menu_bar!((
-                        button("Edit Song"),
-                        Menu::new(vec![
-                            Item::new(
-                                button(text("Full Edit"))
-                                    .on_press(ProgramCommands::OpenSongEditPage) // pass in song!?
-                            ),
-                            Item::new(
-                                button(text("Swap Title & Author"))
-                                    .on_press(ProgramCommands::QuickSwapTitleAuthor)
-                            ),
-                            Item::new(
-                                button(text("Delete!!")).on_press(ProgramCommands::DeleteSong)
-                            ),
-                            playlist_add_to_menu,
-                        ])
-                        .max_width(180.0)
-                    )),
-                    iced::widget::Column::with_children(buttons).spacing(10.0)
-                ]
-                .spacing(30.0),
-            ],
-            // vertical_space(), // puts space between the main content (inc. sidebar) and the bottom controls
-            vertical_space(),
-            self.render_bottom_bar(),
-            vertical_space()
-        ],]);
+        let main_page_2 = container(column![
+            row![self.render_buttons_side(Page::Main), table_cont],
+            self.render_bottom_bar()
+        ]);
         match self.current_view {
             // which page to display
             // Page::Main => row![main_page, self.render_sidebar()].into(), // this format makes it a bit easier to deal with all contents
             Page::Main => main_page_2.into(),
             Page::Download => column![
-                self.download_page.view(),
-                vertical_space(),
+                row![
+                    self.render_buttons_side(Page::Download),
+                    self.download_page.view(),
+                ],
                 self.render_bottom_bar(),
-                vertical_space()
             ]
             .into(),
             Page::Settings => column![
-                self.setting_page.view(),
-                vertical_space(),
+                row![
+                    self.render_buttons_side(Page::Settings),
+                    self.setting_page.view(),
+                ],
                 self.render_bottom_bar(),
-                vertical_space()
             ]
             .into(),
             Page::Media => column![
-                self.media_page.view(),
-                vertical_space(),
+                row![
+                    self.render_buttons_side(Page::Media),
+                    self.media_page.view()
+                ],
                 self.render_bottom_bar(),
-                vertical_space()
             ]
             .into(),
             Page::Playlist => column![
-                self.playlist_page.view(),
-                vertical_space(),
+                row![
+                    self.render_buttons_side(Page::Playlist),
+                    self.playlist_page.view(),
+                ],
                 self.render_bottom_bar(),
-                vertical_space()
             ]
             .into(),
             Page::SongEdit => column![
-                self.song_edit_page.view(),
-                vertical_space(),
+                row![
+                    self.render_buttons_side(Page::SongEdit),
+                    self.song_edit_page.view()
+                ],
                 self.render_bottom_bar(),
-                vertical_space()
             ]
             .into(),
         }

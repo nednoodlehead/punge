@@ -35,15 +35,19 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
     type Row = Row;
 
     fn header(&'a self, _col_index: usize) -> Element<'a, ProgramCommands> {
-        let content = match self.kind {
-            ColumnKind::PlayButton => "",
-            ColumnKind::Author => "Author",
-            ColumnKind::Title => "Title",
-            ColumnKind::Album => "Album",
-            ColumnKind::Edit => "",
+        let content: Element<'a, ProgramCommands> = match self.kind {
+            ColumnKind::PlayButton => text("").into(),
+            ColumnKind::Author => text("Author").into(),
+            ColumnKind::Title => text("Title").into(),
+            ColumnKind::Album => text("Album").into(),
+            ColumnKind::Edit => button(text("eeee"))
+                .width(100)
+                .height(100)
+                .on_press(ProgramCommands::OpenSongEditPage)
+                .into(),
         };
 
-        container(text(content)).height(24).center_y().into()
+        container(content).height(24).center_y().into()
     }
 
     fn cell(
@@ -59,7 +63,7 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
             ColumnKind::Author => text(row.author.clone()).into(),
             ColumnKind::Title => text(row.title.clone()).into(),
             ColumnKind::Album => text(row.album.clone()).into(),
-            ColumnKind::Edit => checkbox("edit", row.ischecked)
+            ColumnKind::Edit => checkbox("", row.ischecked)
                 .on_toggle(move |bol| {
                     ProgramCommands::SelectSong(row.uniqueid.clone(), bol, row_index)
                 })

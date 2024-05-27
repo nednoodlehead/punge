@@ -2,8 +2,8 @@ use crate::db::fetch;
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::gui::start::App;
+use crate::player::interface::read_file_from_beginning;
 use crate::player::interface::{self};
-use crate::player::interface::{read_file_from_beginning, read_from_time};
 use crate::types::{Config, MusicData, PungeMusicObject, ShuffleType};
 use arc_swap::ArcSwap;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
@@ -12,10 +12,8 @@ use global_hotkey::{GlobalHotKeyEvent, HotKeyState};
 
 use iced::futures::sink::SinkExt;
 use iced::subscription::Subscription;
-use rand::seq::SliceRandom;
 use rand::{self, Rng};
 use std::sync::Arc;
-use std::time::Instant;
 use tokio::{self}; // for benchmarking the skip function
 
 // makes idling a bit more interesting. Could pull these from json one day...
