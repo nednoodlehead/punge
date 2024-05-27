@@ -26,7 +26,6 @@ use iced::widget::{
     button, column, container, horizontal_space, responsive, row, scrollable, text, vertical_space,
 };
 use iced::{executor, Application, Command, Element, Length, Settings, Theme};
-use iced_aw::menu::{Item, Menu};
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
 pub fn begin() -> iced::Result {
@@ -997,22 +996,6 @@ impl Application for App {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        // let playlist_add_to_menu = Item::with_menu(
-        //     text("Add to:"),
-        //     Menu::new(
-        //         self.user_playlists
-        //             .iter()
-        //             .map(|p| {
-        //                 Item::new(
-        //                     button(text(p.title.clone()))
-        //                         .on_press(ProgramCommands::AddToPlaylist(p.uniqueid.clone())),
-        //                 )
-        //             })
-        //             .collect(),
-        //     )
-        //     .max_width(150.0)
-        //     .offset(10.0),
-        // );
         let table = responsive(|_size| {
             let table = iced_table::table(
                 self.header.clone(),

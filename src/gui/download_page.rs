@@ -30,7 +30,6 @@ impl DownloadPage {
     pub fn view(&self) -> Element<'_, ProgramCommands> {
         Container::new(
             column![
-                persistent::render_top_buttons(Page::Download),
                 row![
                     column![
                         row![

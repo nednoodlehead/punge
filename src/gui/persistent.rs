@@ -8,30 +8,10 @@ use crate::gui::style::scrubber::ScrubberStyle;
 use crate::gui::style::volume::VolumeStyle;
 use iced::widget::{button, column, container, horizontal_space, row, slider, text, Column, Row};
 use iced::{Alignment, Element, Length};
+use iced_aw::menu::{Item, Menu};
 use iced_aw::widgets::quad;
 use iced_aw::widgets::InnerBounds;
 use iced_core::{Border, Color};
-
-pub fn render_top_buttons(ignore: Page) -> Element<'static, ProgramCommands> {
-    // im not really sure the best way to do this? ig just match based on which to ignore?
-    let buttons = [
-        ("Home", Page::Main),
-        ("Download!", Page::Download),
-        ("Media downloader", Page::Media),
-        ("Settings", Page::Settings),
-        ("Add Playlist", Page::Playlist),
-    ];
-    let btn = buttons.iter().map(|(txt, page)| {
-        if *page == ignore {
-            button(text(txt)).into()
-        } else {
-            button(text(txt))
-                .on_press(ProgramCommands::ChangePage(*page))
-                .into()
-        }
-    });
-    Row::with_children(btn).spacing(15).into()
-}
 
 impl App {
     pub fn render_bottom_bar(&self) -> Element<'static, ProgramCommands> {
@@ -103,6 +83,38 @@ impl App {
         .into()
     }
     pub fn render_buttons_side(&self, ignore: Page) -> Element<'static, ProgramCommands> {
+        let playlist_add_to_menu = Item::with_menu(
+            text("Add to:"),
+            Menu::new(
+                self.user_playlists
+                    .iter()
+                    .map(|p| {
+                        Item::new(
+                            button(text(p.title.clone()))
+                                .on_press(ProgramCommands::AddToPlaylist(p.uniqueid.clone())),
+                        )
+                    })
+                    .collect(),
+            )
+            .max_width(150.0)
+            .offset(10.0),
+        );
+        let menu = iced_aw::menu_bar!((
+            button("Edit song")
+                .style(iced::theme::Button::Custom(Box::new(MenuButton)))
+                .on_press(ProgramCommands::Debug),
+            Menu::new(vec![
+                Item::new(button(text("Full Edit")).on_press(ProgramCommands::OpenSongEditPage)),
+                Item::new(
+                    button(text("Swap Title & Author"))
+                        .on_press(ProgramCommands::QuickSwapTitleAuthor),
+                ),
+                Item::new(button(text("Delete!!")).on_press(ProgramCommands::DeleteSong)),
+                playlist_add_to_menu,
+            ])
+            .max_width(180.0)
+        ));
+
         let mut all_playlists_but_main = self.user_playlists.clone();
         // user should always have the 'main' playlist
 
@@ -142,6 +154,7 @@ impl App {
                 }
             })
             .collect();
+        btn.push(menu.into());
         btn.push(self.separator().into()); // separater between buttons and playlists :)
         btn.extend(playlist_buttons);
         container(Column::with_children(btn).spacing(5))

@@ -72,7 +72,6 @@ impl MediaPage {
         ];
         Container::new(
             column![
-                persistent::render_top_buttons(Page::Media),
                 buttons_and_labels.align_items(Alignment::Center),
                 row![
                     horizontal_space(),

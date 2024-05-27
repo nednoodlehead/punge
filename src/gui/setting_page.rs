@@ -177,7 +177,6 @@ impl SettingPage {
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
         Container::new(column![
-            persistent::render_top_buttons(Page::Settings),
             row![
                 text("Backup location directory: "),
                 text_input(&self.backup_text, &self.backup_text).on_input(|txt| {

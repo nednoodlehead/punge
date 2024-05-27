@@ -1,5 +1,4 @@
 use crate::gui::messages::{Page, ProgramCommands, TextType};
-use crate::gui::persistent::render_top_buttons;
 use iced::widget::{button, column, container, row, text, text_input};
 use iced::Element;
 
@@ -76,12 +75,8 @@ impl SongEditPage {
         ]
         .spacing(15.0);
         let main_content = row![text_part, input_part];
-        column![
-            render_top_buttons(Page::SongEdit),
-            main_content,
-            container(text("")).height(300)
-        ]
-        .spacing(50.0)
-        .into()
+        column![main_content, container(text("")).height(300)]
+            .spacing(50.0)
+            .into()
     }
 }

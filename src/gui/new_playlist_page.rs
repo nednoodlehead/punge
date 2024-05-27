@@ -42,7 +42,6 @@ impl PlaylistPage {
         .padding(10);
         let rows_and_labels = row![labels, fields];
         container::Container::new(column![
-            persistent::render_top_buttons(Page::Playlist),
             rows_and_labels,
             button(text("Create!")).on_press(ProgramCommands::NewPlaylist),
             container(text("")).height(360)
