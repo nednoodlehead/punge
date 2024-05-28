@@ -111,7 +111,6 @@ impl Application for App {
             Ok(t) => {
                 // what abt no mods? maybe should check
                 for (_, bind) in t.keybinds.iter() {
-                    println!("binding {:?}", bind.command);
                     let hotkey = if bind.mod1.is_none() {
                         HotKey::new(bind.mod2, bind.code.unwrap())
                     } else if bind.mod2.is_none() {
@@ -435,10 +434,7 @@ impl Application for App {
 
                 Command::none()
             }
-            Self::Message::Debug => {
-                println!("Da list: {:?}", self.download_list);
-                Command::none()
-            }
+            Self::Message::Debug => Command::none(),
             Self::Message::InAppEvent(t) => match t {
                 AppEvent::CloseRequested => {
                     let lcl = self.current_song.load();
@@ -1012,9 +1008,25 @@ impl Application for App {
 
         all_playlists_but_main.remove(0);
         let table_cont = container(table).height(Length::Fill).padding(5);
+        let table_cont_wrapper = column![
+            row![
+                // playlist data
+                text(
+                    self.user_playlists[self
+                        .user_playlists
+                        .iter()
+                        .position(|x| x.uniqueid == self.viewing_playlist)
+                        .unwrap()]
+                    .title
+                    .clone()
+                )
+                .size(35)
+            ],
+            table_cont
+        ];
 
         let main_page_2 = container(column![
-            row![self.render_buttons_side(Page::Main), table_cont],
+            row![self.render_buttons_side(Page::Main), table_cont_wrapper],
             self.render_bottom_bar()
         ]);
         match self.current_view {

@@ -6,7 +6,7 @@ use crate::gui::style::button::{JustText, MenuButton};
 use crate::gui::style::container::{BottomBarContainer, ContainerWithBorder};
 use crate::gui::style::scrubber::ScrubberStyle;
 use crate::gui::style::volume::VolumeStyle;
-use iced::widget::{button, column, container, horizontal_space, row, slider, text, Column, Row};
+use iced::widget::{button, column, container, horizontal_space, row, slider, text, Column, Image};
 use iced::{Alignment, Element, Length};
 use iced_aw::menu::{Item, Menu};
 use iced_aw::widgets::quad;
@@ -19,7 +19,7 @@ impl App {
         let search_container = container(row![
             iced::widget::text_input("GoTo closest match", self.search.as_str())
                 .on_input(ProgramCommands::UpdateSearch)
-                .width(Length::Fixed(250.0)),
+                .width(Length::Fixed(200.0)),
             button(text("Confirm")).on_press(ProgramCommands::GoToSong)
         ]);
         container(
@@ -36,8 +36,15 @@ impl App {
                     row![
                         horizontal_space(),
                         button(text("<--")).on_press(ProgramCommands::SkipBackwards),
-                        button(text(if self.is_paused { "Play" } else { "Stop" }))
-                            .on_press(ProgramCommands::PlayToggle),
+                        button(if self.is_paused {
+                            Image::new("./img/punge_play_new.png")
+                        } else {
+                            Image::new("./img/punge_pause_new.png")
+                        })
+                        .style(iced::theme::Button::Custom(Box::new(JustText)))
+                        .height(50)
+                        .width(50)
+                        .on_press(ProgramCommands::PlayToggle),
                         button(text("-->")).on_press(ProgramCommands::SkipForwards),
                         horizontal_space()
                     ]
@@ -50,6 +57,7 @@ impl App {
                             self.scrubber,
                             ProgramCommands::MoveSlider
                         )
+                        .on_release(ProgramCommands::SkipToSeconds(self.scrubber / 10))
                         // .width(300.0)
                         .style(iced::theme::Slider::Custom(Box::new(ScrubberStyle))),
                         text(crate::utils::time::sec_to_time(self.total_time))
@@ -62,18 +70,24 @@ impl App {
                     // shuffle, vol & goto
                     row![
                         // shuffle and volume
-                        button(text(format!(
-                            "Shuffle ({})",
-                            if self.shuffle { "On" } else { "Off" }
-                        )))
+                        button(if self.shuffle {
+                            Image::new("./img/shuffle_on_new.png")
+                        } else {
+                            Image::new("./img/shuffle_off_new.png")
+                        })
+                        .height(50)
+                        .width(50)
+                        .style(iced::theme::Button::Custom(Box::new(JustText)))
                         .on_press(ProgramCommands::ShuffleToggle),
                         slider(0..=30, self.volume, ProgramCommands::VolumeChange)
                             .width(150)
                             .style(iced::theme::Slider::Custom(Box::new(VolumeStyle)))
                     ]
+                    .align_items(Alignment::Center)
                     .spacing(15),
                     search_container
                 ]
+                .spacing(5)
             ]
             .padding(15)
             // .spacing(400)
@@ -101,6 +115,7 @@ impl App {
         );
         let menu = iced_aw::menu_bar!((
             button("Edit song")
+                .clip(true)
                 .style(iced::theme::Button::Custom(Box::new(MenuButton)))
                 .on_press(ProgramCommands::Debug),
             Menu::new(vec![
@@ -154,7 +169,7 @@ impl App {
                 }
             })
             .collect();
-        btn.push(menu.into());
+        btn.push(row![text("  "), menu].into()); // the stupid button clips over the container border. so add this so it doesnt ...
         btn.push(self.separator().into()); // separater between buttons and playlists :)
         btn.extend(playlist_buttons);
         container(Column::with_children(btn).spacing(5))
