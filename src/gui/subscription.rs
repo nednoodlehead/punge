@@ -292,6 +292,11 @@ impl App {
                                 .try_seek(std::time::Duration::from_secs(val as u64))
                                 .unwrap();
                             // no play, since we are paused
+                            if !music_obj.to_play {
+                                // still have zero clue on why #42 occurs. this fixes it. But it would be much nicer if it
+                                // was avoidable a different way. I want all the performance i can from this stinky thread
+                                music_obj.sink.stop();
+                            };
                             sender
                                 .send(ProgramCommands::NewData(MusicData {
                                     title: music_obj.current_object.title.clone(),

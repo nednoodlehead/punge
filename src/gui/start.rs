@@ -1005,23 +1005,24 @@ impl Application for App {
 
         let mut all_playlists_but_main = self.user_playlists.clone();
         // user should always have the 'main' playlist
+        let active_playlist = self.user_playlists[self
+            .user_playlists
+            .iter()
+            .position(|x| x.uniqueid == self.viewing_playlist)
+            .unwrap()]
+        .clone();
 
         all_playlists_but_main.remove(0);
         let table_cont = container(table).height(Length::Fill).padding(5);
         let table_cont_wrapper = column![
             row![
                 // playlist data
-                text(
-                    self.user_playlists[self
-                        .user_playlists
-                        .iter()
-                        .position(|x| x.uniqueid == self.viewing_playlist)
-                        .unwrap()]
-                    .title
-                    .clone()
-                )
-                .size(35)
-            ],
+                text(active_playlist.title).size(35),
+                text(active_playlist.description)
+            ]
+            .padding(5)
+            .align_items(iced_core::Alignment::End)
+            .spacing(25),
             table_cont
         ];
 
