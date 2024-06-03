@@ -134,7 +134,8 @@ pub enum Context {
     PlayPause,
     SkippedForward,
     SkippedBackwards,
-    Seeked,
+    SkippedTo, // skipping to the seconds part
+    Seeked,    // searching for a song!
     AutoPlay,
 }
 

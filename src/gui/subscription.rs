@@ -246,7 +246,6 @@ impl App {
                             music_obj.sink.set_volume((val as f32) / 80.0)
                         }
                         PungeCommand::ChangeSong(uuid) => {
-                            println!("here?");
                             let index = music_obj
                                 .list
                                 .iter()
@@ -310,7 +309,7 @@ impl App {
                                     shuffle: music_obj.shuffle,
                                     playlist: music_obj.playlist.clone(),
                                     threshold: music_obj.current_object.threshold,
-                                    context: Context::Seeked,
+                                    context: Context::SkippedTo,
                                     length: music_obj.current_object.length,
                                 }))
                                 .await
@@ -543,7 +542,7 @@ impl App {
                                                     shuffle: music_obj.shuffle,
                                                     playlist: music_obj.playlist.clone(),
                                                     threshold: music_obj.current_object.threshold,
-                                                    context: Context::Seeked,
+                                                    context: Context::SkippedTo,
                                                     length: music_obj.current_object.length,
                                                 }))
                                                 .await

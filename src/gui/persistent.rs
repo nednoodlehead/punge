@@ -170,13 +170,13 @@ impl App {
             })
             .collect();
         btn.push(row![text("  "), menu].into()); // the stupid button clips over the container border. so add this so it doesnt ...
-        btn.push(self.separator().into()); // separater between buttons and playlists :)
+        btn.push(self.horizontal_separator().into()); // separater between buttons and playlists :)
         btn.extend(playlist_buttons);
-        container(Column::with_children(btn).spacing(5))
+        container(row![Column::with_children(btn), self.vertical_separator()].spacing(5))
             .height(Length::Fill)
-            .style(iced::theme::Container::Custom(Box::new(
-                ContainerWithBorder,
-            )))
+            // .style(iced::theme::Container::Custom(Box::new(
+            //     ContainerWithBorder,
+            // )))
             .into()
     }
     // pub fn render_search_result_box(
@@ -192,8 +192,8 @@ impl App {
     //     // also downloads the images. they should be flushed on each search
     //     container()
     // }
-    fn separator(&self) -> quad::Quad {
-        let mut quader = quad::Quad {
+    fn horizontal_separator(&self) -> quad::Quad {
+        quad::Quad {
             quad_color: Color::from([0.5; 3]).into(),
             quad_border: Border {
                 radius: [3.0; 4].into(),
@@ -201,10 +201,24 @@ impl App {
             },
             inner_bounds: InnerBounds::Ratio(0.98, 0.2),
             height: Length::Fixed(20.0),
+            width: Length::Fixed(140.0),
             ..Default::default()
-        };
+        }
         // is this like the only way to set it ..?
-        quader.width = Length::Fixed(150.0);
-        quader
+    }
+
+    pub fn vertical_separator(&self) -> quad::Quad {
+        quad::Quad {
+            quad_color: Color::from([0.5; 3]).into(),
+            quad_border: Border {
+                radius: [3.0; 4].into(),
+                ..Default::default()
+            },
+            inner_bounds: InnerBounds::Ratio(1.0, 1.0),
+            height: Length::Fill,
+            width: Length::Fixed(4.0),
+            ..Default::default()
+        }
+        // is this like the only way to set it ..?
     }
 }

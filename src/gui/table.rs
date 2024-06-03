@@ -40,10 +40,10 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
             ColumnKind::Author => text("Author").into(),
             ColumnKind::Title => text("Title").into(),
             ColumnKind::Album => text("Album").into(),
-            ColumnKind::Edit => button(text("edit").size(10))
+            ColumnKind::Edit => button(text("tog").size(10))
                 .width(100)
                 .height(100)
-                .on_press(ProgramCommands::OpenSongEditPage)
+                .on_press(ProgramCommands::ToggleList)
                 .into(),
         };
 

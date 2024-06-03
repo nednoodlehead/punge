@@ -207,7 +207,7 @@ impl Application for App {
                 match &data.context {
                     &Context::Default => {}
                     &Context::PlayPause => {}
-                    &Context::Seeked => {}
+                    &Context::SkippedTo => {}
 
                     _ => {
                         println!("resetting scrubber to 0");
@@ -1023,10 +1023,6 @@ impl Application for App {
                 // playlist data
                 text(active_playlist.title).size(35),
                 text(active_playlist.description),
-                horizontal_space(),
-                button(text("Toggle table"))
-                    .style(iced::theme::Button::Custom(Box::new(JustText)))
-                    .on_press(ProgramCommands::ToggleList)
             ]
             .padding(5)
             .align_items(iced_core::Alignment::End)
