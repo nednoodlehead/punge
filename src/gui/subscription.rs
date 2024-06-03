@@ -246,6 +246,7 @@ impl App {
                             music_obj.sink.set_volume((val as f32) / 80.0)
                         }
                         PungeCommand::ChangeSong(uuid) => {
+                            println!("here?");
                             let index = music_obj
                                 .list
                                 .iter()

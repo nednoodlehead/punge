@@ -219,7 +219,6 @@ impl Application for App {
                     data.author, data.title, data.album
                 );
                 self.current_song.store(Arc::new(data));
-                // should we reset the scrubbing bar?
                 Command::none()
             }
             Self::Message::VolumeChange(val) => {
@@ -458,6 +457,9 @@ impl Application for App {
             Self::Message::SongFound(obj_or_err) => {
                 match obj_or_err {
                     Ok(obj) => {
+                        if self.is_paused {
+                            self.is_paused = false;
+                        }
                         self.sender
                             .as_ref()
                             .unwrap()
@@ -498,6 +500,8 @@ impl Application for App {
                     .unwrap()
                     .send(PungeCommand::ChangeSong(song))
                     .unwrap();
+                // reset scrubber on successful song change!
+                self.scrubber = 0;
                 Command::none()
             }
             Self::Message::ChangeViewingPlaylist(playlist) => {
