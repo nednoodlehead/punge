@@ -1,16 +1,17 @@
 use crate::types::YouTubeSearchResult;
 
-use rusty_ytdl::search::SearchResult;
-use rusty_ytdl::search::YouTube;
+use rusty_ytdl::blocking::search;
+use rusty_ytdl::blocking::search::SearchResult;
+use rusty_ytdl::blocking::search::YouTube;
 
-pub async fn _see_content(search: String) -> Vec<rusty_ytdl::search::SearchResult> {
+pub async fn _see_content(search: String) -> Vec<rusty_ytdl::blocking::search::SearchResult> {
     let yt = YouTube::new().unwrap();
-    let options = rusty_ytdl::search::SearchOptions {
-        search_type: rusty_ytdl::search::SearchType::All,
+    let options = rusty_ytdl::blocking::search::SearchOptions {
+        search_type: rusty_ytdl::blocking::search::SearchType::All,
         limit: 20, // configurable at some point !?
         safe_search: true,
     };
-    yt.search(search, Some(&options)).await.unwrap()
+    yt.search(search, Some(&options)).unwrap()
 }
 
 pub async fn content_to_text(
@@ -23,19 +24,19 @@ pub async fn content_to_text(
     let yt = YouTube::new().unwrap();
     // search based on the checkboxes
     let search_type = if videos && playlists {
-        rusty_ytdl::search::SearchType::All
+        search::SearchType::All
     } else if videos {
-        rusty_ytdl::search::SearchType::Video
+        search::SearchType::Video
     } else {
-        rusty_ytdl::search::SearchType::Playlist
+        search::SearchType::Playlist
     };
-    let options = rusty_ytdl::search::SearchOptions {
+    let options = search::SearchOptions {
         search_type,
         limit: 20,
         safe_search: true,
     };
     let mut ret = vec![];
-    let results = yt.search(search, Some(&options)).await.unwrap();
+    let results = yt.search(search, Some(&options)).unwrap();
     for result in results {
         match result {
             SearchResult::Video(vid) => {
@@ -52,9 +53,7 @@ pub async fn content_to_text(
             }
             SearchResult::Playlist(playlist) => {
                 // this is required to get the videos, without it, using playlist.videos, returns 0 every time
-                let play = rusty_ytdl::search::Playlist::get(playlist.url.clone(), None)
-                    .await
-                    .unwrap();
+                let play = search::Playlist::get(playlist.url.clone(), None).unwrap();
                 let n = YouTubeSearchResult {
                     title: playlist.name.to_string(),
                     author: playlist.channel.name.clone(),
