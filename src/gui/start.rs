@@ -1018,7 +1018,11 @@ impl Application for App {
             row![
                 // playlist data
                 text(active_playlist.title).size(35),
-                text(active_playlist.description)
+                text(active_playlist.description),
+                horizontal_space(),
+                button(text("Toggle table"))
+                    .style(iced::theme::Button::Custom(Box::new(JustText)))
+                    .on_press(ProgramCommands::ToggleList)
             ]
             .padding(5)
             .align_items(iced_core::Alignment::End)
