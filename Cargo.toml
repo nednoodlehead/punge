@@ -29,6 +29,7 @@ mp3-duration = "0.1.10"  # ditto ^
 rand = "0.8"  # shuffling the list
 arc-swap = "1.6.0" # allows MusicData to be in multiple places at once
 iced_table = {git = "https://github.com/tarkah/iced_table"}  # table widget
-iced_aw = {version = "0.8", default-features = false, features = ["menu", "quad", "icons"]} # additional widgets :D (menu my beloved)
+iced_aw = {version = "0.9.3", default-features = false, features = ["menu", "quad", "icons"]} # additional widgets :D (menu my beloved)
+iced_core = "0.12.3"  # for the stylin in gui\style\*
 log = "0.4.21"  # stinky crate conflict
 discord-rich-presence = "0.2.3" # this one is better than the others available
