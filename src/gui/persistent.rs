@@ -2,8 +2,9 @@
 // such as the 'current playing' bar at the bottom, and the buttons at the top to change pages
 use crate::gui::messages::{Page, ProgramCommands};
 use crate::gui::start::App;
-use crate::gui::style::button::{JustText, MenuButton};
+use crate::gui::style::button::{JustText, MenuButton, SubMenuButton};
 use crate::gui::style::container::{BottomBarContainer, ContainerWithBorder};
+use crate::gui::style::menu::PungeMenu;
 use crate::gui::style::scrubber::ScrubberStyle;
 use crate::gui::style::volume::VolumeStyle;
 use iced::widget::{button, column, container, horizontal_space, row, slider, text, Column, Image};
@@ -98,13 +99,18 @@ impl App {
     }
     pub fn render_buttons_side(&self, ignore: Page) -> Element<'static, ProgramCommands> {
         let playlist_add_to_menu = Item::with_menu(
-            text("Add to:"),
+            button(text("Add to...                     ->")) // this is mad goofy lol
+                .width(180)
+                .style(iced::theme::Button::Custom(Box::new(SubMenuButton)))
+                .on_press(ProgramCommands::Debug),
             Menu::new(
                 self.user_playlists
                     .iter()
                     .map(|p| {
                         Item::new(
                             button(text(p.title.clone()))
+                                .style(iced::theme::Button::Custom(Box::new(SubMenuButton)))
+                                .width(150)
                                 .on_press(ProgramCommands::AddToPlaylist(p.uniqueid.clone())),
                         )
                     })
@@ -115,20 +121,33 @@ impl App {
         );
         let menu = iced_aw::menu_bar!((
             button("Edit song")
-                .clip(true)
                 .style(iced::theme::Button::Custom(Box::new(MenuButton)))
                 .on_press(ProgramCommands::Debug),
             Menu::new(vec![
-                Item::new(button(text("Full Edit")).on_press(ProgramCommands::OpenSongEditPage)),
+                Item::new(
+                    button(text("Full Edit"))
+                        .on_press(ProgramCommands::OpenSongEditPage)
+                        .style(iced::theme::Button::Custom(Box::new(SubMenuButton)))
+                        .width(180)
+                ),
                 Item::new(
                     button(text("Swap Title & Author"))
-                        .on_press(ProgramCommands::QuickSwapTitleAuthor),
+                        .style(iced::theme::Button::Custom(Box::new(SubMenuButton)))
+                        .on_press(ProgramCommands::QuickSwapTitleAuthor)
+                        .width(180),
                 ),
-                Item::new(button(text("Delete!!")).on_press(ProgramCommands::DeleteSong)),
+                Item::new(
+                    button(text("Delete!!"))
+                        .style(iced::theme::Button::Custom(Box::new(SubMenuButton)))
+                        .on_press(ProgramCommands::DeleteSong)
+                        .width(180)
+                ),
                 playlist_add_to_menu,
             ])
+            .offset(0.0)
             .max_width(180.0)
-        ));
+        ))
+        .style(iced_aw::style::MenuBarStyle::Custom(Box::new(PungeMenu)));
 
         let mut all_playlists_but_main = self.user_playlists.clone();
         // user should always have the 'main' playlist
@@ -143,6 +162,7 @@ impl App {
                         playlist.uniqueid.clone(),
                     ))
                     .style(iced::theme::Button::Custom(Box::new(JustText)))
+                    .width(180)
                     .height(Length::Fixed(32.5)) // playlist button height :)
                     .into()
             })
@@ -169,7 +189,7 @@ impl App {
                 }
             })
             .collect();
-        btn.push(row![text("  "), menu].into()); // the stupid button clips over the container border. so add this so it doesnt ...
+        btn.push(menu.into()); // the stupid button clips over the container border. so add this so it doesnt ...
         btn.push(self.horizontal_separator().into()); // separater between buttons and playlists :)
         btn.extend(playlist_buttons);
         container(row![Column::with_children(btn), self.vertical_separator()].spacing(5))
@@ -179,19 +199,6 @@ impl App {
             // )))
             .into()
     }
-    // pub fn render_search_result_box(
-    //     &self,
-    //     title: String,
-    //     channel_name: String,
-    //     views: String,
-    //     duration: String,
-    //     link: String,
-    //     thumbnail: String,
-    // ) -> Element<'_, ProgramCommands> {
-    //     // create a container that holds all of the stuff relating to a download
-    //     // also downloads the images. they should be flushed on each search
-    //     container()
-    // }
     fn horizontal_separator(&self) -> quad::Quad {
         quad::Quad {
             quad_color: Color::from([0.5; 3]).into(),

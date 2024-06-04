@@ -131,3 +131,79 @@ impl button::StyleSheet for MenuButton {
         }
     }
 }
+
+pub struct SubMenuButton;
+
+impl button::StyleSheet for SubMenuButton {
+    type Style = iced::Theme;
+
+    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            shadow_offset: Vector { x: 2.0, y: 2.0 },
+            background: Some(Background::Color(Color {
+                r: 0.55,
+                g: 0.55,
+                b: 0.55,
+                a: 1.0,
+            })),
+            text_color: Color {
+                r: 0.9,
+                g: 0.9,
+                b: 0.9,
+                a: 1.0,
+            },
+            border: Border {
+                color: Color {
+                    r: 0.8,
+                    g: 0.8,
+                    b: 0.8,
+                    a: 1.0,
+                },
+                width: 2.0,
+                radius: Radius::from(0.0), // 20 -> 0
+            },
+            shadow: Shadow {
+                color: Color {
+                    r: 0.1,
+                    g: 0.1,
+                    b: 0.1,
+                    a: 0.1,
+                },
+                offset: Vector { x: 3.0, y: 3.0 },
+                blur_radius: 1.0,
+            },
+        }
+    }
+    fn active(&self, style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            shadow_offset: Vector { x: 2.0, y: 2.0 },
+            background: None,
+            text_color: Color {
+                r: 0.9,
+                g: 0.9,
+                b: 0.9,
+                a: 1.0,
+            },
+            border: Border {
+                color: Color {
+                    r: 0.8,
+                    g: 0.8,
+                    b: 0.8,
+                    a: 0.0,
+                },
+                width: 2.0,
+                radius: Radius::from(20.0),
+            },
+            shadow: Shadow {
+                color: Color {
+                    r: 0.1,
+                    g: 0.1,
+                    b: 0.1,
+                    a: 0.1,
+                },
+                offset: Vector { x: 3.0, y: 3.0 },
+                blur_radius: 1.0,
+            },
+        }
+    }
+}
