@@ -6,23 +6,29 @@
   "static_reduction": 1,
   "media_path": "C:/",
   "keybinds": {
+    "1912779161": {
+      "code": "ArrowLeft",
+      "mod1": "CONTROL",
+      "mod2": null,
+      "command": "ProgramCommands::SkipBackwards"
+    },
+    "3009842507": {
+      "code": "End",
+      "mod1": "CONTROL",
+      "mod2": null,
+      "command": "ProgramCommands::PlayToggle"
+    },
     "4121890298": {
       "code": "ArrowRight",
       "mod1": "CONTROL",
       "mod2": null,
       "command": "ProgramCommands::SkipForwards"
     },
-    "2037224482": {
-      "code": "ArrowUp",
+    "3520754938": {
+      "code": "PageDown",
       "mod1": "CONTROL",
       "mod2": null,
-      "command": "ProgramCommands::StaticVolumeUp"
-    },
-    "2709855943": {
-      "code": "ArrowLeft",
-      "mod1": "SHIFT",
-      "mod2": null,
-      "command": "ProgramCommands::SkipBackwards"
+      "command": "ProgramCommands::ShuffleToggle"
     },
     "4174001518": {
       "code": "ArrowDown",
@@ -30,11 +36,11 @@
       "mod2": null,
       "command": "ProgramCommands::StaticVolumeDown"
     },
-    "3009842507": {
-      "code": "End",
+    "2037224482": {
+      "code": "ArrowUp",
       "mod1": "CONTROL",
       "mod2": null,
-      "command": "ProgramCommands::PlayToggle"
+      "command": "ProgramCommands::StaticVolumeUp"
     }
   },
   "shuffle_type": "WeightBias"
