@@ -208,7 +208,7 @@ impl App {
             },
             inner_bounds: InnerBounds::Ratio(0.98, 0.2),
             height: Length::Fixed(20.0),
-            width: Length::Fixed(140.0),
+            width: Length::Fixed(180.0),
             ..Default::default()
         }
         // is this like the only way to set it ..?
