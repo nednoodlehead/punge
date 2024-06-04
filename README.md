@@ -33,3 +33,6 @@ Ubuntu specific:
 3. `cargo build --release`
 4. Once it is built, copy `punge.exe` from `./target/release/` into the project root 
 5. Launch `punge.exe`
+
+
+Binaries coming soon!!! (I want to get punge to a good state)
