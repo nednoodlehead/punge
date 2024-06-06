@@ -18,9 +18,9 @@ impl Column {
     pub fn new(kind: ColumnKind) -> Self {
         let width = match kind {
             ColumnKind::PlayButton => 35.0,
-            ColumnKind::Author => 250.0,
-            ColumnKind::Title => 400.0,
-            ColumnKind::Album => 250.0,
+            ColumnKind::Author => 325.0,
+            ColumnKind::Title => 375.0,
+            ColumnKind::Album => 275.0,
             ColumnKind::Edit => 35.0,
         };
         Self {

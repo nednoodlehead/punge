@@ -2,13 +2,14 @@
 // such as the 'current playing' bar at the bottom, and the buttons at the top to change pages
 use crate::gui::messages::{Page, ProgramCommands};
 use crate::gui::start::App;
-use crate::gui::style::button::{JustText, MenuButton, SubMenuButton};
+use crate::gui::style::button::{JustText, MenuButton, PlaylistText, SubMenuButton};
 use crate::gui::style::container::{BottomBarContainer, ContainerWithBorder};
 use crate::gui::style::menu::PungeMenu;
 use crate::gui::style::scrubber::ScrubberStyle;
 use crate::gui::style::volume::VolumeStyle;
 use iced::widget::{button, column, container, horizontal_space, row, slider, text, Column, Image};
 use iced::{Alignment, Element, Length};
+use iced_aw::additional_menu;
 use iced_aw::menu::{Item, Menu};
 use iced_aw::widgets::quad;
 use iced_aw::widgets::InnerBounds;
@@ -157,13 +158,37 @@ impl App {
             .user_playlists
             .iter()
             .map(|playlist| {
-                button(text(playlist.title.clone()))
+                let dropdown = iced_aw::additional_menu::Item::with_menu(
+                    button(text(playlist.title.clone()))
+                        .style(iced::theme::Button::Custom(Box::new(PlaylistText))),
+                    iced_aw::additional_menu::Menu::new(vec![
+                        iced_aw::additional_menu::Item::new(
+                            button(text(format!("delete {}", &playlist.title)))
+                                .width(180)
+                                .on_press(ProgramCommands::DeletePlaylist(
+                                    playlist.uniqueid.clone(),
+                                ))
+                                .style(iced::theme::Button::Custom(Box::new(SubMenuButton))),
+                        ),
+                        iced_aw::additional_menu::Item::new(
+                            button(text("Edit"))
+                                .on_press(ProgramCommands::OpenPlaylistEditPage)
+                                .width(180)
+                                .style(iced::theme::Button::Custom(Box::new(SubMenuButton))),
+                        ),
+                        iced_aw::additional_menu::Item::new(
+                            button(text("Duplicate?"))
+                                .width(180)
+                                .style(iced::theme::Button::Custom(Box::new(SubMenuButton))),
+                        ),
+                    ])
+                    .max_width(180.0),
+                );
+                iced_aw::additional_menu::MenuBar::new(vec![dropdown])
+                    .style(iced_aw::style::MenuBarStyle::Custom(Box::new(PungeMenu)))
                     .on_press(ProgramCommands::ChangeViewingPlaylist(
                         playlist.uniqueid.clone(),
                     ))
-                    .style(iced::theme::Button::Custom(Box::new(JustText)))
-                    .width(180)
-                    .height(Length::Fixed(32.5)) // playlist button height :)
                     .into()
             })
             .collect();

@@ -207,3 +207,37 @@ impl button::StyleSheet for SubMenuButton {
         }
     }
 }
+
+pub struct PlaylistText;
+
+impl button::StyleSheet for PlaylistText {
+    type Style = iced::Theme;
+
+    fn disabled(&self, style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            shadow_offset: Vector { x: 2.0, y: 2.0 },
+            background: None,
+            text_color: Color {
+                r: 0.85,
+                g: 0.85,
+                b: 0.85,
+                a: 1.0,
+            },
+            border: Border {
+                color: Color {
+                    r: 0.0,
+                    g: 0.0,
+                    b: 0.0,
+                    a: 0.0,
+                },
+                radius: Radius::default(),
+                width: 1.0,
+            },
+            shadow: Shadow::default(),
+        }
+    }
+
+    fn active(&self, _style: &Self::Style) -> iced::widget::button::Appearance {
+        button::Appearance::default() // never used, required function
+    }
+}

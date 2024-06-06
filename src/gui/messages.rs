@@ -1,7 +1,7 @@
 // these are the messages sent around the program. This is divded up here because start.rs imports this
 // as well as the actual music-playing portion of the app
 
-use crate::types::{AppError, PungeMusicObject};
+use crate::types::{AppError, PungeMusicObject, UserPlaylist};
 use crate::types::{MusicData, YouTubeData};
 use iced::widget::scrollable;
 use serde::{ser, Deserialize, Serialize};
@@ -57,6 +57,9 @@ pub enum ProgramCommands {
     UpdateWidgetText(TextType, String),
     SaveConfig,
     NewPlaylist,
+    DeletePlaylist(String),
+    UpdatePlaylist(UserPlaylist),
+    OpenPlaylistEditPage,
     OpenSongEditPage,
     UpdateSong(crate::gui::table::Row), // happens to be a convient type for this data
     QuickSwapTitleAuthor,               // uniqueid

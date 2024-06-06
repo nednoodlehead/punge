@@ -93,3 +93,10 @@ pub fn update_title_auth(uniqueid: &str) -> Result<(), DatabaseErrors> {
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
+
+pub fn delete_playlist(uniqueid: &str) -> Result<(), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    conn.execute("DELETE FROM metadata WHERE uniqueid = ?", params![uniqueid])?;
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}
