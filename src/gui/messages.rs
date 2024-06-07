@@ -58,8 +58,9 @@ pub enum ProgramCommands {
     SaveConfig,
     NewPlaylist,
     DeletePlaylist(String),
-    UpdatePlaylist(UserPlaylist),
-    OpenPlaylistEditPage,
+    UpdatePlaylist, // update playlist with the content from self.playlist_page
+    OpenPlaylistEditPage(UserPlaylist),
+    ClearPlaylistPage,
     OpenSongEditPage,
     UpdateSong(crate::gui::table::Row), // happens to be a convient type for this data
     QuickSwapTitleAuthor,               // uniqueid

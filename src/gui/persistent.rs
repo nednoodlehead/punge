@@ -172,7 +172,7 @@ impl App {
                         ),
                         iced_aw::additional_menu::Item::new(
                             button(text("Edit"))
-                                .on_press(ProgramCommands::OpenPlaylistEditPage)
+                                .on_press(ProgramCommands::OpenPlaylistEditPage(playlist.clone()))
                                 .width(180)
                                 .style(iced::theme::Button::Custom(Box::new(SubMenuButton))),
                         ),

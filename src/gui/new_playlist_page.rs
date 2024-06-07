@@ -1,5 +1,4 @@
 use crate::gui::messages::{Page, ProgramCommands, TextType};
-use crate::gui::persistent;
 use iced::widget::{button, column, container, row, text, text_input};
 use iced::Element;
 
@@ -43,7 +42,16 @@ impl PlaylistPage {
         let rows_and_labels = row![labels, fields];
         container::Container::new(column![
             rows_and_labels,
-            button(text("Create!")).on_press(ProgramCommands::NewPlaylist),
+            if self.user_id.is_some() {
+                // variable button
+                container(column![
+                    button(text(format!("Update {}", &self.user_title)))
+                        .on_press(ProgramCommands::UpdatePlaylist),
+                    button(text("Stop editing")).on_press(ProgramCommands::ClearPlaylistPage)
+                ])
+            } else {
+                container(button(text("Create!")).on_press(ProgramCommands::NewPlaylist))
+            },
             container(text("")).height(360)
         ])
         .into()

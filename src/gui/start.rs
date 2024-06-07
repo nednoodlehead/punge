@@ -584,22 +584,15 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::ToggleList => {
+                // it is ok if this does nothing while the user has only 1 song
+                // it should be depreciated at some point. list widget iced 0.13 pls !!
                 if self.rows.len() == 1 {
-                    self.rows = get_all_main()
-                        .unwrap()
-                        .into_iter()
-                        .map(|item| Row {
-                            title: item.title,
-                            author: item.author,
-                            album: item.album,
-                            uniqueid: item.uniqueid,
-                            ischecked: false,
-                        })
-                        .collect();
+                    // takes into account different playlists :D
+                    self.refresh_playlist();
                 } else {
                     self.rows = vec![Row {
-                        title: "This will".to_string(),
-                        author: "Be fixed soon".to_string(),
+                        title: "be fixed soon".to_string(),
+                        author: "This will".to_string(),
                         album: "I promise".to_string(),
                         uniqueid: "".to_string(),
                         ischecked: false,
@@ -902,7 +895,6 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::NewPlaylist => {
-                // TODO we should be doing a check for updating an existing playlist vs making a new one
                 if self.playlist_page.user_title != "" {
                     // check to see if it is empty..
                     let playlist = UserPlaylist::new(
@@ -914,6 +906,10 @@ impl Application for App {
                     create_playlist(playlist).unwrap();
                     self.user_playlists = get_all_playlists().unwrap();
                     // also refresh the buttons!
+                    self.playlist_page.user_title.clear();
+                    self.playlist_page.user_description.clear();
+                    self.playlist_page.user_thumbnail.clear();
+                    self.current_view = Page::Main;
                 }
                 Command::none()
             }
@@ -989,7 +985,43 @@ impl Application for App {
                 Command::none()
             }
             ProgramCommands::DeletePlaylist(id) => {
-                delete_playlist(&id).unwrap();
+                // you cannot delete main.
+                if id.to_lowercase() != "main" {
+                    delete_playlist(&id).unwrap();
+                    // refresh the playlist...
+                    self.user_playlists = get_all_playlists().unwrap();
+                }
+                Command::none()
+            }
+            ProgramCommands::UpdatePlaylist => {
+                crate::db::update::update_playlist(
+                    &self.playlist_page.user_title,
+                    &self.playlist_page.user_description,
+                    &self.playlist_page.user_thumbnail,
+                    self.playlist_page.user_id.clone().unwrap().as_ref(), // unwrap because the button that calls this is conditional on self.user_id.is_some()
+                )
+                .unwrap();
+                self.user_playlists = get_all_playlists().unwrap();
+                self.playlist_page.user_title = "".to_string();
+                self.playlist_page.user_description = "".to_string();
+                self.playlist_page.user_thumbnail = "".to_string();
+                self.playlist_page.user_id = None;
+                self.current_view = Page::Main;
+                Command::none()
+            }
+            ProgramCommands::OpenPlaylistEditPage(playlist) => {
+                self.current_view = Page::Playlist;
+                self.playlist_page.user_title = playlist.title;
+                self.playlist_page.user_description = playlist.description;
+                self.playlist_page.user_thumbnail = playlist.thumbnail;
+                self.playlist_page.user_id = Some(playlist.uniqueid);
+                Command::none()
+            }
+            ProgramCommands::ClearPlaylistPage => {
+                self.playlist_page.user_title = "".to_string();
+                self.playlist_page.user_description = "".to_string();
+                self.playlist_page.user_thumbnail = "".to_string();
+                self.playlist_page.user_id = None;
                 Command::none()
             }
 
@@ -1018,7 +1050,7 @@ impl Application for App {
             .user_playlists
             .iter()
             .position(|x| x.uniqueid == self.viewing_playlist)
-            .unwrap()]
+            .unwrap_or(0)]
         .clone();
 
         all_playlists_but_main.remove(0);

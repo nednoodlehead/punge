@@ -1,19 +1,17 @@
 use crate::types::{DatabaseErrors, PungeMusicObject};
 use rusqlite::{params, Connection};
 
-pub fn _update_playlist(
-    old_title: String,
-    new_title: String,
-    description: String,
+pub fn update_playlist(
+    new_title: &str,
+    description: &str,
     image: &str,
+    uniqueid: &str,
 ) -> Result<(), DatabaseErrors> {
     // updates the title, description and image
     let conn = rusqlite::Connection::open("main.db")?;
     let statement: &str =
-        "UPDATE metadata SET title = ?, description = ?, image = ? WHERE title = ?";
-    conn.execute(statement, params![new_title, description, image, old_title])?;
-    let statement_2: String = format!("ALTER TABLE {} RENAME TO {}", old_title, new_title);
-    conn.execute(statement_2.as_str(), params![])?;
+        "UPDATE metadata SET title = ?, description = ?, thumbnail = ? WHERE playlist_id = ?";
+    conn.execute(statement, params![new_title, description, image, uniqueid])?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
@@ -96,7 +94,10 @@ pub fn update_title_auth(uniqueid: &str) -> Result<(), DatabaseErrors> {
 
 pub fn delete_playlist(uniqueid: &str) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
-    conn.execute("DELETE FROM metadata WHERE uniqueid = ?", params![uniqueid])?;
+    conn.execute(
+        "DELETE FROM metadata WHERE playlist_id = ?",
+        params![uniqueid],
+    )?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
