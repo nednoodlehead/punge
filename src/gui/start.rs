@@ -539,13 +539,12 @@ impl Application for App {
             }
             Self::Message::AddToPlaylist(playlist) => {
                 println!("we will add: {:?} to {}", &self.selected_songs, &playlist);
-                for song in &self.selected_songs {
-                    match add_to_playlist(&playlist, song) {
-                        Ok(_) => {}
-                        Err(e) => {
-                            println!("error! {:?}", e)
-                        }
-                    };
+                if self.selected_songs.is_empty() {
+                    add_to_playlist(&playlist, &self.current_song.load().song_id).unwrap();
+                } else {
+                    for song in &self.selected_songs {
+                        add_to_playlist(&playlist, song).unwrap()
+                    }
                 }
                 for row in &mut self.rows {
                     row.ischecked = false; // close all!

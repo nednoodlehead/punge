@@ -1,5 +1,4 @@
-use crate::gui::messages::{ComboBoxType, Page, ProgramCommands, TextType};
-use crate::gui::persistent;
+use crate::gui::messages::{ComboBoxType, ProgramCommands, TextType};
 use crate::types::AppError;
 use crate::types::Config;
 use rusty_ytdl::blocking::Video;
@@ -152,7 +151,7 @@ async fn download_insta(link: String) -> Result<String, AppError> {
     // uploaded to insta, so we can rename it near the end to change that..
     // --no-video-thumbnails --no-captions --no-metadata-json
     // links look like: https://www.instagram.com/p/123456789 10 11
-    let unique: &str = &link[..11];
+    let unique: &str = &link[11..]; // got the dots messed up lool
     std::process::Command::new("instaloader")
         .args([
             "--",
@@ -163,5 +162,6 @@ async fn download_insta(link: String) -> Result<String, AppError> {
         ])
         .spawn()
         .expect("Instagram download failed, do you have instaloader on your path?");
+    // TODO need to pick up and move this. not sure if it makes a directory, or single file. test another time
     Ok(link)
 }
