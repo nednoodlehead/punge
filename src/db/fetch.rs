@@ -104,6 +104,15 @@ pub fn _get_name_from_uuid(playlist_uuid: String) -> String {
     stmt.query_row([&playlist_uuid], |row| row.get(0)).unwrap()
 }
 
+pub fn get_num_of_playlists() -> u16 {
+    let conn = Connection::open("main.db").unwrap();
+    let mut stmt = conn
+        .prepare("SELECT COUNT(playlist_id) FROM metadata")
+        .unwrap();
+    let count: i64 = stmt.query_row([], |row| row.get(0)).unwrap();
+    count as u16
+}
+
 // pub fn get_from_text_query(table: &str, query: &str) -> Vec<PungeMusicObject> {
 //     // user input searches through all table entries, and if title, author, album, features.
 //     // if it contains the user query, return that record
@@ -119,8 +128,8 @@ use crate::types::UserPlaylist;
 pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
     // we assume that the user has a 'main' playlist
     let conn = Connection::open("main.db")?;
-    let mut stmt = conn.prepare("SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, playlist_id
-        FROM metadata")?;
+    let mut stmt = conn.prepare("SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, userorder, playlist_id
+        FROM metadata ORDER BY userorder")?;
     let playlist_obj_iter = stmt.query_map([], |row| {
         Ok(UserPlaylist {
             title: row.get(0)?,
@@ -130,7 +139,8 @@ pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
             songcount: row.get(4)?,
             totaltime: row.get(5)?,
             isautogen: row.get(6)?,
-            uniqueid: row.get(7)?,
+            userorder: row.get(7)?,
+            uniqueid: row.get(8)?,
         })
     })?;
     let mut ret_vec = Vec::new();

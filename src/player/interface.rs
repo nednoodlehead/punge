@@ -45,6 +45,7 @@ impl MusicPlayer {
             .iter()
             .position(|r| r.clone().uniqueid == cache.song_id)
             .unwrap_or(0);
+        // when the user has nothing downloaded, this panics TODO
         let current_object = list[count].clone();
         // list should inherite from cache at some point. not worried now tho
         MusicPlayer {

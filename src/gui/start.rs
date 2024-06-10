@@ -1023,6 +1023,16 @@ impl Application for App {
                 self.playlist_page.user_id = None;
                 Command::none()
             }
+            ProgramCommands::MovePlaylistUp(uniqueid, count) => {
+                crate::db::update::move_playlist_up_one(&uniqueid, count).unwrap();
+                self.user_playlists = get_all_playlists().unwrap();
+                Command::none()
+            }
+            ProgramCommands::MovePlaylistDown(uniqueid, count) => {
+                crate::db::update::move_playlist_down_one(&uniqueid, count).unwrap();
+                self.user_playlists = get_all_playlists().unwrap();
+                Command::none()
+            }
 
             _ => {
                 println!("inumplmented");

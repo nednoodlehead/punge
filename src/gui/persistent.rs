@@ -163,14 +163,6 @@ impl App {
                         .style(iced::theme::Button::Custom(Box::new(PlaylistText))),
                     iced_aw::additional_menu::Menu::new(vec![
                         iced_aw::additional_menu::Item::new(
-                            button(text(format!("delete {}", &playlist.title)))
-                                .width(180)
-                                .on_press(ProgramCommands::DeletePlaylist(
-                                    playlist.uniqueid.clone(),
-                                ))
-                                .style(iced::theme::Button::Custom(Box::new(SubMenuButton))),
-                        ),
-                        iced_aw::additional_menu::Item::new(
                             button(text("Edit"))
                                 .on_press(ProgramCommands::OpenPlaylistEditPage(playlist.clone()))
                                 .width(180)
@@ -179,6 +171,32 @@ impl App {
                         iced_aw::additional_menu::Item::new(
                             button(text("Duplicate?"))
                                 .width(180)
+                                .style(iced::theme::Button::Custom(Box::new(SubMenuButton))),
+                        ),
+                        iced_aw::additional_menu::Item::new(
+                            button(text("Move up one"))
+                                .width(180)
+                                .on_press(ProgramCommands::MovePlaylistUp(
+                                    playlist.uniqueid.clone(),
+                                    playlist.userorder,
+                                ))
+                                .style(iced::theme::Button::Custom(Box::new(SubMenuButton))),
+                        ),
+                        iced_aw::additional_menu::Item::new(
+                            button(text("Move down one"))
+                                .width(180)
+                                .on_press(ProgramCommands::MovePlaylistDown(
+                                    playlist.uniqueid.clone(),
+                                    playlist.userorder,
+                                ))
+                                .style(iced::theme::Button::Custom(Box::new(SubMenuButton))),
+                        ),
+                        iced_aw::additional_menu::Item::new(
+                            button(text(format!("delete {}", &playlist.title)))
+                                .width(180)
+                                .on_press(ProgramCommands::DeletePlaylist(
+                                    playlist.uniqueid.clone(),
+                                ))
                                 .style(iced::theme::Button::Custom(Box::new(SubMenuButton))),
                         ),
                     ])

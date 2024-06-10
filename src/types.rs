@@ -44,6 +44,7 @@ pub struct UserPlaylist {
     pub songcount: u16,
     pub totaltime: String, // updated each time a song is added or removed. in seconds
     pub isautogen: bool,
+    pub userorder: u16,
     pub uniqueid: String,
 }
 
@@ -80,6 +81,8 @@ impl UserPlaylist {
             songcount: 0,
             totaltime: "0".to_string(),
             isautogen,
+            // what is the current number of playlists..?
+            userorder: crate::db::fetch::get_num_of_playlists(),
             uniqueid: Uuid::new_v4().to_string(),
         }
     }

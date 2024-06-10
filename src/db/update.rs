@@ -101,3 +101,55 @@ pub fn delete_playlist(uniqueid: &str) -> Result<(), DatabaseErrors> {
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
+
+// for these we have to also check to see if it CAN go down one more
+pub fn move_playlist_up_one(uniqueid: &str, count: u16) -> Result<(), DatabaseErrors> {
+    let mut conn = Connection::open("main.db")?;
+    // added a scope so the borrow is dropped :D
+    if count == 0 {
+        // cant go up any further...
+        return Ok(());
+    }
+    let tx = conn.transaction()?;
+
+    let new_count = count - 1;
+    tx.execute(
+        "UPDATE metadata SET userorder = ? WHERE userorder = ?",
+        params![count, new_count],
+    )?;
+    tx.execute(
+        "UPDATE metadata SET userorder = ? WHERE playlist_id = ?",
+        params![new_count, uniqueid],
+    )?;
+    tx.commit()?;
+
+    Ok(())
+}
+
+pub fn move_playlist_down_one(uniqueid: &str, count: u16) -> Result<(), DatabaseErrors> {
+    let mut conn = Connection::open("main.db")?;
+
+    let max: i64 = {
+        let mut stmt = conn
+            .prepare("SELECT COUNT(playlist_id) FROM metadata")
+            .unwrap();
+        stmt.query_row([], |row| row.get(0)).unwrap()
+    };
+    if count >= (max + 1) as u16 {
+        return Ok(());
+    }
+    let tx = conn.transaction()?;
+    let new_count = count + 1;
+
+    tx.execute(
+        "UPDATE metadata SET userorder = ? WHERE userorder = ?",
+        params![count, new_count],
+    )?;
+    tx.execute(
+        "UPDATE metadata SET userorder = ? WHERE playlist_id = ?",
+        params![new_count, uniqueid],
+    )?;
+    tx.commit()?;
+
+    Ok(())
+}
