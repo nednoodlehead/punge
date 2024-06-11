@@ -69,11 +69,3 @@ pub fn read_file_from_beginning(file: String) -> Decoder<BufReader<File>> {
     Decoder::new(reader).unwrap()
 }
 
-pub fn read_from_time(file: String, time: u32) -> Decoder<BufReader<File>> {
-    let mut reader = BufReader::new(File::open(file).unwrap());
-    let sample_rate = 48000; // 44100 or 192k?
-    let position = sample_rate * time;
-    reader.seek(SeekFrom::Start(position as u64)).unwrap();
-    let decoder: Decoder<BufReader<File>> = Decoder::new(reader).unwrap();
-    decoder
-}

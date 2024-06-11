@@ -10,7 +10,7 @@ pub struct ScrubberStyle;
 impl slider::StyleSheet for ScrubberStyle {
     type Style = iced::Theme;
 
-    fn hovered(&self, style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
+    fn hovered(&self, _style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
         slider::Appearance {
             rail: slider::Rail {
                 colors: (
@@ -48,7 +48,7 @@ impl slider::StyleSheet for ScrubberStyle {
             },
         }
     }
-    fn active(&self, style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
+    fn active(&self, _style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
         slider::Appearance {
             rail: slider::Rail {
                 colors: (
@@ -86,7 +86,7 @@ impl slider::StyleSheet for ScrubberStyle {
             },
         }
     }
-    fn dragging(&self, style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
+    fn dragging(&self, _style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
         slider::Appearance {
             rail: slider::Rail {
                 colors: (

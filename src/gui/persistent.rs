@@ -3,13 +3,12 @@
 use crate::gui::messages::{Page, ProgramCommands};
 use crate::gui::start::App;
 use crate::gui::style::button::{JustText, MenuButton, PlaylistText, SubMenuButton};
-use crate::gui::style::container::{BottomBarContainer, ContainerWithBorder};
+use crate::gui::style::container::BottomBarContainer;
 use crate::gui::style::menu::PungeMenu;
 use crate::gui::style::scrubber::ScrubberStyle;
 use crate::gui::style::volume::VolumeStyle;
 use iced::widget::{button, column, container, horizontal_space, row, slider, text, Column, Image};
 use iced::{Alignment, Element, Length};
-use iced_aw::additional_menu;
 use iced_aw::menu::{Item, Menu};
 use iced_aw::widgets::quad;
 use iced_aw::widgets::InnerBounds;
@@ -37,7 +36,9 @@ impl App {
                     // music buttons & srubbing bar
                     row![
                         horizontal_space(),
-                        button(text("<--")).on_press(ProgramCommands::SkipBackwards),
+                        button(Image::new("./img/punge_left_new.png"))
+                            .style(iced::theme::Button::Custom(Box::new(JustText)))
+                            .on_press(ProgramCommands::SkipBackwards),
                         button(if self.is_paused {
                             Image::new("./img/punge_play_new.png")
                         } else {
@@ -47,7 +48,9 @@ impl App {
                         .height(50)
                         .width(50)
                         .on_press(ProgramCommands::PlayToggle),
-                        button(text("-->")).on_press(ProgramCommands::SkipForwards),
+                        button(Image::new("./img/punge_right_new.png"))
+                            .on_press(ProgramCommands::SkipForwards)
+                            .style(iced::theme::Button::Custom(Box::new(JustText))),
                         horizontal_space()
                     ]
                     .align_items(Alignment::Center)

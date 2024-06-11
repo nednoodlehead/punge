@@ -61,7 +61,7 @@ pub struct MenuButton;
 impl button::StyleSheet for MenuButton {
     type Style = iced::Theme;
 
-    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+    fn hovered(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
             shadow_offset: Vector { x: 2.0, y: 2.0 },
             background: Some(Background::Color(Color {
@@ -98,7 +98,7 @@ impl button::StyleSheet for MenuButton {
             },
         }
     }
-    fn active(&self, style: &Self::Style) -> button::Appearance {
+    fn active(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
             shadow_offset: Vector { x: 2.0, y: 2.0 },
             background: None,
@@ -137,7 +137,7 @@ pub struct SubMenuButton;
 impl button::StyleSheet for SubMenuButton {
     type Style = iced::Theme;
 
-    fn hovered(&self, style: &Self::Style) -> button::Appearance {
+    fn hovered(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
             shadow_offset: Vector { x: 2.0, y: 2.0 },
             background: Some(Background::Color(Color {
@@ -174,7 +174,7 @@ impl button::StyleSheet for SubMenuButton {
             },
         }
     }
-    fn active(&self, style: &Self::Style) -> button::Appearance {
+    fn active(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
             shadow_offset: Vector { x: 2.0, y: 2.0 },
             background: None,
@@ -213,7 +213,7 @@ pub struct PlaylistText;
 impl button::StyleSheet for PlaylistText {
     type Style = iced::Theme;
 
-    fn disabled(&self, style: &Self::Style) -> button::Appearance {
+    fn disabled(&self, _style: &Self::Style) -> button::Appearance {
         button::Appearance {
             shadow_offset: Vector { x: 2.0, y: 2.0 },
             background: None,

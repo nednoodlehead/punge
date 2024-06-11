@@ -10,7 +10,7 @@ pub struct VolumeStyle;
 impl slider::StyleSheet for VolumeStyle {
     type Style = iced::Theme;
 
-    fn hovered(&self, style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
+    fn hovered(&self, _style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
         slider::Appearance {
             rail: slider::Rail {
                 colors: (
@@ -48,7 +48,7 @@ impl slider::StyleSheet for VolumeStyle {
             },
         }
     }
-    fn active(&self, style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
+    fn active(&self, _style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
         slider::Appearance {
             rail: slider::Rail {
                 colors: (
@@ -86,7 +86,7 @@ impl slider::StyleSheet for VolumeStyle {
             },
         }
     }
-    fn dragging(&self, style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
+    fn dragging(&self, _style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
         slider::Appearance {
             rail: slider::Rail {
                 colors: (
