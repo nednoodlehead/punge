@@ -4,7 +4,7 @@
 use crate::db::fetch::{get_all_from_playlist, get_all_main};
 use crate::types::{AppError, PungeMusicObject};
 use rand::seq::SliceRandom;
-use rand::Rng;
+
 use regex::Regex;
 
 fn search_string(to_search: String, pattern: String) -> bool {

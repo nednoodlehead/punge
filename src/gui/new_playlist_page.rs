@@ -1,4 +1,4 @@
-use crate::gui::messages::{Page, ProgramCommands, TextType};
+use crate::gui::messages::{ProgramCommands, TextType};
 use iced::widget::{button, column, container, row, text, text_input};
 use iced::Element;
 

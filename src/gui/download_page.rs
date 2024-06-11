@@ -1,5 +1,5 @@
-use crate::gui::messages::{CheckBoxType, Page, ProgramCommands, TextType};
-use crate::gui::persistent;
+use crate::gui::messages::{CheckBoxType, ProgramCommands, TextType};
+
 use crate::types::YouTubeSearchResult;
 use iced::widget::{
     button, checkbox, column, horizontal_space, row, scrollable, text, text_input, Column,

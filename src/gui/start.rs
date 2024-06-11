@@ -23,8 +23,7 @@ use std::sync::Arc;
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::subscription::Subscription;
 use iced::widget::{
-    button, column, container, horizontal_space, image, responsive, row, scrollable, text,
-    vertical_space,
+    column, container, image, responsive, row, scrollable, text,
 };
 use iced::{executor, Application, Command, Element, Length, Settings, Theme};
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
@@ -380,7 +379,7 @@ impl Application for App {
                     self.download_page.include_videos,
                     self.download_page.include_playlists,
                 ),
-                |vals| ProgramCommands::SearchYouTubeResults(vals),
+                ProgramCommands::SearchYouTubeResults,
             ),
             Self::Message::SearchYouTubeResults(search) => {
                 self.download_page.youtube_content = search;
@@ -894,7 +893,7 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::NewPlaylist => {
-                if self.playlist_page.user_title != "" {
+                if !self.playlist_page.user_title.is_empty() {
                     // check to see if it is empty..
                     let playlist = UserPlaylist::new(
                         self.playlist_page.user_title.clone(),
@@ -922,7 +921,7 @@ impl Application for App {
                 //         .update_info(item.0, item.1, item.2, uniqueid, false);
                 //     self.current_view = Page::SongEdit;
                 // }
-                let data = if self.selected_songs.len() == 0 {
+                let data = if self.selected_songs.is_empty() {
                     let info = self.current_song.load();
                     (
                         info.title.clone(),

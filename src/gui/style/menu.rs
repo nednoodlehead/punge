@@ -1,5 +1,5 @@
 use iced_aw::menu::StyleSheet;
-use iced_core::{Background, Border, Color, Padding, Shadow, Vector};
+use iced_core::{Background, Color, Padding};
 
 pub struct PungeMenu;
 

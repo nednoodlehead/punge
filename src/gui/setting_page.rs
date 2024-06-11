@@ -1,9 +1,9 @@
-use crate::gui::messages::{ComboBoxType, Page, ProgramCommands, TextType};
-use crate::gui::persistent;
-use crate::types::{Config, PungeKeyBind, ShuffleType};
+use crate::gui::messages::{ComboBoxType, ProgramCommands, TextType};
+
+use crate::types::{Config, PungeKeyBind};
 use crate::utils::key::{self};
 
-use iced::widget::{button, column, combo_box, row, text, text_input, ComboBox, Container};
+use iced::widget::{button, column, combo_box, row, text, text_input, Container};
 use iced::Element;
 use std::hash::Hash;
 
