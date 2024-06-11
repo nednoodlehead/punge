@@ -2,7 +2,7 @@
 // such as the 'current playing' bar at the bottom, and the buttons at the top to change pages
 use crate::gui::messages::{Page, ProgramCommands};
 use crate::gui::start::App;
-use crate::gui::style::button::{JustText, MenuButton, PlaylistText, SubMenuButton};
+use crate::gui::style::button::{JustText, MenuButton, PlaylistText, PungeButton, SubMenuButton};
 use crate::gui::style::container::BottomBarContainer;
 use crate::gui::style::menu::PungeMenu;
 use crate::gui::style::scrubber::ScrubberStyle;
@@ -21,7 +21,9 @@ impl App {
             iced::widget::text_input("GoTo closest match", self.search.as_str())
                 .on_input(ProgramCommands::UpdateSearch)
                 .width(Length::Fixed(200.0)),
-            button(text("Confirm")).on_press(ProgramCommands::GoToSong)
+            button(text("Confirm"))
+                .on_press(ProgramCommands::GoToSong)
+                .style(iced::theme::Button::Custom(Box::new(PungeButton)))
         ]);
         container(
             row![
@@ -36,7 +38,7 @@ impl App {
                     // music buttons & srubbing bar
                     row![
                         horizontal_space(),
-                        button(Image::new("./img/punge_left_new.png"))
+                        button(text("<----"))
                             .style(iced::theme::Button::Custom(Box::new(JustText)))
                             .on_press(ProgramCommands::SkipBackwards),
                         button(if self.is_paused {
@@ -48,7 +50,7 @@ impl App {
                         .height(50)
                         .width(50)
                         .on_press(ProgramCommands::PlayToggle),
-                        button(Image::new("./img/punge_right_new.png"))
+                        button(text("---->"))
                             .on_press(ProgramCommands::SkipForwards)
                             .style(iced::theme::Button::Custom(Box::new(JustText))),
                         horizontal_space()

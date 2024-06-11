@@ -41,6 +41,7 @@ pub async fn content_to_text(
         match result {
             SearchResult::Video(vid) => {
                 let n = YouTubeSearchResult {
+                    // title: vid.title.chars().take(30).collect(),
                     title: vid.title.clone(),
                     author: vid.channel.name.clone(),
                     views: vid.views,
@@ -55,7 +56,7 @@ pub async fn content_to_text(
                 // this is required to get the videos, without it, using playlist.videos, returns 0 every time
                 let play = search::Playlist::get(playlist.url.clone(), None).unwrap();
                 let n = YouTubeSearchResult {
-                    title: playlist.name.to_string(),
+                    title: playlist.name.clone(),
                     author: playlist.channel.name.clone(),
                     views: playlist.views,
                     duration: None,

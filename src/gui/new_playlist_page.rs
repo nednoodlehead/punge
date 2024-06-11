@@ -1,4 +1,5 @@
 use crate::gui::messages::{ProgramCommands, TextType};
+use crate::gui::style::button::PungeButton;
 use iced::widget::{button, column, container, row, text, text_input};
 use iced::Element;
 
@@ -46,11 +47,18 @@ impl PlaylistPage {
                 // variable button
                 container(column![
                     button(text(format!("Update {}", &self.user_title)))
+                        .style(iced::theme::Button::Custom(Box::new(PungeButton)))
                         .on_press(ProgramCommands::UpdatePlaylist),
-                    button(text("Stop editing")).on_press(ProgramCommands::ClearPlaylistPage)
+                    button(text("Stop editing"))
+                        .on_press(ProgramCommands::ClearPlaylistPage)
+                        .style(iced::theme::Button::Custom(Box::new(PungeButton)))
                 ])
             } else {
-                container(button(text("Create!")).on_press(ProgramCommands::NewPlaylist))
+                container(
+                    button(text("Create!"))
+                        .on_press(ProgramCommands::NewPlaylist)
+                        .style(iced::theme::Button::Custom(Box::new(PungeButton))),
+                )
             },
             container(text("")).height(360)
         ])

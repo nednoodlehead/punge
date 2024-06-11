@@ -1,4 +1,5 @@
 use crate::gui::messages::{ComboBoxType, ProgramCommands, TextType};
+use crate::gui::style::button::PungeButton;
 use crate::types::AppError;
 use crate::types::Config;
 use rusty_ytdl::blocking::Video;
@@ -60,6 +61,7 @@ impl MediaPage {
                 })
                 .width(50.0),
                 button(text("Download!"))
+                    .style(iced::theme::Button::Custom(Box::new(PungeButton)))
                     .on_press(ProgramCommands::DownloadMedia(
                         self.download_input.clone(),
                         self.download_to_location.clone(),

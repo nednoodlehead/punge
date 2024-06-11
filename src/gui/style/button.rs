@@ -241,3 +241,67 @@ impl button::StyleSheet for PlaylistText {
         button::Appearance::default() // never used, required function
     }
 }
+
+pub struct PungeButton; // defines regular buttons, but styled so they aren't default. persistent GOTO search `confirm` button, `download` button
+
+impl button::StyleSheet for PungeButton {
+    type Style = iced::Theme;
+
+    fn active(&self, _style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            shadow_offset: Vector { x: 2.0, y: 2.0 },
+            background: Some(Background::Color(Color {
+                r: 0.2,
+                g: 0.2,
+                b: 0.2,
+                a: 1.0,
+            })),
+            text_color: Color {
+                r: 0.85,
+                g: 0.85,
+                b: 0.85,
+                a: 1.0,
+            },
+            border: Border {
+                color: Color {
+                    r: 0.75,
+                    g: 0.75,
+                    b: 0.75,
+                    a: 1.0,
+                },
+                radius: Radius::default(),
+                width: 1.0,
+            },
+            shadow: Shadow::default(),
+        }
+    }
+
+    fn hovered(&self, _style: &Self::Style) -> button::Appearance {
+        button::Appearance {
+            shadow_offset: Vector { x: 2.0, y: 2.0 },
+            background: Some(Background::Color(Color {
+                r: 0.0,
+                g: 0.5,
+                b: 0.2,
+                a: 1.0,
+            })),
+            text_color: Color {
+                r: 0.85,
+                g: 0.85,
+                b: 0.85,
+                a: 1.0,
+            },
+            border: Border {
+                color: Color {
+                    r: 0.75,
+                    g: 0.75,
+                    b: 0.75,
+                    a: 1.0,
+                },
+                radius: Radius::default(),
+                width: 1.0,
+            },
+            shadow: Shadow::default(),
+        }
+    }
+}

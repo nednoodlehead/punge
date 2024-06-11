@@ -22,9 +22,7 @@ use std::sync::Arc;
 
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::subscription::Subscription;
-use iced::widget::{
-    column, container, image, responsive, row, scrollable, text,
-};
+use iced::widget::{column, container, image, responsive, row, scrollable, text};
 use iced::{executor, Application, Command, Element, Length, Settings, Theme};
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 

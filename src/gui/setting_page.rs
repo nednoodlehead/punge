@@ -1,5 +1,5 @@
 use crate::gui::messages::{ComboBoxType, ProgramCommands, TextType};
-
+use crate::gui::style::button::PungeButton;
 use crate::types::{Config, PungeKeyBind};
 use crate::utils::key::{self};
 
@@ -182,7 +182,9 @@ impl SettingPage {
                 text_input(&self.backup_text, &self.backup_text).on_input(|txt| {
                     ProgramCommands::UpdateWidgetText(TextType::BackupText, txt)
                 }),
-                button(text("Backup!")).on_press(ProgramCommands::CreateBackup)
+                button(text("Backup!"))
+                    .on_press(ProgramCommands::CreateBackup)
+                    .style(iced::theme::Button::Custom(Box::new(PungeButton)))
             ]
             .padding(10.0),
             row![
@@ -227,7 +229,9 @@ impl SettingPage {
                 )
             ],
             self.render_keybinds(),
-            row![button(text("Save!")).on_press(ProgramCommands::SaveConfig)],
+            row![button(text("Save!"))
+                .on_press(ProgramCommands::SaveConfig)
+                .style(iced::theme::Button::Custom(Box::new(PungeButton)))],
         ])
         .into()
     }
