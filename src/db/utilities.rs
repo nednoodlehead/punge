@@ -1,48 +1,6 @@
 // in this file, we are adding a new field to our db "threshold", which is calculated from existing values
 // the purpose is for our src\gui\subscription.rs database subscription to read a value from db (instead of doing an unneeded calculation to get it)
 
-
-
-
-
-// pub fn convert() {
-//     let conn = Connection::open("main.db").unwrap();
-//     let mut stmt = conn.prepare("SELECT * FROM main").unwrap();
-//     let _new_items: Vec<PungeMusicObject> = Vec::new();
-//     let obj_iter = stmt
-//         .query_map([], |row| {
-//             Ok(PungeMusicObject {
-//                 title: row.get(0).unwrap(),
-//                 author: row.get(1).unwrap(),
-//                 album: row.get(2).unwrap(),
-//                 features: row.get(3).unwrap(),
-//                 length: row.get(4).unwrap(),
-//                 savelocationmp3: row.get(5).unwrap(),
-//                 savelocationjpg: row.get(6).unwrap(),
-//                 datedownloaded: row.get(7).unwrap(),
-//                 lastlistenedto: row.get(8).unwrap(),
-//                 ischild: row.get(9).unwrap(),
-//                 uniqueid: row.get(10).unwrap(),
-//                 plays: row.get(11).unwrap(),
-//                 weight: row.get(12).unwrap(),
-//                 threshold: calc_thres(row.get(4).unwrap()),
-//             })
-//         })
-//         .unwrap();
-//     let stmt2 = "ALTER TABLE main ADD threshold SMALLINT";
-//     conn.execute(stmt2, []).unwrap();
-//     let stmt_3 = "UPDATE main SET threshold = ?1 WHERE uniqueid = ?";
-//     for item in obj_iter {
-//         let new_item = item.unwrap();
-//         println!("updating: {}", &new_item.title);
-//         conn.execute(
-//             stmt_3,
-//             params![calc_thres(new_item.length as u16), new_item.uniqueid],
-//         )
-//         .unwrap();
-//     }
-//     println!("it worked :P");
-// }
 // old, keep around for now..
 pub fn _calc_thres(len: String) -> u16 {
     // len: 00:10:12 format

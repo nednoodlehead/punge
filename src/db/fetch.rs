@@ -82,28 +82,6 @@ pub fn _exists_in_db(uniqueid: String) -> bool {
     val
 }
 
-pub fn get_uuid_from_name(playlist_name: String) -> String {
-    let conn = Connection::open("main.db").unwrap();
-    let mut stmt = conn
-        .prepare("SELECT playlist_id from metadata WHERE title = ?")
-        .unwrap();
-    println!("playlist name HERE: {}", &playlist_name);
-    let result: String = stmt.query_row([&playlist_name], |row| row.get(0)).unwrap();
-    drop(stmt);
-    conn.close().unwrap();
-    result
-}
-// ok i made this function misinterpreting what we have from ProgramCommands::PlaylistSelected(string)
-pub fn _get_name_from_uuid(playlist_uuid: String) -> String {
-    let conn = Connection::open("main.db").unwrap();
-    println!("{}", &playlist_uuid);
-    let mut stmt = conn
-        .prepare("SELECT title from metadata WHERE playlist_id = ?")
-        .unwrap();
-
-    stmt.query_row([&playlist_uuid], |row| row.get(0)).unwrap()
-}
-
 pub fn get_num_of_playlists() -> u16 {
     let conn = Connection::open("main.db").unwrap();
     let mut stmt = conn

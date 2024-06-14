@@ -3,6 +3,7 @@
 use crate::types::PungeMusicObject;
 use chrono::Local;
 use itertools::Itertools;
+use log::{debug, error, info, warn};
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs;
@@ -23,13 +24,13 @@ pub fn separate(
     let timestamp_map = hash_to_vec_ordered(map, length);
     // TODO streamline this, we are converting frmo timestamp -> string -> usize. go timestamp -> usize
     let length_map = get_length_from_timestamp(timestamp_map.clone());
-    println!("Seperating!!. {}", &obj.savelocationmp3);
+    info!("Seperating video!!. {}", &obj.savelocationmp3);
     for (count, (start_time, end_time, title)) in timestamp_map.iter().enumerate() {
         let out_path = format!(
             "{}{} - {}{}.mp3",
             mp3_dir, &obj.author, &title, &obj.uniqueid
         );
-        println!("exporting to {}", &out_path);
+        info!("exporting to {}", &out_path);
         let args = if end_time != "end" {
             vec![
                 "-i",
@@ -39,7 +40,7 @@ pub fn separate(
                 out_path.as_str(),
             ]
         } else {
-            println!(
+            debug!(
                 "hit the else?: {}\n{}\n{}\n",
                 &obj.savelocationmp3, &start_time, &out_path
             );
@@ -52,7 +53,7 @@ pub fn separate(
             ]
         };
         let cmd = Command::new("ffmpeg.exe").args(args).output();
-        println!("{:?}", cmd.unwrap());
+        debug!("ffmpeg output: {:?}", cmd.unwrap());
         let new_obj = PungeMusicObject {
             title: title.to_owned(),
             author: obj.author.to_owned(),

@@ -3,6 +3,7 @@ use crate::db::update::update_empty_entries;
 use crate::types::{AppError, DatabaseErrors, PungeMusicObject, YouTubeData};
 use crate::utils::sep_video;
 use itertools::Itertools;
+use log::{debug, error, info, warn};
 use regex::Regex;
 use rusqlite;
 use rusty_ytdl::blocking::Video;
@@ -21,10 +22,10 @@ pub async fn download_interface(
         request_options: rusty_ytdl::RequestOptions::default(),
     };
     let video = Video::new_with_options(url.clone(), vid_opt)?; // url check
-    println!("is one? {}", playlist_title.is_none());
+    info!("playlist_title: {:?}", &playlist_title);
     if check_if_exists(video.get_video_id()) && playlist_title.is_none() {
         // if the entry exists already
-        println!("FAILED!@#!@#!");
+        warn!("The video already exists");
         return Err(AppError::DatabaseError(
             DatabaseErrors::DatabaseEntryExistsError,
         ));
@@ -88,7 +89,7 @@ pub async fn download_interface(
             details.length_seconds.parse::<u32>().unwrap(),
         )
         .await?;
-        println!("updating: {}", &obj.title);
+        info!("updating: {}", &obj.title);
         update_empty_entries(obj)?; // update the entries because we made them already in Self::Message::Download
         youtube_data
     } else if description_timestamp_check(details.description.as_str()) {
@@ -179,14 +180,17 @@ pub fn check_if_exists(uniqueid: String) -> bool {
     // maybe should be Result!?
     // checks if the given unique id is found inside the main table. aka: has it been downloaded?
     let conn = rusqlite::Connection::open("main.db").unwrap();
-    println!("exists?: {}", &uniqueid);
     let mut stmt = conn
         .prepare("SELECT * FROM main WHERE uniqueid = ?")
         .unwrap();
-    let exists = stmt.exists([uniqueid]).unwrap();
-    println!("does exzists: {}", &exists);
+    let exists = stmt.exists([uniqueid.clone()]).unwrap();
     drop(stmt);
     conn.close().unwrap();
+    debug!(
+        "{} does {}exist",
+        &uniqueid,
+        if exists { "" } else { "not " }
+    );
     exists
 }
 
@@ -291,14 +295,14 @@ async fn download_to_punge(
         id.video_details.video_id.clone()
     );
     let path_download = std::path::Path::new(mp4_name.as_str());
-    println!("{} AND {}", &mp3_name, &mp4_name);
+    debug!("mp3 name: {}  mp4_name: {}", &mp3_name, &mp4_name);
     // we assume that the inputs are sanitized by "clean_input_for_win_saving"
     // the unwrap can fail sometimes. so we loop 5 times, sleeping for 3 seconds inbetween so it will try again
-    println!("startin download!");
+    info!("startin download!");
     let before = std::time::Instant::now();
     match vid.download(path_download) {
         Ok(_t) => {
-            println!("Download finsihed in: {:.2?}", before.elapsed());
+            info!("Download finsihed in: {:.2?}", before.elapsed());
             // convert the old file to (webm) to mp3 and rename
             let x = std::process::Command::new("ffmpeg.exe")
                 .args([
@@ -314,24 +318,25 @@ async fn download_to_punge(
                 .output();
             match x {
                 Ok(_t) => {
-                    println!("hell yeah");
+                    info!("File converted successfully, removing now...");
                     match std::fs::remove_file(mp4_name.clone()) {
                         Ok(_t) => {
                             Ok(()) // if the ffmpeg operation goes well and he file is removed
                         }
                         Err(e) => {
-                            println!("nameer::  {} {}", new_mp3_name.as_str(), &mp4_name);
+                            error!("File failed to be removed {}", &mp4_name);
                             Err(AppError::FileError(format!("{:?}", e))) // if the ffmpeg operation works, and the file is not removed
                         }
                     }
                 }
                 Err(e) => {
+                    error!("Ffmpeg failed: {:?}", &e);
                     Err(AppError::FfmpegError(e.to_string())) // if the ffmpeg operation fails
                 }
             }
         }
         Err(e) => {
-            println!("br {:?}", &e);
+            error!("Download failed! {:?}", &e);
 
             Err(AppError::YoutubeError(format!("Error downloading {}", e)))
         }

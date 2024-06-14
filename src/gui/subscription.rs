@@ -7,8 +7,8 @@ use crate::player::interface::{self};
 use crate::types::{Config, MusicData, PungeMusicObject, ShuffleType};
 use arc_swap::ArcSwap;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
-
 use global_hotkey::{GlobalHotKeyEvent, HotKeyState};
+use log::{debug, error, info, warn};
 
 use iced::futures::sink::SinkExt;
 use iced::subscription::Subscription;
@@ -62,7 +62,6 @@ impl App {
                     crate::db::metadata::add_one_weight(obj.load().song_id.clone()).unwrap();
                     if cycle == obj.load().threshold {
                         // so doing it this way gets rid of the need to hold onto the last id, since midway through (~2/3rd way) +1 play will occur
-                        println!("added one to play");
                         crate::db::metadata::add_one_play(obj.load().song_id.clone()).unwrap();
                     }
                 } else {
@@ -84,7 +83,6 @@ impl App {
             loop {
                 // config needs to be refreshed each loop, cause if it isn't, it won't get updates for new binds
                 // wish this could be done better?
-                // println!("da config: {:?}", &config.load());
                 match GlobalHotKeyEvent::receiver().try_recv() {
                     Ok(hotkey) => {
                         if hotkey.state == HotKeyState::Pressed {
@@ -149,8 +147,7 @@ impl App {
                 .unwrap();
 
             // main music loop!
-            println!("starting main loop");
-            println!("Struct from start: {:?}", &music_obj);
+            info!("starting loop!");
             loop {
                 match gui_rec.try_recv() {
                     Ok(cmd) => match cmd {
@@ -163,7 +160,6 @@ impl App {
                             }
                             music_obj.to_play = true;
                             music_obj.sink.play();
-                            println!("playing here... {:?}", &music_obj);
                             sender
                                 .send(ProgramCommands::NewData(MusicData {
                                     title: music_obj.current_object.title.clone(),
@@ -185,7 +181,6 @@ impl App {
                         PungeCommand::SkipForwards => {
                             // so i guess the answer is doing .stop()? not .clear(). ig cause .stop() also clears the queue
                             music_obj.sink.stop();
-                            println!("skip forards, top!! {:?}", &music_obj);
                             let old_id = music_obj.current_object.uniqueid.clone();
                             music_obj.count =
                                 change_count(true, music_obj.count, music_obj.list.len());
@@ -279,11 +274,11 @@ impl App {
                                 .unwrap();
                         }
                         PungeCommand::GoToAlbum => {
-                            println!("going 2 album!")
+                            warn!("Unimplemented action")
                         }
                         PungeCommand::SkipToSeconds(val) => {
                             // TODO WHY DOES IT PLAY HERE ?!?!
-                            println!("skipping to seconds. paused?");
+                            info!("Skipping to seconds (while paused)");
                             music_obj.sink.append(read_file_from_beginning(
                                 music_obj.list[music_obj.count].savelocationmp3.clone(),
                             ));
@@ -316,7 +311,6 @@ impl App {
                                 .unwrap();
                         }
                         PungeCommand::ToggleShuffle => {
-                            println!("DEBUG HERE: {}", &music_obj.list[music_obj.count].title);
                             if music_obj.shuffle {
                                 if music_obj.playlist == "main" {
                                     music_obj.list = fetch::get_all_main().unwrap();
@@ -332,7 +326,6 @@ impl App {
                                         r.clone().uniqueid == music_obj.current_object.uniqueid
                                     })
                                     .unwrap();
-                                println!("at inddex: {}", index);
                                 music_obj.count = index;
                                 music_obj.shuffle = false;
                             } else {
@@ -362,11 +355,11 @@ impl App {
                             }
                         }
                         PungeCommand::ChangePlaylist(name) => {
-                            println!("changing the playlist! above");
+                            info!("changing playlist name: {}", &name);
                             if name == "main" {
                                 music_obj.list = fetch::get_all_main().unwrap();
                             } else {
-                                println!("getting all from {}", &name);
+                                debug!("getting all from {}", &name);
                                 music_obj.list = fetch::get_all_from_playlist(&name).unwrap();
                             }
                             music_obj.playlist = name;
@@ -380,7 +373,7 @@ impl App {
                     // if we are playing, we want to loop and keep playing !!
                     loop {
                         // i think most of the count checks are depciated
-                        println!("inside our palying loop!");
+                        debug!("inside of the playing loop");
                         // process commands (maybe turn it into a function i guess?, would sort of suck to copy and paste to make work)
                         if music_obj.count == 0 {
                             music_obj.count += music_obj.list.len();
@@ -389,12 +382,10 @@ impl App {
                             music_obj.count = 0;
                         }
                         if music_obj.sink.empty() {
-                            println!("default appending!");
                             music_obj.sink.append(read_file_from_beginning(
                                 music_obj.list[music_obj.count].savelocationmp3.clone(),
                             ));
                         }
-                        println!("playing, in theory");
                         music_obj.sink.play();
                         while !music_obj.sink.is_paused() {
                             // process again !?
@@ -403,7 +394,6 @@ impl App {
                                     match cmd {
                                         PungeCommand::PlayOrPause => {
                                             // so the logic here, is that the only command issued here is pause, play cannot occur from this location. (cause the loop ends and we are in the top area)
-                                            println!("stooping here! (bottom)");
                                             sender
                                                 .send(ProgramCommands::NewData(MusicData {
                                                     title: music_obj.current_object.title.clone(),
@@ -566,7 +556,6 @@ impl App {
                                                             == music_obj.current_object.uniqueid
                                                     })
                                                     .unwrap();
-                                                println!("indexing: {}", index);
                                                 music_obj.count = index;
                                                 music_obj.shuffle = false;
                                             } else {
@@ -591,19 +580,19 @@ impl App {
                                             }
                                         }
                                         PungeCommand::ChangePlaylist(name) => {
-                                            println!("changin the playlist below {}", &name);
+                                            info!("changin the playlist below {}", &name);
                                             if name == "main" {
                                                 music_obj.list = fetch::get_all_main().unwrap();
                                             } else {
-                                                println!("getting all from {}", &name);
+                                                info!("getting all from {}", &name);
                                                 music_obj.list =
                                                     fetch::get_all_from_playlist(&name).unwrap();
                                             }
                                             music_obj.playlist = name;
-                                            println!("length below: {}", music_obj.list.len())
+                                            info!("length below: {}", music_obj.list.len())
                                         }
                                         PungeCommand::ChangeSong(uuid) => {
-                                            println!(
+                                            info!(
                                                 "CURRENT PLAYLIST: {} and {}",
                                                 music_obj.playlist,
                                                 music_obj.list.len()
@@ -652,7 +641,7 @@ impl App {
                                                 .unwrap();
                                         }
                                         _ => {
-                                            println!("yeah, other stuff... {:?}", cmd)
+                                            warn!("unimplmented?? {:?}", cmd)
                                         }
                                     }
                                 }
@@ -661,10 +650,8 @@ impl App {
                                 }
                             }
                             if music_obj.sink.is_paused() {
-                                println!("is paused break!");
                                 break;
                             } else if music_obj.sink.empty() {
-                                println!("empty break!! ");
                                 break;
                             } else {
                                 async_std::task::sleep(std::time::Duration::from_millis(50)).await;
@@ -673,7 +660,6 @@ impl App {
                         if music_obj.sink.is_paused() {
                             break;
                         } else {
-                            println!("default counter!");
                             music_obj.count =
                                 change_count(true, music_obj.count, music_obj.list.len());
                             music_obj.current_object = music_obj.list[music_obj.count].clone();
@@ -707,7 +693,12 @@ impl App {
         iced::subscription::channel(13, 32, |mut _sender| async move {
             let mut client = DiscordIpcClient::new("1219029975441608737").unwrap();
             let punge_img = activity::Assets::new().large_image("punge_icon_for_discord-02");
-            client.connect().unwrap();
+            match client.connect() {
+                Ok(_) => {
+                    info!("Discord client connected successfully")
+                }
+                Err(e) => warn!("Discord client not connected: {:?}", e),
+            }
             loop {
                 // every 5 seconds, update the song. maybe this will be changed at some point to include the
                 if !obj.load().is_playing {

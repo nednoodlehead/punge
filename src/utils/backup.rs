@@ -1,4 +1,5 @@
 use chrono::offset::Local;
+use log::info;
 use std::fs::copy;
 pub fn create_backup(mut backup_dir: String) -> Result<(), std::io::Error> {
     // maybe backup_dir should derive from config? no big deal for now though.
@@ -7,7 +8,7 @@ pub fn create_backup(mut backup_dir: String) -> Result<(), std::io::Error> {
     } else {
         backup_dir
     };
-    println!("{}", &backup_dir);
+    info!("backup location: {}", &backup_dir);
     // output should look like: c:/my_backup/punge_backup_2024-01-29-hh-mm-ss.db
     let output_path = format!(
         "{}punge_backup{}.db",

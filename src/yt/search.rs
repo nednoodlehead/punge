@@ -1,5 +1,5 @@
 use crate::types::YouTubeSearchResult;
-
+use log::info;
 use rusty_ytdl::blocking::search;
 use rusty_ytdl::blocking::search::SearchResult;
 use rusty_ytdl::blocking::search::YouTube;
@@ -69,6 +69,6 @@ pub async fn content_to_text(
             SearchResult::Channel(_chn) => {}
         };
     }
-    println!("length of ret: {}", ret.len());
+    info!("length of returned videos: {}", ret.len());
     ret
 }

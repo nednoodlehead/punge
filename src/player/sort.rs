@@ -3,6 +3,7 @@
 // quite inspired by helix's regex
 use crate::db::fetch::{get_all_from_playlist, get_all_main};
 use crate::types::{AppError, PungeMusicObject};
+use log::{debug, error, info, warn};
 use rand::seq::SliceRandom;
 
 use regex::Regex;
@@ -69,7 +70,6 @@ pub async fn get_values_from_db(
         get_all_from_playlist(playlist.as_str()).unwrap()
     };
     let regex_patt = create_new_pattern(user_string.clone());
-    println!("pattern: {}", &regex_patt);
     let mut found_values: Vec<(u8, PungeMusicObject)> = Vec::new();
     for music_entry in playlist_values {
         // will always be author - title
@@ -78,7 +78,7 @@ pub async fn get_values_from_db(
             music_entry.author.clone(),
             music_entry.title.clone()
         );
-        println!("searching: {}", &to_search_string);
+        debug!("searching: {}", &to_search_string);
         if search_string(to_search_string.clone(), regex_patt.clone()) {
             found_values.push((
                 get_value_of_found(to_search_string, user_string.clone()),

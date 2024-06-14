@@ -18,15 +18,33 @@ use crate::utils::delete::delete_record_and_file;
 use crate::utils::playlist::get_playlist;
 use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
-use std::sync::Arc;
-
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::subscription::Subscription;
 use iced::widget::{column, container, image, responsive, row, scrollable, text};
 use iced::{executor, Application, Command, Element, Length, Settings, Theme};
+use log::{debug, error, info, warn};
+use simplelog::{CombinedLogger, TermLogger, WriteLogger};
+use std::sync::Arc;
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
 
 pub fn begin() -> iced::Result {
+    // initialze logger
+    let mut log_config = simplelog::ConfigBuilder::new();
+    log_config.add_filter_allow("punge".to_string());
+    CombinedLogger::init(vec![
+        TermLogger::new(
+            log::LevelFilter::Warn,
+            log_config.build(),
+            simplelog::TerminalMode::default(),
+            simplelog::ColorChoice::Always,
+        ),
+        WriteLogger::new(
+            log::LevelFilter::Debug,
+            log_config.build(),
+            std::fs::File::create("punge.log").unwrap(),
+        ),
+    ])
+    .unwrap();
     App::run(Settings {
         id: None,
         flags: (),
@@ -124,7 +142,7 @@ impl Application for App {
                 t
             }
             Err(e) => {
-                println!("error gettin cache {:?}", e);
+                warn!("Cannot fetch cache, resorting to default");
                 Config {
                     backup_path: format!("C:/Users/{}/Documents/", whoami::username()),
                     mp3_path: String::from("C:/"),
@@ -196,7 +214,7 @@ impl Application for App {
     fn update(&mut self, msg: Self::Message) -> iced::Command<ProgramCommands> {
         match msg {
             Self::Message::UpdateSender(sender) => {
-                println!("updated sender!");
+                info!("Sender sent!");
                 self.sender = sender;
                 Command::none()
             }
@@ -208,11 +226,11 @@ impl Application for App {
                     &Context::SkippedTo => {}
 
                     _ => {
-                        println!("resetting scrubber to 0");
+                        info!("resetting scrubber to 0");
                         self.scrubber = 0;
                     }
                 }
-                println!(
+                info!(
                     "The new information given to update: {} {} {}",
                     data.author, data.title, data.album
                 );
@@ -234,7 +252,7 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::SkipToSeconds(num) => {
-                println!("lets skip to: {}, len: {}", num, self.total_time);
+                info!("lets skip to: {}, len: {}", num, self.total_time);
                 self.sender
                     .as_mut()
                     .unwrap()
@@ -406,21 +424,21 @@ impl Application for App {
                         format!("{} - {} Downloaded Successfully", t.title, t.author)
                     }
                     Err(e) => {
-                        println!("ERROR DOWNLOADING: {:?} {:?}", e, &link);
+                        error!("ERROR DOWNLOADING: {:?} {:?}", e, &link);
                         // if the problem occured from playlist, there is an existing entry for the obj, but if it failed, we want to
                         // remove that, since it will cause a panic on null fields.
                         // so case where the link is less than 11 chars, it will panic on subtract overflow..
                         if link.len() < 12 {
-                            println!("ignoring potential delte action, link is too short");
+                            warn!("ignoring potential delte action, link is too short");
                         } else {
                             match crate::db::update::delete_from_uuid(
                                 link[link.len() - 11..].to_string(), // last 11 chars of the url, aka uniqueid
                             ) {
                                 Ok(_t) => {
-                                    println!("Deleted successfully: {}", &link);
+                                    info!("Deleted successfully: {}", &link);
                                 }
                                 Err(_e) => {
-                                    println!("nothin to delete")
+                                    info!("nothin to delete")
                                 }
                             };
                         }
@@ -443,7 +461,7 @@ impl Application for App {
                         length: 190,
                     };
                     player_cache::dump_cache(cache); // dumps user cache
-                    println!("dumpepd cache!");
+                    info!("dumpepd cache! goodbye :)");
 
                     iced::window::close::<Self::Message>(iced::window::Id::MAIN)
                 }
@@ -509,7 +527,7 @@ impl Application for App {
                 self.selected_songs.clear(); // clear them! (so we dont select some, switch playlist and edit unintentionally)
                                              // main should be treated just like a regular playlist !?
                 self.refresh_playlist();
-                println!(
+                debug!(
                     "rows? {} | {:?} name: {}",
                     self.rows.len(),
                     self.rows,
@@ -535,7 +553,7 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::AddToPlaylist(playlist) => {
-                println!("we will add: {:?} to {}", &self.selected_songs, &playlist);
+                info!("we will add: {:?} to {}", &self.selected_songs, &playlist);
                 if self.selected_songs.is_empty() {
                     add_to_playlist(&playlist, &self.current_song.load().song_id).unwrap();
                 } else {
@@ -562,10 +580,10 @@ impl Application for App {
                     for uuid in to_delete {
                         match delete_record_and_file(uuid) {
                             Ok(_t) => {
-                                println!("epic delete moment")
+                                info!("delete successful!")
                             }
                             Err(e) => {
-                                println!("error deleting {:?}", e)
+                                error!("error deleting {:?}", e)
                             }
                         }
                     }
@@ -601,10 +619,10 @@ impl Application for App {
 
                 match create_backup(self.setting_page.backup_text.clone()) {
                     Ok(_) => {
-                        println!("yippie!");
+                        info!("backup created successfully!");
                     }
                     Err(e) => {
-                        println!("whaa {:?}", e);
+                        error!("error creating backup -> {:?}", e);
                     }
                 };
                 Command::none()
@@ -882,10 +900,10 @@ impl Application for App {
                 self.config.store(Arc::new(obj.clone())); // refresh the config with this data :D
                 match cache::write_to_cache(obj) {
                     Ok(_t) => {
-                        println!("config written successfully: {:?}", &self.config.load())
+                        info!("config written successfully: {:?}", &self.config.load())
                     }
                     Err(e) => {
-                        println!("Config failed! {:?}", e)
+                        warn!("Config failed! {:?}", e)
                     }
                 }
                 Command::none()
@@ -1031,10 +1049,7 @@ impl Application for App {
                 Command::none()
             }
 
-            _ => {
-                println!("inumplmented");
-                Command::none()
-            }
+            _ => Command::none(),
         }
     }
 
@@ -1155,7 +1170,7 @@ impl App {
                 .collect();
         } else {
             let new = get_all_from_playlist(&self.viewing_playlist).unwrap();
-            println!("vi {}", &self.viewing_playlist);
+            debug!("viewing_playlist: {}", &self.viewing_playlist);
             self.rows = new
                 .into_iter()
                 .map(|item| Row {

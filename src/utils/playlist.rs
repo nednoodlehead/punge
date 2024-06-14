@@ -1,6 +1,6 @@
 use crate::types::Playlist;
+use log::{debug, error, info, warn};
 use regex::Regex;
-
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -27,7 +27,6 @@ pub fn get_playlist(link: &str) -> Result<Playlist, AppError> {
 }
 // gets the html from the given link
 fn get_html(link: &str) -> String {
-    
     reqwest::blocking::get(link).unwrap().text().unwrap()
 }
 // function to get the extra information from the json
@@ -62,7 +61,7 @@ fn json_to_vec_videos(to_json: &String) -> Vec<String> {
                 return_vals.push(string)
             }
             None => {
-                println!("Unable to fetch video data. Ignoring.")
+                warn!("Unable to fetch video data. Ignoring.")
             }
         }
     }
@@ -95,7 +94,7 @@ fn find_object_from_startpoint(old_html: &str, starting: usize) -> String {
     // making sure that first char is either a [ or { (seems to always be a '{' )
     if html[0] != '{' && html[0] != '[' {
         // panics if it isnt either
-        panic!["Invalid start point!"]
+        panic!("Invalid start point!")
     }
     // first char, will be added to the stack
     let first_temp: char = html[0];
