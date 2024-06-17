@@ -153,8 +153,8 @@ async fn download_insta(link: String) -> Result<String, AppError> {
     // uploaded to insta, so we can rename it near the end to change that..
     // --no-video-thumbnails --no-captions --no-metadata-json
     // links look like: https://www.instagram.com/p/123456789 10 11
-    let unique: &str = &link[11..]; // got the dots messed up lool
-    std::process::Command::new("instaloader")
+    let unique: &str = &link[28..]; // got the dots messed up lool <- how did i mess the number up so badly
+    match std::process::Command::new("instaloader")
         .args([
             "--",
             format!("-{}", unique).as_str(),
@@ -163,7 +163,14 @@ async fn download_insta(link: String) -> Result<String, AppError> {
             "--no-metadata-json",
         ])
         .spawn()
-        .expect("Instagram download failed, do you have instaloader on your path?");
+    {
+        Ok(t) => return Ok(link),
+        Err(e) => {
+            return Err(AppError::FileError(
+                "Instaloader failed. Do you have it on your path?".to_string(),
+            ))
+        }
+    };
+
     // TODO need to pick up and move this. not sure if it makes a directory, or single file. test another time
-    Ok(link)
 }
