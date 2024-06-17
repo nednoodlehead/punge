@@ -12,8 +12,8 @@ use std::collections::HashMap;
 
 use crate::types::AppError;
 
-pub fn get_playlist(link: &str) -> Result<Playlist, AppError> {
-    let html: String = get_html(link);
+pub async fn get_playlist(link: String) -> Result<Playlist, AppError> {
+    let html: String = get_html(&link);
     let json: String = parse_for_js(html);
     let extras: (String, String, u64) = get_extras(&json);
     let video_vec: Vec<String> = json_to_vec_videos(&json);

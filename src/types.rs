@@ -27,6 +27,7 @@ pub struct PungeMusicObject {
     pub threshold: u16,
 }
 
+#[derive(Clone)]
 pub struct Playlist {
     pub links: Vec<String>,
     pub title: String,

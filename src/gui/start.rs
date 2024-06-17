@@ -11,7 +11,7 @@ use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::player_cache;
 use crate::player::sort::get_values_from_db;
-use crate::types::{Config, MusicData, ShuffleType, UserPlaylist};
+use crate::types::{AppError, Config, MusicData, ShuffleType, UserPlaylist, YouTubeData};
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
 use crate::utils::delete::delete_record_and_file;
@@ -333,27 +333,9 @@ impl Application for App {
             Self::Message::Download(link) => {
                 // is it a playlist?
                 let download = if link.contains("list=") {
-                    let mut list_cmd = Vec::new();
-                    let mut link_list = Vec::new();
-                    let playlist = get_playlist(&link).unwrap();
-                    // to guarentee that the order is preserved, we add an empty entry with just the uuid
-                    // then, after the downloads have completed, we either update the entry with the data
-                    // or remove the entry afterwards if it fails
-                    for song in playlist.links {
-                        link_list.push(song.clone()[28..].to_string()); // this is the uniqueid
-                        self.download_page
-                            .download_feedback
-                            .push(format!("Download started on {}", &link));
-                        self.download_list.push(song.clone());
-                        let cmd = Command::perform(
-                            download_interface(song.clone(), Some(playlist.title.clone())),
-                            |yt_data| ProgramCommands::AddToDownloadFeedback(song, yt_data),
-                        );
-                        list_cmd.push(cmd);
-                    }
-                    // add the empty entries!
-                    add_empty_entries(link_list).unwrap();
-                    Command::batch(list_cmd)
+                    Command::perform(get_playlist(link.clone()), |playl| {
+                        ProgramCommands::PlaylistResults(link, playl)
+                    })
                 } else {
                     self.download_list.push(link.clone());
                     self.download_page
@@ -368,6 +350,35 @@ impl Application for App {
                 self.download_page.text = String::new();
                 download
                 // Command::none()
+            }
+            Self::Message::PlaylistResults(link, playlist_or_err) => {
+                if playlist_or_err.is_err() {
+                    self.download_page
+                        .download_feedback
+                        .push(format!("Download failed!: {}", link));
+                    return Command::none();
+                }
+                let playlist = playlist_or_err.unwrap();
+                let mut list_cmd = Vec::new();
+                let mut link_list = Vec::new();
+                // to guarentee that the order is preserved, we add an empty entry with just the uuid
+                // then, after the downloads have completed, we either update the entry with the data
+                // or remove the entry afterwards if it fails
+                for song in playlist.links {
+                    link_list.push(song.clone()[28..].to_string()); // this is the uniqueid
+                    self.download_page
+                        .download_feedback
+                        .push(format!("Download started on {}", &link));
+                    self.download_list.push(song.clone());
+                    let cmd = Command::perform(
+                        download_interface(song.clone(), Some(playlist.title.clone())),
+                        |yt_data| ProgramCommands::AddToDownloadFeedback(song, yt_data),
+                    );
+                    list_cmd.push(cmd);
+                }
+                // add the empty entries!
+                add_empty_entries(link_list).unwrap();
+                Command::batch(list_cmd)
             }
             Self::Message::DownloadMedia(link, path, mp3_4) => {
                 self.media_page

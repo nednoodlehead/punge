@@ -2,6 +2,7 @@ use crate::db::insert::add_to_main;
 use crate::db::update::update_empty_entries;
 use crate::types::{AppError, DatabaseErrors, PungeMusicObject, YouTubeData};
 use crate::utils::sep_video;
+use crate::utils::playlist::get_playlist;
 use itertools::Itertools;
 use log::{debug, error, info, warn};
 use regex::Regex;
@@ -386,3 +387,4 @@ fn description_timestamp_check(desc: &str) -> bool {
         true
     }
 }
+

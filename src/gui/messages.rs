@@ -2,7 +2,7 @@
 // as well as the actual music-playing portion of the app
 
 use crate::types::{AppError, PungeMusicObject, UserPlaylist};
-use crate::types::{MusicData, YouTubeData};
+use crate::types::{MusicData, Playlist, YouTubeData};
 use iced::widget::scrollable;
 use serde::{ser, Deserialize, Serialize};
 use tokio::sync::mpsc as async_sender;
@@ -35,6 +35,7 @@ pub enum ProgramCommands {
     ChangePage(Page),
     CheckBoxEvent(CheckBoxType, bool),
     Download(String),
+    PlaylistResults(String, Result<Playlist, AppError>),
     DownloadMedia(String, String, String), // link, path, mp3 or mp4
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
     UpdateCombobox(ComboBoxType, String),  // little ugly lol. cause the type is a const
