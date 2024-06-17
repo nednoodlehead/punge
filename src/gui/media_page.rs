@@ -164,11 +164,12 @@ async fn download_insta(link: String) -> Result<String, AppError> {
         ])
         .spawn()
     {
-        Ok(t) => return Ok(link),
+        Ok(_) => return Ok(link),
         Err(e) => {
-            return Err(AppError::FileError(
-                "Instaloader failed. Do you have it on your path?".to_string(),
-            ))
+            return Err(AppError::FileError(format!(
+                "instaloader error: {:?}. is it on your path!?",
+                e
+            )))
         }
     };
 
