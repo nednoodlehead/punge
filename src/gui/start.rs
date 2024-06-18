@@ -11,7 +11,7 @@ use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::player_cache;
 use crate::player::sort::get_values_from_db;
-use crate::types::{AppError, Config, MusicData, ShuffleType, UserPlaylist, YouTubeData};
+use crate::types::{Config, MusicData, ShuffleType, UserPlaylist};
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
 use crate::utils::delete::delete_record_and_file;
@@ -67,7 +67,7 @@ pub fn begin() -> iced::Result {
             decorations: true,
             transparent: false,
             level: iced::window::Level::Normal,
-            icon: Some(iced::window::icon::from_file("./img/punge icon.ico").unwrap()), // will add soon i think
+            icon: Some(iced::window::icon::from_file("./img/punge icon.ico").unwrap()),
             platform_specific: iced::window::settings::PlatformSpecific {
                 parent: None,
                 drag_and_drop: false,
@@ -141,7 +141,7 @@ impl Application for App {
                 }
                 t
             }
-            Err(e) => {
+            Err(_) => {
                 warn!("Cannot fetch cache, resorting to default");
                 Config {
                     backup_path: format!("C:/Users/{}/Documents/", whoami::username()),

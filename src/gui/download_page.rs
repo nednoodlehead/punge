@@ -119,7 +119,7 @@ impl DownloadPage {
                                     text(results.author.clone()),
                                     text(results.videos.clone().unwrap())
                                 ]
-                                .width(Length::Fixed(500.0)),
+                                .width(Length::Fixed(400.0)),
                                 horizontal_space(),
                                 column![
                                     button(text("Download!"))

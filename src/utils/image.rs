@@ -3,7 +3,7 @@
 // in theory these images will come from the youtube thumbnail, then are processed
 use reqwest;
 // returns the path to the downloaded thumbnail
-pub fn get_raw_thumbnail_from_link(youtube_id: &str, dir_path: &str) -> Result<String, ()> {
+pub fn _get_raw_thumbnail_from_link(youtube_id: &str, dir_path: &str) -> Result<String, ()> {
     // https://youtube.com/watch?v=NPqDIwWMtxg
     // turns into: https://img.youtube.com/vi/NPqDIwWMtxg/maxresdefault.jpg
     let base_url = format!(

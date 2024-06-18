@@ -246,20 +246,20 @@ pub struct YouTubeSearchResult {
 pub enum ShuffleType {
     Regular,    // shuffle the list in place
     WeightBias, // order by weight, divide by 6, shuffle in sections, re-enter in sections
-    TrueRandom,
+    Cluster,
 }
 impl ShuffleType {
     pub fn to_string(&self) -> String {
         match self {
             ShuffleType::Regular => "Normal shuffle".to_string(),
-            ShuffleType::TrueRandom => "True random".to_string(),
+            ShuffleType::Cluster => "True random".to_string(),
             ShuffleType::WeightBias => "Weighted".to_string(),
         }
     }
     pub fn from_str(name: &str) -> Self {
         match name {
             "Normal shuffle" => ShuffleType::Regular,
-            "True random" => ShuffleType::TrueRandom,
+            "True random" => ShuffleType::Cluster,
             "Weighted" => ShuffleType::WeightBias,
             _ => ShuffleType::Regular, // fail!
         }

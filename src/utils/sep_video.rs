@@ -3,7 +3,7 @@
 use crate::types::PungeMusicObject;
 use chrono::Local;
 use itertools::Itertools;
-use log::{debug, error, info, warn};
+use log::{debug, info};
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs;

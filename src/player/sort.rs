@@ -3,7 +3,7 @@
 // quite inspired by helix's regex
 use crate::db::fetch::{get_all_from_playlist, get_all_main};
 use crate::types::{AppError, PungeMusicObject};
-use log::{debug, error, info, warn};
+use log::debug;
 use rand::seq::SliceRandom;
 
 use regex::Regex;
@@ -127,24 +127,6 @@ pub fn regular_shuffle(grabbed: Vec<PungeMusicObject>) -> Vec<PungeMusicObject> 
     grabbed
 }
 
-// cant be used since the player tries to grab the location of the uuid in the list,
-// but this method does not guarentee that there will be that value
-// stupid, i would never personally use it, can cause duplicate songs.. let the user choose tho
-pub fn true_random_shuffle(grabbed: Vec<PungeMusicObject>) -> Vec<PungeMusicObject> {
-    // let grabbed = get_all_main().unwrap();
-    // let mut rng = rand::thread_rng();
-    // let mut new = vec![];
-    // for _ in grabbed.iter() {
-    //     new.push(grabbed[rng.gen_range(0..grabbed.len())].clone())
-    // }
-    // new
-    // temp replacement, or maybe forever idk
-    let mut grabbed = grabbed.clone(); // chat is this stupid ?
-    let mut rng = rand::thread_rng();
-    grabbed.shuffle(&mut rng);
-    grabbed
-}
-
 pub fn cluster_shuffle(grabbed: Vec<PungeMusicObject>) -> Vec<PungeMusicObject> {
     // sort of like weighted shuffle, but the 'weight' in this case is just based off the order
     // this is literally just taken from that, nevermind the ordering on weight part.
@@ -152,6 +134,7 @@ pub fn cluster_shuffle(grabbed: Vec<PungeMusicObject>) -> Vec<PungeMusicObject> 
     let len = grabbed.len();
     let mut rng = rand::thread_rng();
     let mut new = vec![];
+    // funny edge case lol
     if grabbed.len() < 7 {
         grabbed
     } else {

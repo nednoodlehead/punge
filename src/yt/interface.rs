@@ -2,7 +2,6 @@ use crate::db::insert::add_to_main;
 use crate::db::update::update_empty_entries;
 use crate::types::{AppError, DatabaseErrors, PungeMusicObject, YouTubeData};
 use crate::utils::sep_video;
-use crate::utils::playlist::get_playlist;
 use itertools::Itertools;
 use log::{debug, error, info, warn};
 use regex::Regex;
@@ -22,7 +21,7 @@ pub async fn download_interface(
         download_options: rusty_ytdl::DownloadOptions::default(),
         request_options: rusty_ytdl::RequestOptions::default(),
     };
-    let video = Video::new_with_options(url.clone(), vid_opt)?; // url check
+    let video = Video::new_with_options(&url, vid_opt)?; // url check
     info!("playlist_title: {:?}", &playlist_title);
     if check_if_exists(video.get_video_id()) && playlist_title.is_none() {
         // if the entry exists already
@@ -387,4 +386,3 @@ fn description_timestamp_check(desc: &str) -> bool {
         true
     }
 }
-

@@ -8,7 +8,7 @@ use crate::types::{Config, MusicData, PungeMusicObject, ShuffleType};
 use arc_swap::ArcSwap;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use global_hotkey::{GlobalHotKeyEvent, HotKeyState};
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 
 use iced::futures::sink::SinkExt;
 use iced::subscription::Subscription;
@@ -337,21 +337,20 @@ impl App {
                                     ShuffleType::WeightBias => {
                                         crate::player::sort::shuffle_weight_bias(music_obj.list)
                                     }
-                                    ShuffleType::TrueRandom => {
-                                        crate::player::sort::true_random_shuffle(music_obj.list)
+                                    ShuffleType::Cluster => {
+                                        crate::player::sort::cluster_shuffle(music_obj.list)
                                     }
                                 };
                                 music_obj.shuffle = true;
                                 // ok this seems to fix #33, but why does the non-paused version not need this?
                                 // i probably would've noticed something by now...
-                                let index = music_obj
+                                music_obj.count = music_obj
                                     .list
                                     .iter()
                                     .position(|r| {
                                         r.clone().uniqueid == music_obj.current_object.uniqueid
                                     })
                                     .unwrap();
-                                music_obj.count = index;
                             }
                         }
                         PungeCommand::ChangePlaylist(name) => {
@@ -570,13 +569,22 @@ impl App {
                                                             music_obj.list,
                                                         )
                                                     }
-                                                    ShuffleType::TrueRandom => {
-                                                        crate::player::sort::true_random_shuffle(
+                                                    ShuffleType::Cluster => {
+                                                        crate::player::sort::cluster_shuffle(
                                                             music_obj.list,
                                                         )
                                                     }
                                                 };
                                                 music_obj.shuffle = true;
+                                                // im adding this. idk why it seemingly doesnt matter
+                                                music_obj.count = music_obj
+                                                    .list
+                                                    .iter()
+                                                    .position(|r| {
+                                                        r.clone().uniqueid
+                                                            == music_obj.current_object.uniqueid
+                                                    })
+                                                    .unwrap();
                                             }
                                         }
                                         PungeCommand::ChangePlaylist(name) => {

@@ -1,5 +1,5 @@
 use crate::types::Playlist;
-use log::{debug, error, info, warn};
+use log::{info, warn};
 use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -13,9 +13,13 @@ use std::collections::HashMap;
 use crate::types::AppError;
 
 pub async fn get_playlist(link: String) -> Result<Playlist, AppError> {
+    info!("fetching html");
     let html: String = get_html(&link);
+    info!("parsing for json");
     let json: String = parse_for_js(html);
+    info!("getting video metadata");
     let extras: (String, String, u64) = get_extras(&json);
+    info!("converting to list of videos");
     let video_vec: Vec<String> = json_to_vec_videos(&json);
     let final_exp: Playlist = Playlist {
         links: video_vec,
@@ -30,8 +34,8 @@ fn get_html(link: &str) -> String {
     reqwest::blocking::get(link).unwrap().text().unwrap()
 }
 // function to get the extra information from the json
-fn get_extras(json: &String) -> (String, String, u64) {
-    let obj: Value = serde_json::from_str(json.as_str()).unwrap();
+fn get_extras(json: &str) -> (String, String, u64) {
+    let obj: Value = serde_json::from_str(json).unwrap();
     let title: String =
         obj["contents"]["twoColumnWatchNextResults"]["playlist"]["playlist"]["title"].to_string();
     let author: String = obj["contents"]["twoColumnWatchNextResults"]["playlist"]["playlist"]
@@ -45,11 +49,11 @@ fn get_extras(json: &String) -> (String, String, u64) {
 }
 
 // turns the json into a vec of the videos
-fn json_to_vec_videos(to_json: &String) -> Vec<String> {
+fn json_to_vec_videos(to_json: &str) -> Vec<String> {
     // new vector that will contain the links
     let mut return_vals: Vec<String> = Vec::new();
     // turn the json(string) into json(serde_json::Value)
-    let obj: Value = serde_json::from_str(to_json.as_str()).expect("The json was invalid");
+    let obj: Value = serde_json::from_str(to_json).expect("The json was invalid");
     // this is an array of the playlist contents
     let vals = &obj["contents"]["twoColumnWatchNextResults"]["playlist"]["playlist"]["contents"];
     let bruh = vals.as_array().unwrap();

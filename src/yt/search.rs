@@ -4,16 +4,6 @@ use rusty_ytdl::blocking::search;
 use rusty_ytdl::blocking::search::SearchResult;
 use rusty_ytdl::blocking::search::YouTube;
 
-pub async fn _see_content(search: String) -> Vec<rusty_ytdl::blocking::search::SearchResult> {
-    let yt = YouTube::new().unwrap();
-    let options = rusty_ytdl::blocking::search::SearchOptions {
-        search_type: rusty_ytdl::blocking::search::SearchType::All,
-        limit: 20, // configurable at some point !?
-        safe_search: true,
-    };
-    yt.search(search, Some(&options)).unwrap()
-}
-
 pub async fn content_to_text(
     search: String,
     videos: bool,
