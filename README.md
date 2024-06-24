@@ -25,7 +25,12 @@ New Punge brings on multiple improvements:
 # Build Instructions
 
 Ubuntu specific:
-   `sudo apt-install libasound2-dev`
+   `sudo apt install libasound2-dev`
+
+Debian specific:
+`sudo apt install pkg-config`
+`sudo apt install libssl-dev`
+`sudo apt install libasound2-dev`
 
 
 1. Clone the repo `git clone https://github.com/nednoodlehead/punge`
