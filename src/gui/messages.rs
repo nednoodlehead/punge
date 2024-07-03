@@ -35,7 +35,7 @@ pub enum ProgramCommands {
     ChangePage(Page),
     CheckBoxEvent(CheckBoxType, bool),
     Download(String),
-    PlaylistResults(String, Result<Playlist, AppError>),
+    PlaylistResults(String, Result<rusty_ytdl::search::Playlist, AppError>),
     DownloadMedia(String, String, String), // link, path, mp3 or mp4
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
     UpdateCombobox(ComboBoxType, String),  // little ugly lol. cause the type is a const

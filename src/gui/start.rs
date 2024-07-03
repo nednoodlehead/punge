@@ -11,7 +11,7 @@ use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::player_cache;
 use crate::player::sort::get_values_from_db;
-use crate::types::{Config, MusicData, ShuffleType, UserPlaylist};
+use crate::types::{AppError, Config, MusicData, ShuffleType, UserPlaylist};
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
 use crate::utils::delete::delete_record_and_file;
@@ -68,11 +68,7 @@ pub fn begin() -> iced::Result {
             transparent: false,
             level: iced::window::Level::Normal,
             icon: Some(iced::window::icon::from_file("./img/punge icon.ico").unwrap()),
-            platform_specific: iced::window::settings::PlatformSpecific {
-                parent: None,
-                drag_and_drop: false,
-                skip_taskbar: false,
-            },
+            platform_specific: iced::window::settings::PlatformSpecific::default(),
             exit_on_close_request: false,
         },
         default_font: Default::default(),
@@ -333,9 +329,18 @@ impl Application for App {
             Self::Message::Download(link) => {
                 // is it a playlist?
                 let download = if link.contains("list=") {
-                    Command::perform(get_playlist(link.clone()), |playl| {
-                        ProgramCommands::PlaylistResults(link, playl)
-                    })
+                    Command::perform(
+                        rusty_ytdl::search::Playlist::get(link.clone(), None),
+                        |playl| {
+                            let bew = if playl.is_err() {
+                                Err(AppError::YoutubeError(format!("{:?}", playl)))
+                            } else {
+                                Ok(playl.unwrap())
+                            };
+
+                            ProgramCommands::PlaylistResults(link, bew)
+                        },
+                    )
                 } else {
                     self.download_list.push(link.clone());
                     self.download_page
@@ -364,15 +369,15 @@ impl Application for App {
                 // to guarentee that the order is preserved, we add an empty entry with just the uuid
                 // then, after the downloads have completed, we either update the entry with the data
                 // or remove the entry afterwards if it fails
-                for song in playlist.links {
-                    link_list.push(song.clone()[28..].to_string()); // this is the uniqueid
+                for song in playlist.videos {
+                    link_list.push(song.title.clone()[28..].to_string()); // this is the uniqueid
                     self.download_page
                         .download_feedback
                         .push(format!("Download started on {}", &link));
-                    self.download_list.push(song.clone());
+                    self.download_list.push(song.title.clone());
                     let cmd = Command::perform(
-                        download_interface(song.clone(), Some(playlist.title.clone())),
-                        |yt_data| ProgramCommands::AddToDownloadFeedback(song, yt_data),
+                        download_interface(song.title.clone(), Some(playlist.name.clone())),
+                        |yt_data| ProgramCommands::AddToDownloadFeedback(song.title, yt_data),
                     );
                     list_cmd.push(cmd);
                 }
