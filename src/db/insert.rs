@@ -39,12 +39,14 @@ pub fn create_playlist(new_playlist: UserPlaylist) -> Result<(), DatabaseErrors>
     Ok(())
 }
 
-pub fn add_to_playlist(playlist_uuid: &str, uniqueid: &str) -> Result<(), DatabaseErrors> {
+pub fn add_to_playlist(playlist_uuid: &str, uniqueid: Vec<String>) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
-    conn.execute(
-        "INSERT INTO playlist_relations (playlist_id, song_id) VALUES (?1, ?2)",
-        params![playlist_uuid, uniqueid],
-    )?;
+    for special_id in uniqueid.iter() {
+        conn.execute(
+            "INSERT INTO playlist_relations (playlist_id, song_id) VALUES (?1, ?2)",
+            params![playlist_uuid, special_id],
+        )?;
+    }
     conn.close().map_err(|(_, err)| err)?;
     info!("added to playlist successfully!");
     Ok(())

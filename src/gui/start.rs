@@ -571,11 +571,10 @@ impl Application for App {
             Self::Message::AddToPlaylist(playlist) => {
                 info!("we will add: {:?} to {}", &self.selected_songs, &playlist);
                 if self.selected_songs.is_empty() {
-                    add_to_playlist(&playlist, &self.current_song.load().song_id).unwrap();
+                    add_to_playlist(&playlist, vec![self.current_song.load().song_id.clone()])
+                        .unwrap();
                 } else {
-                    for song in &self.selected_songs {
-                        add_to_playlist(&playlist, song).unwrap()
-                    }
+                    add_to_playlist(&playlist, self.selected_songs.clone()).unwrap()
                 }
                 for row in &mut self.rows {
                     row.ischecked = false; // close all!
