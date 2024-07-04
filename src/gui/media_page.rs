@@ -2,15 +2,15 @@ use crate::gui::messages::{ComboBoxType, ProgramCommands, TextType};
 use crate::gui::style::button::PungeButton;
 use crate::types::AppError;
 use crate::types::Config;
-use rusty_ytdl::blocking::Video;
-use rusty_ytdl::{self, VideoOptions};
-
 use iced::widget::{
     button, column, combo_box, horizontal_space, row, scrollable, text, text_input, Column,
     Container,
 };
-
 use iced::{Alignment, Element};
+use itertools::Itertools;
+use log::debug;
+use rusty_ytdl::blocking::Video;
+use rusty_ytdl::{self, VideoOptions};
 
 pub struct MediaPage {
     pub download_input: String,
@@ -103,7 +103,8 @@ pub async fn download_content(
     if link.contains("youtube") {
         download_youtube(link.clone(), download_path, mp3_4).await?;
     } else if link.contains("instagram") {
-        download_insta(link.clone()).await?;
+        // always download mp4...
+        download_insta(link.clone(), download_path).await?;
     } else {
         return Err(AppError::InvalidUrlError(
             "Link does not contain 'instagram' or 'youtube'".to_string(),
@@ -147,24 +148,59 @@ async fn download_youtube(
     Ok(format!("{} downloaded successfully!", title))
 }
 
-async fn download_insta(link: String) -> Result<String, AppError> {
+async fn download_insta(link: String, download_dir: String) -> Result<String, AppError> {
     // we could use the pypi instaloader from cmd to do this ?
     // also, by default, (sort of dumb) it sets the date of the download to the date it was
     // uploaded to insta, so we can rename it near the end to change that..
     // --no-video-thumbnails --no-captions --no-metadata-json
     // links look like: https://www.instagram.com/p/123456789 10 11
-    let unique: &str = &link[28..]; // got the dots messed up lool <- how did i mess the number up so badly
-    match std::process::Command::new("instaloader")
+    let split_str = link.split("/").collect_vec();
+    let process = std::process::Command::new("instaloader")
         .args([
+            "--filename-pattern={shortcode}",
+            // format!("--dirname-pattern={}", download_dir).as_str(),
             "--",
-            format!("-{}", unique).as_str(),
+            format!("-{}", split_str[4]).as_str(),
             "--no-video-thumbnails", // tbh we dont really care about the rest..
             "--no-captions",
             "--no-metadata-json",
+            "--no-metadata-txt",
+            "--no-compress-json",
         ])
         .spawn()
-    {
-        Ok(_) => return Ok(link),
+        .unwrap()
+        .wait_with_output();
+    // this needs to block?
+    match process {
+        Ok(_) => {
+            // so the filename to move can either be `.jpg` or `.mp4`
+            let jpg_filename = format!("{}.mp4", split_str[4]);
+            let mp4_filename = format!("{}.jpg", split_str[4]);
+            // determine which version we have
+            let author_file = if std::path::Path::new(&jpg_filename).exists() {
+                jpg_filename
+            } else {
+                mp4_filename
+            };
+            let src_file = format!("./-{}/{}", split_str[4], author_file);
+            let dst_file = format!("{}/{}", download_dir, author_file);
+            // put it in the correct location
+            debug!(
+                "moving {} ({}) to {} ({})",
+                &src_file,
+                std::path::Path::new(&src_file).exists(),
+                &dst_file,
+                std::path::Path::new(&dst_file).exists()
+            );
+            std::fs::copy(src_file, dst_file).unwrap();
+            // remove the old directory
+            std::fs::remove_dir_all(format!("./-{}", split_str[4])).unwrap();
+
+            // std::fs::File::set_times(, )
+            // 2. move the mp4 to the correct directory
+            // yadda
+            return Ok(link);
+        }
         Err(e) => {
             return Err(AppError::FileError(format!(
                 "instaloader error: {:?}. is it on your path!?",
