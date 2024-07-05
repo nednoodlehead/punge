@@ -1,6 +1,6 @@
 // can we rename this to lib.rs at some point maybe??
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid};
-use crate::db::insert::{add_empty_entries, add_to_playlist, create_playlist};
+use crate::db::insert::{add_to_playlist, create_playlist};
 use crate::db::update::{
     delete_from_playlist, delete_playlist, update_auth_album, update_song, update_title_auth,
 };
@@ -329,9 +329,11 @@ impl Application for App {
             Self::Message::Download(link) => {
                 // is it a playlist?
                 let download = if link.contains("list=") {
+                    println!("atleast?");
                     Command::perform(
-                        rusty_ytdl::search::Playlist::get(link.clone(), None),
+                        crate::yt::interface::playlist_wrapper(link.clone()),
                         |playl| {
+                            println!("we are here!");
                             let bew = if playl.is_err() {
                                 Err(AppError::YoutubeError(format!("{:?}", playl)))
                             } else {
@@ -357,6 +359,7 @@ impl Application for App {
                 // Command::none()
             }
             Self::Message::PlaylistResults(link, playlist_or_err) => {
+                println!("but we made it to second call");
                 if playlist_or_err.is_err() {
                     self.download_page
                         .download_feedback
@@ -365,24 +368,22 @@ impl Application for App {
                 }
                 let playlist = playlist_or_err.unwrap();
                 let mut list_cmd = Vec::new();
-                let mut link_list = Vec::new();
                 // to guarentee that the order is preserved, we add an empty entry with just the uuid
                 // then, after the downloads have completed, we either update the entry with the data
                 // or remove the entry afterwards if it fails
-                for song in playlist.videos {
-                    link_list.push(song.title.clone()[28..].to_string()); // this is the uniqueid
+                for song in playlist.videos.clone() {
+                    let full_url = format!("https://youtube.com/watch?v={}", &song.url);
                     self.download_page
                         .download_feedback
-                        .push(format!("Download started on {}", &link));
+                        .push(format!("Download started on {}", &full_url));
                     self.download_list.push(song.title.clone());
                     let cmd = Command::perform(
-                        download_interface(song.title.clone(), Some(playlist.name.clone())),
+                        download_interface(full_url, Some(playlist.name.clone())),
                         |yt_data| ProgramCommands::AddToDownloadFeedback(song.title, yt_data),
                     );
                     list_cmd.push(cmd);
                 }
                 // add the empty entries!
-                add_empty_entries(link_list).unwrap();
                 Command::batch(list_cmd)
             }
             Self::Message::DownloadMedia(link, path, mp3_4) => {

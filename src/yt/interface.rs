@@ -11,6 +11,12 @@ use rusty_ytdl::blocking::Video;
 // so every link should be just downloading one video
 // we do need to know if this function was called under the pretext of us knowing the album / playlist title
 
+pub async fn playlist_wrapper(
+    link: String,
+) -> Result<rusty_ytdl::blocking::search::Playlist, rusty_ytdl::VideoError> {
+    rusty_ytdl::blocking::search::Playlist::get(link, None)
+}
+
 pub async fn download_interface(
     url: String,
     playlist_title: Option<String>,

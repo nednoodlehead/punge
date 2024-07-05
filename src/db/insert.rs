@@ -51,17 +51,3 @@ pub fn add_to_playlist(playlist_uuid: &str, uniqueid: Vec<String>) -> Result<(),
     info!("added to playlist successfully!");
     Ok(())
 }
-
-pub fn add_empty_entries(uuids: Vec<String>) -> Result<(), DatabaseErrors> {
-    // we add dummy data so when a playlist is made, and the playlist is refreshed in-app,
-    // it doesn't throw errors for null columns
-    let conn = Connection::open("main.db")?;
-    for str in uuids {
-        conn.execute("INSERT INTO main (title, author, album, features, length, savelocationmp3,\
-                    savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays, weight, threshold)\
-                    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)", params!["placeholder_title", "placeholder_author", "placeholder_album", "placeholder_features",
-            20, "placeholder_mp3", "placeholder_jpg", chrono::Local::now(), chrono::Local::now(), false, str, 0, 0, 2])?;
-    }
-    conn.close().map_err(|(_, err)| err)?;
-    Ok(())
-}
