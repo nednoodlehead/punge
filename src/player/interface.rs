@@ -6,6 +6,7 @@ use rand::seq::SliceRandom;
 use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
 use std::io::{BufReader};
+use chrono::Local;
 
 pub struct MusicPlayer {
     pub list: Vec<PungeMusicObject>,
@@ -46,7 +47,28 @@ impl MusicPlayer {
             .position(|r| r.clone().uniqueid == cache.song_id)
             .unwrap_or(0);
         // when the user has nothing downloaded, this panics TODO
-        let current_object = list[count].clone();
+        let current_object = if list.is_empty() {
+            PungeMusicObject {
+                title: "No songs loaded".to_string(),
+                author: "Download from the 'Download' tab".to_string(),
+                album: "You'll probs have to restart".to_string(),
+                features: "none".to_string(),
+                length: 10,
+                savelocationmp3: "none".to_string(),
+                savelocationjpg: "none".to_string(),
+                
+            datedownloaded: Local::now().date_naive(),
+            lastlistenedto: Local::now().date_naive(),
+            ischild: true,
+            uniqueid: "empty".to_string(),
+            plays: 0,
+            weight: 0,
+            threshold: 1
+            }            
+        }
+        else {
+            list[count].clone()
+        };
         // list should inherite from cache at some point. not worried now tho
         MusicPlayer {
             list,

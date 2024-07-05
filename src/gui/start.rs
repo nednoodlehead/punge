@@ -15,7 +15,6 @@ use crate::types::{AppError, Config, MusicData, ShuffleType, UserPlaylist};
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
 use crate::utils::delete::delete_record_and_file;
-use crate::utils::playlist::get_playlist;
 use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
@@ -329,7 +328,6 @@ impl Application for App {
             Self::Message::Download(link) => {
                 // is it a playlist?
                 let download = if link.contains("list=") {
-                    println!("atleast?");
                     Command::perform(
                         crate::yt::interface::playlist_wrapper(link.clone()),
                         |playl| {
@@ -359,7 +357,6 @@ impl Application for App {
                 // Command::none()
             }
             Self::Message::PlaylistResults(link, playlist_or_err) => {
-                println!("but we made it to second call");
                 if playlist_or_err.is_err() {
                     self.download_page
                         .download_feedback
