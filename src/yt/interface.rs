@@ -96,7 +96,7 @@ pub async fn download_interface(
         )
         .await?;
         info!("updating: {}", &obj.title);
-        update_empty_entries(obj)?; // update the entries because we made them already in Self::Message::Download
+        add_to_main(obj)?;
         youtube_data
     } else if description_timestamp_check(details.description.as_str()) {
         // how is this meant to be done ??
