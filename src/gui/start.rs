@@ -326,7 +326,7 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::Download(link) => {
-                // is it a playlist?
+                // we need to find the current length for main
                 let download = if link.contains("list=") {
                     Command::perform(
                         crate::yt::interface::playlist_wrapper(link.clone()),
@@ -346,9 +346,10 @@ impl Application for App {
                     self.download_page
                         .download_feedback
                         .push(format!("Download started on {}", &link));
-                    Command::perform(download_interface(link.clone(), None), |yt_data| {
-                        ProgramCommands::AddToDownloadFeedback(link, yt_data)
-                    })
+                    Command::perform(
+                        download_interface(link.clone(), None, self.user_playlists[0].songcount),
+                        |yt_data| ProgramCommands::AddToDownloadFeedback(link, yt_data),
+                    )
                 };
 
                 // reset the value, regardless of the outcome
@@ -375,7 +376,11 @@ impl Application for App {
                         .push(format!("Download started on {}", &full_url));
                     self.download_list.push(song.title.clone());
                     let cmd = Command::perform(
-                        download_interface(full_url, Some(playlist.name.clone())),
+                        download_interface(
+                            full_url,
+                            Some(playlist.name.clone()),
+                            self.user_playlists[0].songcount,
+                        ),
                         |yt_data| ProgramCommands::AddToDownloadFeedback(song.title, yt_data),
                     );
                     list_cmd.push(cmd);

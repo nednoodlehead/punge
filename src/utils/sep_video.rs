@@ -14,6 +14,7 @@ pub fn separate(
     obj: PungeMusicObject,
     mp3_dir: String,
     length: usize,
+    starting_order: usize, // if the video was one song, what number would it be:
 ) -> Vec<PungeMusicObject> {
     // vec of paths to files
     // path: path to the modified mp3 file. the files will be placed in the dir, and this file removed
@@ -71,6 +72,7 @@ pub fn separate(
             threshold: crate::db::utilities::calc_thres(crate::utils::time::time_to_sec(
                 &length_map[count].clone(),
             ) as usize) as u16,
+            order: starting_order + count, // each value needs to be +1 on the last.
         };
         ret_vec.push(new_obj)
     }

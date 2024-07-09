@@ -6,11 +6,11 @@ pub fn add_to_main(music_obj: PungeMusicObject) -> Result<String, DatabaseErrors
     let conn = Connection::open("main.db")?;
     info!("Adding into main!");
     conn.execute("INSERT INTO main (title, author, album, features, length, savelocationmp3,\
-                    savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays, weight, threshold)\
-                    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+                    savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays, weight, threshold, order)\
+                    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
                  params![music_obj.title, music_obj.author, music_obj.album, music_obj.features, music_obj.length, music_obj.savelocationmp3,
                  music_obj.savelocationjpg, music_obj.datedownloaded, music_obj.lastlistenedto, music_obj.ischild, music_obj.uniqueid,
-                 music_obj.plays, music_obj.weight, music_obj.threshold])?;
+                 music_obj.plays, music_obj.weight, music_obj.threshold, music_obj.order])?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(format!("{} - {}", &music_obj.title, &music_obj.author))
 }

@@ -20,6 +20,7 @@ pub async fn playlist_wrapper(
 pub async fn download_interface(
     url: String,
     playlist_title: Option<String>,
+    order: usize, // where the song will be inserted in main
 ) -> Result<YouTubeData, AppError> {
     let vid_opt = rusty_ytdl::VideoOptions {
         quality: rusty_ytdl::VideoQuality::HighestAudio,
@@ -69,6 +70,7 @@ pub async fn download_interface(
             mp3,
             details.video_id,
             details.length_seconds.parse::<u32>().unwrap(),
+            order,
         )
         .await?;
         add_to_main(obj)?;
@@ -93,6 +95,7 @@ pub async fn download_interface(
             mp3,
             details.video_id,
             details.length_seconds.parse::<u32>().unwrap(),
+            order,
         )
         .await?;
         info!("updating: {}", &obj.title);
@@ -122,12 +125,14 @@ pub async fn download_interface(
             mp3.clone(),
             details.video_id.clone(),
             details.length_seconds.parse::<u32>().unwrap(),
+            order,
         );
         let punge_iter = sep_video::separate(
             details.description,
             temp_punge_obj.await.unwrap(),
             mp3.clone(),
             details.length_seconds.parse::<usize>().unwrap(),
+            order,
         );
         for sub_item in punge_iter {
             add_to_main(sub_item)?;
@@ -154,6 +159,7 @@ pub async fn download_interface(
             mp3,
             details.video_id,
             details.length_seconds.parse::<u32>().unwrap(),
+            order,
         )
         .await?;
         add_to_main(obj.clone())?;
@@ -174,6 +180,7 @@ pub async fn download_interface(
             mp3,
             details.video_id,
             details.length_seconds.parse::<u32>().unwrap(),
+            order,
         )
         .await?;
         add_to_main(obj.clone())?;
@@ -228,6 +235,7 @@ async fn create_punge_obj(
     mp3_dir: String,
     vid_id: String,
     vid_length: u32, // pass in this and vid_id to avoid calling .await unnecessarily
+    order: usize,    // tells us where in 'main' the object sits
 ) -> Result<PungeMusicObject, AppError> {
     // downloads the video, thumbnail
     // creates the punge obj for further processing if needed (like one song -> whole album)
@@ -265,6 +273,7 @@ async fn create_punge_obj(
         plays: 0,
         weight: 0,
         threshold: crate::db::utilities::calc_thres(vid_length as usize) as u16,
+        order,
     })
 }
 

@@ -7,9 +7,10 @@ pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject
     let conn = Connection::open("main.db")?;
     let mut stmt = conn.prepare("SELECT title, author, album, features,
     length, savelocationmp3, savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays,
-    weight, threshold FROM main
+    weight, threshold, user_order FROM main
     JOIN playlist_relations ON uniqueid = song_id
-    WHERE playlist_id = ?")?;
+    WHERE playlist_id = ?
+    ORDER BY user_order")?;
     let punge_obj_iter = stmt.query_map([playlist_uuid], |row| {
         Ok(PungeMusicObject {
             title: row.get(0)?,
@@ -26,6 +27,7 @@ pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject
             plays: row.get(11)?,
             weight: row.get(12)?,
             threshold: row.get(13)?,
+            order: row.get(14)?,
         })
     })?;
     let mut ret_vec = Vec::new();
@@ -44,7 +46,7 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     let mut ret_vec: Vec<PungeMusicObject> = Vec::new();
     let mut stmt = conn.prepare("SELECT title, author, album, features,
     length, savelocationmp3, savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays,
-    weight, threshold FROM main")?;
+    weight, threshold, user_order FROM main ORDER BY user_order")?;
     let song_iter = stmt.query_map(params![], |row| {
         Ok(PungeMusicObject {
             title: row.get(0)?,
@@ -61,6 +63,7 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
             plays: row.get(11)?,
             weight: row.get(12)?,
             threshold: row.get(13)?,
+            order: row.get(14)?,
         })
     })?;
     for obj in song_iter {
@@ -149,6 +152,7 @@ pub fn get_obj_from_uuid(uniqueid: &str) -> Result<PungeMusicObject, DatabaseErr
             plays: row.get(11)?,
             weight: row.get(12)?,
             threshold: row.get(13)?,
+            order: row.get(14)?,
         })
     })?;
     Ok(playlist_obj_iter)

@@ -63,7 +63,8 @@ impl MusicPlayer {
             uniqueid: "empty".to_string(),
             plays: 0,
             weight: 0,
-            threshold: 1
+            threshold: 1,
+            order: 0
             }            
         }
         else {

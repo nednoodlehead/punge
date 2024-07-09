@@ -20,8 +20,10 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
             uniqueid TEXT PRIMARY KEY,
             plays SMALLINT,
             weight SMALLINT,
-            threshold SMALLINT
+            threshold SMALLINT,
+            user_order INT
             )",
+        // order of songs within 'main'
         params![],
     )?;
     conn.execute(
@@ -41,8 +43,10 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
     conn.execute(
         "CREATE TABLE playlist_relations (
             playlist_id TEXT,
-            song_id TEXT
+            song_id TEXT,
+            user_order INT
             )",
+        // order of the songs within a playlist
         params![],
     )?;
     conn.execute(

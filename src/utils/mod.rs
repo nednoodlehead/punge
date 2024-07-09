@@ -1,5 +1,6 @@
 pub mod backup;
 pub mod cache;
+pub mod db;
 pub mod delete;
 pub mod image;
 pub mod key;

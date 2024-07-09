@@ -25,6 +25,7 @@ pub struct PungeMusicObject {
     pub plays: u16,
     pub weight: i16,
     pub threshold: u16,
+    pub order: usize,
 }
 
 #[derive(Clone)]
@@ -42,7 +43,7 @@ pub struct UserPlaylist {
     pub description: String,
     pub thumbnail: String, // path to thumbnail
     pub datecreated: NaiveDate,
-    pub songcount: u16,
+    pub songcount: usize,
     pub totaltime: String, // updated each time a song is added or removed. in seconds
     pub isautogen: bool,
     pub userorder: u16,
