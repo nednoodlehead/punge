@@ -21,7 +21,7 @@ pub fn create_playlist(new_playlist: UserPlaylist) -> Result<(), DatabaseErrors>
     info!("inserting, playlist does not exist");
     conn.execute(
         "INSERT INTO metadata (title, description, thumbnail, datecreated,\
-        songcount, totaltime, isautogen, userorder, playlist_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        songcount, totaltime, isautogen, order_of_playlist, playlist_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
             new_playlist.title,
             new_playlist.description,
@@ -39,12 +39,16 @@ pub fn create_playlist(new_playlist: UserPlaylist) -> Result<(), DatabaseErrors>
     Ok(())
 }
 
-pub fn add_to_playlist(playlist_uuid: &str, uniqueid: Vec<String>) -> Result<(), DatabaseErrors> {
+pub fn add_to_playlist(
+    playlist_uuid: &str,
+    uniqueid: Vec<String>,
+    order_num: usize,
+) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
     for special_id in uniqueid.iter() {
         conn.execute(
-            "INSERT INTO playlist_relations (playlist_id, song_id) VALUES (?1, ?2)",
-            params![playlist_uuid, special_id],
+            "INSERT INTO playlist_relations (playlist_id, song_id, user_playlist_order) VALUES (?1, ?2, ?3)",
+            params![playlist_uuid, special_id, order_num],
         )?;
     }
     conn.close().map_err(|(_, err)| err)?;

@@ -42,15 +42,6 @@ pub fn _quick_swap_title_author(
     Ok(())
 }
 
-pub fn update_empty_entries(obj: PungeMusicObject) -> Result<(), DatabaseErrors> {
-    let conn = Connection::open("main.db")?;
-    conn.execute("UPDATE main SET title = ?, author = ?, album = ?, features = ?, length = ?, savelocationmp3 = ?, savelocationjpg = ?, datedownloaded = ?, lastlistenedto = ?, ischild = ?, plays = ?, weight = ?, threshold = ? WHERE uniqueid = ?", params![
-        obj.title, obj.author, obj.album, obj.features, obj.length, obj.savelocationmp3, obj.savelocationjpg, obj.datedownloaded, obj.lastlistenedto, obj.ischild, obj.plays, obj.weight, obj.threshold, obj.uniqueid
-    ])?;
-    conn.close().map_err(|(_, err)| err)?;
-    Ok(())
-}
-
 pub fn delete_from_uuid(uniqueid: String) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
     conn.execute("DELETE FROM main WHERE uniqueid = ?", params![uniqueid])?;
@@ -62,7 +53,15 @@ pub fn delete_from_playlist(uniqueid: String, playlistid: String) -> Result<(), 
     let conn = Connection::open("main.db")?;
     conn.execute(
         "DELETE FROM playlist_relations WHERE playlist_id = ? AND song_id = ?",
-        params![playlistid, uniqueid],
+        params![&playlistid, &uniqueid],
+    )?;
+    conn.execute(
+        "UPDATE metadata SET songcount = songcount -1 WHERE playlist_id = ?",
+        params![&playlistid],
+    )?;
+    conn.execute(
+        "UPDATE metadata SET totaltime = totaltime - (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?",
+        params![uniqueid, playlistid],
     )?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())

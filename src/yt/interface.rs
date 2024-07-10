@@ -1,5 +1,4 @@
 use crate::db::insert::add_to_main;
-use crate::db::update::update_empty_entries;
 use crate::types::{AppError, DatabaseErrors, PungeMusicObject, YouTubeData};
 use crate::utils::sep_video;
 use itertools::Itertools;

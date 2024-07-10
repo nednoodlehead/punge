@@ -35,7 +35,7 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
             songcount SMALLINT,
             totaltime TEXT,
             isautogen BOOL,
-            userorder SMALLINT,
+            order_of_playlist SMALLINT,
             playlist_id TEXT
             )",
         params![],
@@ -44,7 +44,7 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
         "CREATE TABLE playlist_relations (
             playlist_id TEXT,
             song_id TEXT,
-            user_order INT
+            user_playlist_order INT
             )",
         // order of the songs within a playlist
         params![],
@@ -52,7 +52,7 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
     conn.execute(
         // the main 'playlist' :)
         "INSERT INTO metadata (title, description, thumbnail, datecreated,
-        songcount, totaltime, isautogen, userorder, playlist_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        songcount, totaltime, isautogen, order_of_playlist, playlist_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         params![
             String::from("Main"),
             String::from("All of your music"),

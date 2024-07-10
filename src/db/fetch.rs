@@ -10,7 +10,7 @@ pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject
     weight, threshold, user_order FROM main
     JOIN playlist_relations ON uniqueid = song_id
     WHERE playlist_id = ?
-    ORDER BY user_order")?;
+    ORDER BY user_playlist_order")?;
     let punge_obj_iter = stmt.query_map([playlist_uuid], |row| {
         Ok(PungeMusicObject {
             title: row.get(0)?,
@@ -109,8 +109,8 @@ use crate::types::UserPlaylist;
 pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
     // we assume that the user has a 'main' playlist
     let conn = Connection::open("main.db")?;
-    let mut stmt = conn.prepare("SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, userorder, playlist_id
-        FROM metadata ORDER BY userorder")?;
+    let mut stmt = conn.prepare("SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, order_of_playlist, playlist_id
+        FROM metadata ORDER BY order_of_playlist")?;
     let playlist_obj_iter = stmt.query_map([], |row| {
         Ok(UserPlaylist {
             title: row.get(0)?,

@@ -1,4 +1,3 @@
-// can we rename this to lib.rs at some point maybe??
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid};
 use crate::db::insert::{add_to_playlist, create_playlist};
 use crate::db::update::{
@@ -574,15 +573,33 @@ impl Application for App {
             Self::Message::AddToPlaylist(playlist) => {
                 info!("we will add: {:?} to {}", &self.selected_songs, &playlist);
                 if self.selected_songs.is_empty() {
-                    add_to_playlist(&playlist, vec![self.current_song.load().song_id.clone()])
-                        .unwrap();
+                    add_to_playlist(
+                        &playlist,
+                        vec![self.current_song.load().song_id.clone()],
+                        self.user_playlists[self
+                            .user_playlists
+                            .iter()
+                            .position(|play| &play.uniqueid == &playlist)
+                            .unwrap()]
+                        .songcount,
+                    )
+                    .unwrap();
                 } else {
-                    add_to_playlist(&playlist, self.selected_songs.clone()).unwrap()
+                    add_to_playlist(
+                        &playlist,
+                        self.selected_songs.clone(),
+                        self.user_playlists[self
+                            .user_playlists
+                            .iter()
+                            .position(|play| &play.uniqueid == &playlist)
+                            .unwrap()]
+                        .songcount,
+                    )
+                    .unwrap()
                 }
                 for row in &mut self.rows {
                     row.ischecked = false; // close all!
                 }
-                // add_to_playlist(playlist_id.unwrap(), song_id.unwrap()).unwrap(); // what abt duplicate addigs?
                 Command::none()
             }
             Self::Message::DeleteSong => {
