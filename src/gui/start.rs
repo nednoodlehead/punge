@@ -1,7 +1,8 @@
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid};
 use crate::db::insert::{add_to_playlist, create_playlist};
 use crate::db::update::{
-    delete_from_playlist, delete_playlist, update_auth_album, update_song, update_title_auth,
+    delete_from_playlist, delete_playlist, move_song_down_one, move_song_up_one, update_auth_album,
+    update_song, update_title_auth,
 };
 use crate::gui::messages::{
     AppEvent, CheckBoxType, ComboBoxType, Context, Page, ProgramCommands, PungeCommand, TextType,
@@ -102,9 +103,10 @@ pub struct App {
     // tarkah table stuff
     header: scrollable::Id,
     body: scrollable::Id,
-    _footer: scrollable::Id,
+    _footer: scrollable::Id, // maybe i should use this one day ...
     columns: Vec<Column>,
     rows: Vec<Row>,
+    toggle_table_edit: bool, // used to toggle the 'edit' mode. keeps track of it
 }
 
 impl Application for App {
@@ -193,6 +195,7 @@ impl Application for App {
                         ischecked: false,
                     })
                     .collect(), // get it from the other file lol
+                toggle_table_edit: false,
             },
             Command::none(),
         )
@@ -368,6 +371,8 @@ impl Application for App {
                 // to guarentee that the order is preserved, we add an empty entry with just the uuid
                 // then, after the downloads have completed, we either update the entry with the data
                 // or remove the entry afterwards if it fails
+                let mut count = 0;
+                let default_count = self.user_playlists[0].songcount;
                 for song in playlist.videos.clone() {
                     let full_url = format!("https://youtube.com/watch?v={}", &song.url);
                     self.download_page
@@ -378,11 +383,12 @@ impl Application for App {
                         download_interface(
                             full_url,
                             Some(playlist.name.clone()),
-                            self.user_playlists[0].songcount,
+                            default_count + count,
                         ),
                         |yt_data| ProgramCommands::AddToDownloadFeedback(song.title, yt_data),
                     );
                     list_cmd.push(cmd);
+                    count += 1;
                 }
                 // add the empty entries!
                 Command::batch(list_cmd)
@@ -1081,6 +1087,34 @@ impl Application for App {
             ProgramCommands::MovePlaylistDown(uniqueid, count) => {
                 crate::db::update::move_playlist_down_one(&uniqueid, count).unwrap();
                 self.user_playlists = get_all_playlists().unwrap();
+                Command::none()
+            }
+            ProgramCommands::ToggleEditMode => {
+                println!("col width: {}", self.columns[4].width);
+                if self.toggle_table_edit {
+                    if let Some(col) = self.columns.get_mut(4) {
+                        col.width = 35.0;
+                    }
+                    self.toggle_table_edit = false;
+                    self.columns[3].width = 275.0;
+                } else {
+                    if let Some(col) = self.columns.get_mut(4) {
+                        col.width = 100.0;
+                    }
+                    self.columns[3].width = 210.0;
+                    self.toggle_table_edit = true;
+                };
+                Command::none()
+            }
+            Self::Message::MoveSongUp(uuid, position) => {
+                move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+                self.refresh_playlist();
+                Command::none()
+            }
+            Self::Message::MoveSongDown(uuid, position) => {
+                println!("????");
+                move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+                self.refresh_playlist();
                 Command::none()
             }
 

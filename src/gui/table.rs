@@ -1,7 +1,7 @@
 // shoutout to github.com/tarkah for this banger !!!
 // and we will sit here praying until https://github.com/iced-rs/iced/issues/160 comes out!
 use crate::gui::messages::ProgramCommands;
-use iced::widget::{button, checkbox, container, horizontal_space, text};
+use iced::widget::{button, checkbox, container, horizontal_space, row, text};
 use iced::Element;
 use iced::{Length, Renderer, Theme};
 use iced_table::table;
@@ -10,7 +10,7 @@ use iced_table::table;
 
 pub struct Column {
     kind: ColumnKind,
-    width: f32,
+    pub width: f32,
     resize_offset: Option<f32>,
 }
 
@@ -40,11 +40,17 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
             ColumnKind::Author => text("Author").into(),
             ColumnKind::Title => text("Title").into(),
             ColumnKind::Album => text("Album").into(),
-            ColumnKind::Edit => button(text("tog").size(10))
-                .width(100)
-                .height(100)
-                .on_press(ProgramCommands::ToggleList)
-                .into(),
+            ColumnKind::Edit => row![
+                button(text("edit").size(10))
+                    .width(40)
+                    .height(40)
+                    .on_press(ProgramCommands::ToggleEditMode),
+                button(text("  ").size(10))
+                    .on_press(ProgramCommands::ToggleList)
+                    .width(40)
+                    .height(40)
+            ]
+            .into(),
         };
 
         container(content).height(24).center_y().into()
@@ -63,11 +69,18 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
             ColumnKind::Author => text(row.author.clone()).into(),
             ColumnKind::Title => text(row.title.clone()).into(),
             ColumnKind::Album => text(row.album.clone()).into(),
-            ColumnKind::Edit => checkbox("", row.ischecked)
-                .on_toggle(move |bol| {
+            ColumnKind::Edit => row![
+                checkbox("", row.ischecked).on_toggle(move |bol| {
                     ProgramCommands::SelectSong(row.uniqueid.clone(), bol, row_index)
-                })
-                .into(),
+                }),
+                button(text("^"))
+                    .on_press(ProgramCommands::MoveSongUp(row.uniqueid.clone(), row_index)),
+                button(text("v")).on_press(ProgramCommands::MoveSongDown(
+                    row.uniqueid.clone(),
+                    row_index
+                ))
+            ]
+            .into(),
         };
 
         container(content)

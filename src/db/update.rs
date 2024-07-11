@@ -152,3 +152,62 @@ pub fn move_playlist_down_one(uniqueid: &str, count: u16) -> Result<(), Database
 
     Ok(())
 }
+
+pub fn move_song_up_one(
+    song_uuid: String,
+    position: usize,
+    playlist_uuid: String,
+) -> Result<(), DatabaseErrors> {
+    // we must differenciate between a change on 'main' and playlist, since the sql is different
+    let conn = Connection::open("main.db")?;
+    if playlist_uuid != "main" {
+        // set the new number's number to -1
+        conn.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order - 1 WHERE user_playlist_order = ?", params![position])?;
+        // update the one we are moving up to the new number
+        conn.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE song_id = ? AND playlist_id = ?", params![position, &song_uuid, &playlist_uuid])?;
+    } else {
+        conn.execute(
+            "UPDATE main SET user_order = user_order - 1 WHERE user_order = ?",
+            params![position],
+        )?;
+        conn.execute(
+            "UPDATE main SET user_order = ? WHERE uniqueid = ?",
+            params![position, song_uuid],
+        )?;
+    }
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}
+// like i guess you could make these ^ & v one function? maybe something to refactor *one* day :)
+pub fn move_song_down_one(
+    song_uuid: String,
+    position: usize,
+    playlist_uuid: String,
+) -> Result<(), DatabaseErrors> {
+    // we must differenciate between a change on 'main' and playlist, since the sql is different
+    let conn = Connection::open("main.db")?;
+    let position = position + 1;
+    if playlist_uuid != "main" {
+        // set the new number's number to +1
+        conn.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order - 1 WHERE user_playlist_order = ? AND playlist_id = ?", params![position, &playlist_uuid])?;
+        // update the one we are moving up to the new number
+        conn.execute(
+            "UPDATE playlist_relations SET user_playlist_order =  ",
+            params![position, &song_uuid, &playlist_uuid],
+        )?;
+    } else {
+        // the one we are affecting but didnt select
+        println!("{} {} ??", position, &song_uuid);
+        conn.execute(
+            // CORRECT!!!
+            "UPDATE main SET user_order = user_order - 1 WHERE user_order = ?",
+            params![position],
+        )?;
+        conn.execute(
+            "UPDATE main SET user_order = user_order + 1 WHERE uniqueid = ?",
+            params![song_uuid],
+        )?;
+    }
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}

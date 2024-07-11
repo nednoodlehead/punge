@@ -61,7 +61,7 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
             0,
             String::from("00:00:00"),
             false, // so technically it is 'auto gen', but not in the right sense
-            1,
+            0, // hey stupid. indexing starts a zero
             "main"
         ],
     )?;
