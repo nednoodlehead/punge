@@ -141,11 +141,11 @@ pub fn move_playlist_down_one(uniqueid: &str, count: u16) -> Result<(), Database
     let new_count = count + 1;
 
     tx.execute(
-        "UPDATE metadata SET userorder = ? WHERE userorder = ?",
+        "UPDATE metadata SET order_of_playlist = ? WHERE order_of_playlist = ?",
         params![count, new_count],
     )?;
     tx.execute(
-        "UPDATE metadata SET userorder = ? WHERE playlist_id = ?",
+        "UPDATE metadata SET order_of_playlist = ? WHERE playlist_id = ?",
         params![new_count, uniqueid],
     )?;
     tx.commit()?;
@@ -159,21 +159,27 @@ pub fn move_song_up_one(
     playlist_uuid: String,
 ) -> Result<(), DatabaseErrors> {
     // we must differenciate between a change on 'main' and playlist, since the sql is different
-    let conn = Connection::open("main.db")?;
+    let mut conn = Connection::open("main.db")?;
     if playlist_uuid != "main" {
-        // set the new number's number to -1
-        conn.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order - 1 WHERE user_playlist_order = ?", params![position])?;
+        // set the new number's number to +1
+        conn.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order - 1 WHERE user_playlist_order = ? AND playlist_id = ?", params![position, &playlist_uuid])?;
         // update the one we are moving up to the new number
-        conn.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE song_id = ? AND playlist_id = ?", params![position, &song_uuid, &playlist_uuid])?;
+        conn.execute(
+            "UPDATE playlist_relations SET user_playlist_order =  ",
+            params![position, &song_uuid, &playlist_uuid],
+        )?;
     } else {
-        conn.execute(
-            "UPDATE main SET user_order = user_order - 1 WHERE user_order = ?",
-            params![position],
+        let trans = conn.transaction()?;
+        let one_below = position - 1;
+        trans.execute(
+            "UPDATE main SET user_order = ? WHERE user_order = ?",
+            params![position, one_below],
         )?;
-        conn.execute(
+        trans.execute(
             "UPDATE main SET user_order = ? WHERE uniqueid = ?",
-            params![position, song_uuid],
+            params![one_below, song_uuid],
         )?;
+        trans.commit()?;
     }
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
@@ -185,8 +191,7 @@ pub fn move_song_down_one(
     playlist_uuid: String,
 ) -> Result<(), DatabaseErrors> {
     // we must differenciate between a change on 'main' and playlist, since the sql is different
-    let conn = Connection::open("main.db")?;
-    let position = position + 1;
+    let mut conn = Connection::open("main.db")?;
     if playlist_uuid != "main" {
         // set the new number's number to +1
         conn.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order - 1 WHERE user_playlist_order = ? AND playlist_id = ?", params![position, &playlist_uuid])?;
@@ -198,15 +203,18 @@ pub fn move_song_down_one(
     } else {
         // the one we are affecting but didnt select
         println!("{} {} ??", position, &song_uuid);
-        conn.execute(
-            // CORRECT!!!
-            "UPDATE main SET user_order = user_order - 1 WHERE user_order = ?",
-            params![position],
+        let trans = conn.transaction()?; // mowt says trans rights
+                                         // so the one we care about will go up in value, the other will go "down" (referring to visual, not numerical)
+        let one_above = position + 1;
+        trans.execute(
+            "UPDATE main SET user_order = ? WHERE user_order = ?",
+            params![position, one_above],
         )?;
-        conn.execute(
-            "UPDATE main SET user_order = user_order + 1 WHERE uniqueid = ?",
-            params![song_uuid],
+        trans.execute(
+            "UPDATE main SET user_order = ? WHERE uniqueid = ?",
+            params![one_above, song_uuid],
         )?;
+        trans.commit()?;
     }
     conn.close().map_err(|(_, err)| err)?;
     Ok(())

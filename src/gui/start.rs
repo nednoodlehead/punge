@@ -1107,14 +1107,26 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::MoveSongUp(uuid, position) => {
-                move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
-                self.refresh_playlist();
+                if position != 0 {
+                    move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+                    self.refresh_playlist();
+                } else {
+                    warn!("MoveSongUp called on song in position 0!")
+                }
                 Command::none()
             }
             Self::Message::MoveSongDown(uuid, position) => {
-                println!("????");
-                move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
-                self.refresh_playlist();
+                if position.saturating_sub(1) != self.rows.len() {
+                    println!(
+                        "len of rows: {} len of position: {}",
+                        self.rows.len(),
+                        position
+                    );
+                    move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+                    self.refresh_playlist();
+                } else {
+                    warn!("MoveSongDown called on lowest song")
+                }
                 Command::none()
             }
 
