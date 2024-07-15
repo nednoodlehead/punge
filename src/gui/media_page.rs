@@ -177,10 +177,10 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
             let jpg_filename = format!("{}.mp4", split_str[4]);
             let mp4_filename = format!("{}.jpg", split_str[4]);
             // determine which version we have
-            let author_file = if std::path::Path::new(&jpg_filename).exists() {
-                jpg_filename
-            } else {
+            let author_file = if std::path::Path::new(&mp4_filename).exists() {
                 mp4_filename
+            } else {
+                jpg_filename
             };
             let src_file = format!("./-{}/{}", split_str[4], author_file);
             let dst_file = format!("{}/{}", download_dir, author_file);
@@ -208,6 +208,4 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
             )))
         }
     };
-
-    // TODO need to pick up and move this. not sure if it makes a directory, or single file. test another time
 }
