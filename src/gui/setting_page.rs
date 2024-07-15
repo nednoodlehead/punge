@@ -104,6 +104,7 @@ impl SettingPage {
             backup_text: config.backup_path.clone(),
             mp3_path_text: config.mp3_path.clone(),
             jpg_path_text: config.jpg_path.clone(),
+
             static_increment: config.static_increment.to_string(),
             static_reduction: config.static_reduction.to_string(),
             media_path: config.media_path.clone(),
@@ -188,6 +189,13 @@ impl SettingPage {
                 row![
                     text("Backup location directory"),
                     horizontal_space(),
+                    if std::path::Path::new(&self.backup_text).exists() {
+                        // thumbs up
+                        text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                    } else {
+                        // thumbs down
+                        text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                    },
                     text_input(&self.backup_text, &self.backup_text)
                         .on_input(|txt| {
                             ProgramCommands::UpdateWidgetText(TextType::BackupText, txt)
@@ -201,6 +209,13 @@ impl SettingPage {
                 row![
                     text("Mp3 download location"),
                     horizontal_space(),
+                    if std::path::Path::new(&self.mp3_path_text).exists() {
+                        // thumbs up
+                        text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                    } else {
+                        // thumbs down
+                        text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                    },
                     text_input(&self.mp3_path_text, &self.mp3_path_text)
                         .on_input(|txt| {
                             ProgramCommands::UpdateWidgetText(TextType::Mp3Text, txt)
@@ -211,6 +226,13 @@ impl SettingPage {
                 row![
                     text("Jpg download location"),
                     horizontal_space(),
+                    if std::path::Path::new(&self.jpg_path_text).exists() {
+                        // thumbs up
+                        text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                    } else {
+                        // thumbs down
+                        text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                    },
                     text_input(&self.jpg_path_text, &self.jpg_path_text)
                         .on_input(|txt| {
                             ProgramCommands::UpdateWidgetText(TextType::JpgText, txt)
@@ -221,6 +243,13 @@ impl SettingPage {
                 row![
                     text("Default Media Download location"),
                     horizontal_space(),
+                    if std::path::Path::new(&self.media_path).exists() {
+                        // thumbs up
+                        text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                    } else {
+                        // thumbs down
+                        text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                    },
                     text_input(&self.media_path, &self.media_path)
                         .on_input(|txt| {
                             ProgramCommands::UpdateWidgetText(TextType::MediaPath, txt)

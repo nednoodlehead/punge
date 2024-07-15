@@ -70,10 +70,10 @@ pub fn begin() -> iced::Result {
             platform_specific: iced::window::settings::PlatformSpecific::default(),
             exit_on_close_request: false,
         },
-        default_font: Default::default(),
+        default_font: iced::Font::with_name("Punge!!"),
         default_text_size: iced::Pixels(16.0),
         antialiasing: false,
-        fonts: Settings::<()>::default().fonts, // thanks source code?
+        fonts: vec![std::borrow::Cow::Borrowed(iced_aw::BOOTSTRAP_FONT_BYTES)], // thanks source code?
     })
 }
 // pages for the gui

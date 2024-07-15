@@ -21,7 +21,8 @@ impl App {
             iced::widget::text_input("GoTo closest match", self.search.as_str())
                 .on_input(ProgramCommands::UpdateSearch)
                 .width(Length::Fixed(200.0)),
-            button(text("Confirm"))
+            button(text("Confirm").font(iced_aw::BOOTSTRAP_FONT))
+                .width(40)
                 .on_press(ProgramCommands::GoToSong)
                 .style(iced::theme::Button::Custom(Box::new(PungeButton)))
         ]);

@@ -41,7 +41,7 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
             ColumnKind::Title => text("Title").into(),
             ColumnKind::Album => text("Album").into(),
             ColumnKind::Edit => row![
-                button(text("edit").size(10))
+                button(text("\u{F4CA}").size(10).font(iced_aw::BOOTSTRAP_FONT))
                     .width(40)
                     .height(40)
                     .on_press(ProgramCommands::ToggleEditMode),
@@ -63,7 +63,7 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
         row: &'a Self::Row,
     ) -> Element<'a, ProgramCommands> {
         let content: Element<_> = match self.kind {
-            ColumnKind::PlayButton => button(text(">"))
+            ColumnKind::PlayButton => button(text("\u{F4F4}").font(iced_aw::BOOTSTRAP_FONT))
                 .on_press(ProgramCommands::PlaySong(row.uniqueid.clone()))
                 .into(),
             ColumnKind::Author => text(row.author.clone()).into(),
@@ -73,12 +73,11 @@ impl<'a> table::Column<'a, ProgramCommands, Theme, Renderer> for Column {
                 checkbox("", row.ischecked).on_toggle(move |bol| {
                     ProgramCommands::SelectSong(row.uniqueid.clone(), bol, row_index)
                 }),
-                button(text("^"))
+                button(text("\u{F148}").font(iced_aw::BOOTSTRAP_FONT))
                     .on_press(ProgramCommands::MoveSongUp(row.uniqueid.clone(), row_index)),
-                button(text("v")).on_press(ProgramCommands::MoveSongDown(
-                    row.uniqueid.clone(),
-                    row_index
-                ))
+                button(text("\u{F128}").font(iced_aw::BOOTSTRAP_FONT)).on_press(
+                    ProgramCommands::MoveSongDown(row.uniqueid.clone(), row_index)
+                )
             ]
             .into(),
         };
