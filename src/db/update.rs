@@ -45,6 +45,10 @@ pub fn _quick_swap_title_author(
 pub fn delete_from_uuid(uniqueid: String) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
     conn.execute("DELETE FROM main WHERE uniqueid = ?", params![uniqueid])?;
+    conn.execute(
+        "UPDATE metadata SET songcount = songcount - 1 WHERE playlist_id = main",
+        params![],
+    )?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
@@ -154,6 +158,8 @@ pub fn move_playlist_down_one(uniqueid: &str, count: u16) -> Result<(), Database
 }
 
 pub fn move_song_up_one(
+    // ok so it sort of just occured to me that we could skip the whole 'uuid' part and just have a single number
+    // then make the var (one above or below depending on up or down song) then atomic swap them...
     song_uuid: String,
     position: usize,
     playlist_uuid: String,
@@ -202,7 +208,6 @@ pub fn move_song_down_one(
         )?;
     } else {
         // the one we are affecting but didnt select
-        println!("{} {} ??", position, &song_uuid);
         let trans = conn.transaction()?; // mowt says trans rights
                                          // so the one we care about will go up in value, the other will go "down" (referring to visual, not numerical)
         let one_above = position + 1;

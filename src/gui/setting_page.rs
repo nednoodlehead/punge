@@ -2,7 +2,6 @@ use crate::gui::messages::{ComboBoxType, ProgramCommands, TextType};
 use crate::gui::style::button::PungeButton;
 use crate::types::{Config, PungeKeyBind};
 use crate::utils::key::{self};
-
 use iced::widget::{button, column, combo_box, row, text, text_input, Container};
 use iced::Element;
 use std::hash::Hash;

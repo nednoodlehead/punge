@@ -244,6 +244,7 @@ async fn create_punge_obj(
     let naming_conv = format!("{} - {}{}", author, title, vid_id.clone());
     let jpg_name = format!("{}{}.jpg", jpg_dir, naming_conv);
     let mp3_name = format!("{}{}.mp3", mp3_dir, naming_conv);
+    info!("we are downloading to {}", &mp3_name);
     if std::path::Path::new(&mp3_name).exists() {
         // should this be checked for eariler? can we???
         return Err(AppError::DatabaseError(DatabaseErrors::FileExistsError));
@@ -257,6 +258,7 @@ async fn create_punge_obj(
         jpg_name.clone(),
     )
     .await?;
+    info!("The video has downloaded, it would've failed by now");
     Ok(PungeMusicObject {
         title,
         author,

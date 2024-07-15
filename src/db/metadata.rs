@@ -2,6 +2,7 @@
 // supposedly, making these connections and closing them has almost no overhead, and since they get called, it is no big deal. I dont even see a reason to put this on a subsccription.
 // maybe depending on if we are doing calculations to determine values, that takes more than like 0.001 seconds, we can use a subscription. not for now though
 use crate::types::AppError;
+use chrono::Local;
 use rusqlite::{params, Connection};
 /*
 song is played fully and naturally transposes to the next song
@@ -49,14 +50,14 @@ pub fn _skipped_song(uniqueid: String) -> Result<(), AppError> {
 pub fn add_one_weight(uniqueid: String) -> Result<(), AppError> {
     let conn = Connection::open("main.db")?;
     let stmt = "UPDATE main SET weight = weight +1 WHERE uniqueid = ?";
-    conn.execute(stmt, params![uniqueid])?;
+    conn.execute(stmt, params![uniqueid, Local::now()])?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
 pub fn add_one_play(uniqueid: String) -> Result<(), AppError> {
     let conn = Connection::open("main.db")?;
-    let stmt = "UPDATE main SET plays = plays +1 WHERE uniqueid = ?";
-    conn.execute(stmt, params![uniqueid])?;
+    let stmt = "UPDATE main SET plays = plays +1 lastlistenedto = ? WHERE uniqueid = ?";
+    conn.execute(stmt, params![uniqueid, Local::now()])?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }

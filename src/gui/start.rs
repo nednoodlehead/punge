@@ -333,7 +333,6 @@ impl Application for App {
                     Command::perform(
                         crate::yt::interface::playlist_wrapper(link.clone()),
                         |playl| {
-                            println!("we are here!");
                             let bew = if playl.is_err() {
                                 Err(AppError::YoutubeError(format!("{:?}", playl)))
                             } else {
@@ -577,31 +576,23 @@ impl Application for App {
                 Command::none()
             }
             Self::Message::AddToPlaylist(playlist) => {
+                let local_songcount = self.user_playlists[self
+                    .user_playlists
+                    .iter()
+                    .position(|play| &play.uniqueid == &playlist)
+                    .unwrap()]
+                .songcount;
                 info!("we will add: {:?} to {}", &self.selected_songs, &playlist);
                 if self.selected_songs.is_empty() {
                     add_to_playlist(
                         &playlist,
                         vec![self.current_song.load().song_id.clone()],
-                        self.user_playlists[self
-                            .user_playlists
-                            .iter()
-                            .position(|play| &play.uniqueid == &playlist)
-                            .unwrap()]
-                        .songcount,
+                        local_songcount,
                     )
                     .unwrap();
                 } else {
-                    add_to_playlist(
-                        &playlist,
-                        self.selected_songs.clone(),
-                        self.user_playlists[self
-                            .user_playlists
-                            .iter()
-                            .position(|play| &play.uniqueid == &playlist)
-                            .unwrap()]
-                        .songcount,
-                    )
-                    .unwrap()
+                    add_to_playlist(&playlist, self.selected_songs.clone(), local_songcount)
+                        .unwrap()
                 }
                 for row in &mut self.rows {
                     row.ischecked = false; // close all!
@@ -1090,7 +1081,6 @@ impl Application for App {
                 Command::none()
             }
             ProgramCommands::ToggleEditMode => {
-                println!("col width: {}", self.columns[4].width);
                 if self.toggle_table_edit {
                     if let Some(col) = self.columns.get_mut(4) {
                         col.width = 35.0;
@@ -1117,11 +1107,6 @@ impl Application for App {
             }
             Self::Message::MoveSongDown(uuid, position) => {
                 if position.saturating_sub(1) != self.rows.len() {
-                    println!(
-                        "len of rows: {} len of position: {}",
-                        self.rows.len(),
-                        position
-                    );
                     move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
                     self.refresh_playlist();
                 } else {
