@@ -938,6 +938,8 @@ impl Application for App {
                         warn!("Config failed! {:?}", e)
                     }
                 }
+                // update the path when the user is sure of the default location
+                self.media_page.download_to_location = self.setting_page.media_path.clone();
                 Command::none()
             }
             Self::Message::NewPlaylist => {

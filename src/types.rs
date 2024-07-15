@@ -259,9 +259,9 @@ impl ShuffleType {
     }
     pub fn from_str(name: &str) -> Self {
         match name {
-            "Normal shuffle" => ShuffleType::Regular,
-            "True random" => ShuffleType::Cluster,
-            "Weighted" => ShuffleType::WeightBias,
+            "Deck shuffle" => ShuffleType::Regular,
+            "Cluster Shuffle" => ShuffleType::Cluster,
+            "Weighted Shuffle" => ShuffleType::WeightBias,
             _ => ShuffleType::Regular, // fail!
         }
     }

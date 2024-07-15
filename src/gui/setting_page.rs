@@ -2,7 +2,9 @@ use crate::gui::messages::{ComboBoxType, ProgramCommands, TextType};
 use crate::gui::style::button::PungeButton;
 use crate::types::{Config, PungeKeyBind};
 use crate::utils::key::{self};
-use iced::widget::{button, column, combo_box, row, text, text_input, Container};
+use iced::widget::{
+    button, column, combo_box, horizontal_space, row, scrollable, text, text_input, Container,
+};
 use iced::Element;
 use std::hash::Hash;
 
@@ -109,9 +111,9 @@ impl SettingPage {
             key_options: combo_box::State::new(key::all_codes()),
             mod_options: combo_box::State::new(key::get_all_modifiers()),
             shuffle_types: combo_box::State::new(vec![
-                "Normal shuffle".to_string(),
-                "True random".to_string(),
-                "Weighted".to_string(),
+                "Deck Shuffle".to_string(),
+                "Weighted Shuffle".to_string(),
+                "Cluster Shuffle".to_string(),
             ]),
             play_key_value: "".to_string(),
             play_mod1_value: "".to_string(),
@@ -175,63 +177,106 @@ impl SettingPage {
         pg
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
-        Container::new(column![
-            row![
-                text("Backup location directory: "),
-                text_input(&self.backup_text, &self.backup_text).on_input(|txt| {
-                    ProgramCommands::UpdateWidgetText(TextType::BackupText, txt)
-                }),
-                button(text("Backup!"))
-                    .on_press(ProgramCommands::CreateBackup)
-                    .style(iced::theme::Button::Custom(Box::new(PungeButton)))
+        Container::new(scrollable(
+            column![
+                row![
+                    horizontal_space(),
+                    text("Download locations").size(20),
+                    horizontal_space()
+                ]
+                .padding(10),
+                row![
+                    text("Backup location directory"),
+                    horizontal_space(),
+                    text_input(&self.backup_text, &self.backup_text)
+                        .on_input(|txt| {
+                            ProgramCommands::UpdateWidgetText(TextType::BackupText, txt)
+                        })
+                        .width(630),
+                    button(text("Backup!"))
+                        .on_press(ProgramCommands::CreateBackup)
+                        .style(iced::theme::Button::Custom(Box::new(PungeButton)))
+                ]
+                .padding(10.0),
+                row![
+                    text("Mp3 download location"),
+                    horizontal_space(),
+                    text_input(&self.mp3_path_text, &self.mp3_path_text)
+                        .on_input(|txt| {
+                            ProgramCommands::UpdateWidgetText(TextType::Mp3Text, txt)
+                        })
+                        .width(700),
+                ]
+                .padding(10.0),
+                row![
+                    text("Jpg download location"),
+                    horizontal_space(),
+                    text_input(&self.jpg_path_text, &self.jpg_path_text)
+                        .on_input(|txt| {
+                            ProgramCommands::UpdateWidgetText(TextType::JpgText, txt)
+                        })
+                        .width(700)
+                ]
+                .padding(10.0),
+                row![
+                    text("Default Media Download location"),
+                    horizontal_space(),
+                    text_input(&self.media_path, &self.media_path)
+                        .on_input(|txt| {
+                            ProgramCommands::UpdateWidgetText(TextType::MediaPath, txt)
+                        })
+                        .width(700)
+                ]
+                .padding(10.0),
+                row![
+                    horizontal_space(),
+                    text("Bind amounts & Shuffle").size(20),
+                    horizontal_space()
+                ],
+                row![
+                    text("Static increment bind amount"),
+                    horizontal_space(),
+                    text_input(&self.static_increment, &self.static_increment)
+                        .on_input(|txt| {
+                            ProgramCommands::UpdateWidgetText(TextType::StaticIncrement, txt)
+                        })
+                        .width(700)
+                ]
+                .padding(10.0),
+                row![
+                    text("Static reduction bind amount"),
+                    horizontal_space(),
+                    text_input(&self.static_reduction, &self.static_reduction)
+                        .on_input(|txt| {
+                            ProgramCommands::UpdateWidgetText(TextType::StaticReduction, txt)
+                        })
+                        .width(700)
+                ]
+                .padding(10.0),
+                row![
+                    text("Shuffle type"),
+                    horizontal_space(),
+                    combo_box(
+                        &self.shuffle_types,
+                        "Shuffle type!",
+                        Some(&self.shuffle_type),
+                        |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::ShuffleType, txt) }
+                    )
+                    .width(700)
+                ]
+                .padding(10),
+                row![
+                    horizontal_space(),
+                    text("Keybinds").size(20),
+                    horizontal_space()
+                ],
+                self.render_keybinds(),
+                row![button(text("Save!"))
+                    .on_press(ProgramCommands::SaveConfig)
+                    .style(iced::theme::Button::Custom(Box::new(PungeButton)))],
             ]
-            .padding(10.0),
-            row![
-                text("Mp3 download location"),
-                text_input(&self.mp3_path_text, &self.mp3_path_text)
-                    .on_input(|txt| { ProgramCommands::UpdateWidgetText(TextType::Mp3Text, txt) }),
-            ]
-            .padding(10.0),
-            row![
-                text("Jpg download location"),
-                text_input(&self.jpg_path_text, &self.jpg_path_text)
-                    .on_input(|txt| { ProgramCommands::UpdateWidgetText(TextType::JpgText, txt) })
-            ]
-            .padding(10.0),
-            row![
-                text("Static increment bind amount (1 = default): "),
-                text_input(&self.static_increment, &self.static_increment).on_input(|txt| {
-                    ProgramCommands::UpdateWidgetText(TextType::StaticIncrement, txt)
-                })
-            ]
-            .padding(10.0),
-            row![
-                text("Static reduction bind amount (1 = default): "),
-                text_input(&self.static_reduction, &self.static_reduction).on_input(|txt| {
-                    ProgramCommands::UpdateWidgetText(TextType::StaticReduction, txt)
-                })
-            ]
-            .padding(10.0),
-            row![
-                text("Default Media Download location: "),
-                text_input(&self.media_path, &self.media_path).on_input(|txt| {
-                    ProgramCommands::UpdateWidgetText(TextType::MediaPath, txt)
-                })
-            ],
-            row![
-                text("Shuffle type"),
-                combo_box(
-                    &self.shuffle_types,
-                    "Shuffle type!",
-                    Some(&self.shuffle_type),
-                    |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::ShuffleType, txt) }
-                )
-            ],
-            self.render_keybinds(),
-            row![button(text("Save!"))
-                .on_press(ProgramCommands::SaveConfig)
-                .style(iced::theme::Button::Custom(Box::new(PungeButton)))],
-        ])
+            .spacing(10.0),
+        ))
         .into()
     }
 }
@@ -240,117 +285,144 @@ impl SettingPage {
         column![
             row![
                 text("Play toggle"),
+                horizontal_space(),
                 combo_box(
                     &self.key_options,
                     "Key",
                     Some(&self.play_key_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::PlayKey, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 1",
                     Some(&self.play_mod1_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::PlayModifier1, txt) }
-                ),
+                )
+                .width(233), // 700 / 3
                 combo_box(
                     &self.mod_options,
                     "Modifier 2",
                     Some(&self.play_mod2_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::PlayModifier2, txt) }
                 )
-            ],
+                .width(233)
+            ]
+            .padding(10),
             row![
                 text("Skip Forwards"),
+                horizontal_space(),
                 combo_box(
                     &self.key_options,
                     "Key",
                     Some(&self.forward_key_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::ForwardKey, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifer 1",
                     Some(&self.forward_mod1_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::ForwardModifer1, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifer 2",
                     Some(&self.forward_mod2_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::ForwardModifer2, txt) }
                 )
-            ],
+                .width(233)
+            ]
+            .padding(10),
             row![
                 text("Skip Backwards"),
+                horizontal_space(),
                 combo_box(
                     &self.key_options,
                     "Key",
                     Some(&self.backward_key_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::BackwardKey, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 1",
                     Some(&self.backward_mod1_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::BackwardModifier1, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 2",
                     Some(&self.backward_mod2_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::BackwardModifier2, txt) }
                 )
-            ],
+                .width(233)
+            ]
+            .padding(10),
             row![
                 text("Shuffle toggle"),
+                horizontal_space(),
                 combo_box(
                     &self.key_options,
                     "Key",
                     Some(&self.shuffle_key_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::ShuffleKey, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 1",
                     Some(&self.shuffle_mod1_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::ShuffleModifier1, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 2",
                     Some(&self.shuffle_mod2_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::ShuffleModifier2, txt) }
-                ),
-            ],
+                )
+                .width(233),
+            ]
+            .padding(10),
             row![
                 text("Static volume up"),
+                horizontal_space(),
                 combo_box(
                     &self.key_options,
                     "Key",
                     Some(&self.staticup_key_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::StaticUpKey, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 1",
                     Some(&self.staticup_mod1_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::StaticUpModifier1, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 2",
                     Some(&self.staticup_mod2_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::StaticUpModifier2, txt) }
-                ),
-            ],
+                )
+                .width(233),
+            ]
+            .padding(10),
             row![
                 text("Static volume down"),
+                horizontal_space(),
                 combo_box(
                     &self.key_options,
                     "Key",
                     Some(&self.staticdown_key_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::StaticDownKey, txt) }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 1",
@@ -358,7 +430,8 @@ impl SettingPage {
                     |txt| {
                         ProgramCommands::UpdateCombobox(ComboBoxType::StaticDownModifier1, txt)
                     }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 2",
@@ -366,16 +439,21 @@ impl SettingPage {
                     |txt| {
                         ProgramCommands::UpdateCombobox(ComboBoxType::StaticDownModifier2, txt)
                     }
-                ),
-            ],
+                )
+                .width(233),
+            ]
+            .padding(10),
             row![
-                text("Go to album"),
+                text("Go to album (coming soon!)"),
+                horizontal_space(),
                 combo_box(
                     &self.key_options,
                     "Key",
                     Some(&self.gotoalbum_key_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::GoToAlbumKey, txt) }
-                ),
+                )
+                .width(233)
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 1",
@@ -383,16 +461,19 @@ impl SettingPage {
                     |txt| {
                         ProgramCommands::UpdateCombobox(ComboBoxType::GoToAlbumModifier1, txt)
                     }
-                ),
+                )
+                .width(233),
                 combo_box(
                     &self.mod_options,
                     "Modifier 2",
                     Some(&self.gotoalbum_mod2_value),
                     |txt| { ProgramCommands::UpdateCombobox(ComboBoxType::GoToAlbumModifer2, txt) }
-                ),
+                )
+                .width(233),
             ]
-            .spacing(10)
+            .padding(10)
         ]
+        .spacing(10)
         .into()
     }
 }
