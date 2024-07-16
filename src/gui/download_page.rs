@@ -3,7 +3,7 @@ use crate::gui::style::button::PungeButton;
 use crate::types::YouTubeSearchResult;
 use iced::widget::{
     button, checkbox, column, horizontal_space, row, scrollable, text, text_input, Column,
-    Container,
+    Container, Image,
 };
 use iced::{Element, Length};
 
@@ -95,12 +95,13 @@ impl DownloadPage {
                         Some(duration) => {
                             // these are normal videos
                             column![row![
+                                Image::new(&results.thumbnail).width(80).height(45), // 16:9
                                 column![
                                     text(results.title.clone()),
                                     text(results.author.clone()),
                                     text(duration.clone())
                                 ]
-                                .width(Length::Fixed(400.0)),
+                                .width(Length::Fixed(320.0)),
                                 horizontal_space(),
                                 column![
                                     button(text("Download!"))

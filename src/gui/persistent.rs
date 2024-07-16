@@ -27,6 +27,9 @@ impl App {
         ]);
         container(
             row![
+                Image::new(curr_song.thumbnail.clone())
+                    .width(100)
+                    .height(100),
                 column![
                     text(curr_song.title.clone()),
                     text(curr_song.author.clone()),

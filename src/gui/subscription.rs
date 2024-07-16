@@ -133,6 +133,7 @@ impl App {
                     title: music_obj.current_object.title.clone(),
                     author: music_obj.current_object.author.clone(),
                     album: music_obj.current_object.album.clone(),
+                    thumbnail: music_obj.current_object.savelocationjpg.clone(),
                     song_id: music_obj.current_object.uniqueid.clone(),
                     previous_id: None, // doesnt matter unless we are on skip_forward
                     volume: music_obj.sink.volume(),
@@ -165,6 +166,7 @@ impl App {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
+                                    thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
                                     previous_id: None, // i dont think we can know this here?
                                     volume: music_obj.sink.volume(),
@@ -196,6 +198,7 @@ impl App {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
+                                    thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
                                     previous_id: Some(old_id),
                                     volume: music_obj.sink.volume(),
@@ -224,6 +227,7 @@ impl App {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
+                                    thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
                                     previous_id: None,
                                     volume: music_obj.sink.volume(),
@@ -260,6 +264,7 @@ impl App {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
+                                    thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
                                     previous_id: None,
                                     volume: music_obj.sink.volume(),
@@ -297,6 +302,7 @@ impl App {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
+                                    thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
                                     previous_id: None,
                                     volume: music_obj.sink.volume(),
@@ -398,6 +404,10 @@ impl App {
                                                     title: music_obj.current_object.title.clone(),
                                                     author: music_obj.current_object.author.clone(),
                                                     album: music_obj.current_object.album.clone(),
+                                                    thumbnail: music_obj
+                                                        .current_object
+                                                        .savelocationjpg
+                                                        .clone(),
                                                     song_id: music_obj
                                                         .current_object
                                                         .uniqueid
@@ -438,6 +448,10 @@ impl App {
                                                     title: music_obj.current_object.title.clone(),
                                                     author: music_obj.current_object.author.clone(),
                                                     album: music_obj.current_object.album.clone(),
+                                                    thumbnail: music_obj
+                                                        .current_object
+                                                        .savelocationjpg
+                                                        .clone(),
                                                     song_id: music_obj
                                                         .current_object
                                                         .uniqueid
@@ -481,6 +495,10 @@ impl App {
                                                     title: music_obj.current_object.title.clone(),
                                                     author: music_obj.current_object.author.clone(),
                                                     album: music_obj.current_object.album.clone(),
+                                                    thumbnail: music_obj
+                                                        .current_object
+                                                        .savelocationjpg
+                                                        .clone(),
                                                     song_id: music_obj
                                                         .current_object
                                                         .uniqueid
@@ -521,6 +539,10 @@ impl App {
                                                     title: music_obj.current_object.title.clone(),
                                                     author: music_obj.current_object.author.clone(),
                                                     album: music_obj.current_object.album.clone(),
+                                                    thumbnail: music_obj
+                                                        .current_object
+                                                        .savelocationjpg
+                                                        .clone(),
                                                     song_id: music_obj
                                                         .current_object
                                                         .uniqueid
@@ -632,6 +654,10 @@ impl App {
                                                     title: music_obj.current_object.title.clone(),
                                                     author: music_obj.current_object.author.clone(),
                                                     album: music_obj.current_object.album.clone(),
+                                                    thumbnail: music_obj
+                                                        .current_object
+                                                        .savelocationjpg
+                                                        .clone(),
                                                     song_id: music_obj
                                                         .current_object
                                                         .uniqueid
@@ -677,6 +703,7 @@ impl App {
                                     title: music_obj.current_object.title.clone(),
                                     author: music_obj.current_object.author.clone(),
                                     album: music_obj.current_object.album.clone(),
+                                    thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
                                     previous_id: None,
                                     volume: music_obj.sink.volume(),

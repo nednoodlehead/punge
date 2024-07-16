@@ -29,7 +29,8 @@ pub async fn download_interface(
     };
     let video = Video::new_with_options(&url, vid_opt)?; // url check
     info!("playlist_title: {:?}", &playlist_title);
-    if check_if_exists(video.get_video_id()) && playlist_title.is_none() {
+    let video_id = video.get_video_id();
+    if check_if_exists(&video_id) && playlist_title.is_none() {
         // if the entry exists already
         warn!("The video already exists");
         return Err(AppError::DatabaseError(
@@ -39,6 +40,7 @@ pub async fn download_interface(
     let details = video.get_basic_info().unwrap().video_details;
     let (mp3, jpg) = fetch_json();
 
+    let jpg_file = format!("{}{}.jpg", &jpg, &video_id);
     // different cases for videos:
     // 1. normal, title has auth and title in it, separated by " - ", no album
     // 2. auto-gen. title = title, author = author, album = 4th line in description
@@ -67,6 +69,7 @@ pub async fn download_interface(
             String::from("None"),
             jpg,
             mp3,
+            jpg_file,
             details.video_id,
             details.length_seconds.parse::<u32>().unwrap(),
             order,
@@ -92,6 +95,7 @@ pub async fn download_interface(
             String::from("None"),
             jpg,
             mp3,
+            jpg_file,
             details.video_id,
             details.length_seconds.parse::<u32>().unwrap(),
             order,
@@ -122,6 +126,7 @@ pub async fn download_interface(
             String::from("none"),
             jpg.clone(),
             mp3.clone(),
+            jpg_file,
             details.video_id.clone(),
             details.length_seconds.parse::<u32>().unwrap(),
             order,
@@ -156,6 +161,7 @@ pub async fn download_interface(
             String::from("None"),
             jpg,
             mp3,
+            jpg_file,
             details.video_id,
             details.length_seconds.parse::<u32>().unwrap(),
             order,
@@ -177,6 +183,7 @@ pub async fn download_interface(
             String::from("None"),
             jpg,
             mp3,
+            jpg_file,
             details.video_id,
             details.length_seconds.parse::<u32>().unwrap(),
             order,
@@ -188,14 +195,14 @@ pub async fn download_interface(
     Ok(youtube_data)
 }
 
-pub fn check_if_exists(uniqueid: String) -> bool {
+pub fn check_if_exists(uniqueid: &str) -> bool {
     // maybe should be Result!?
     // checks if the given unique id is found inside the main table. aka: has it been downloaded?
     let conn = rusqlite::Connection::open("main.db").unwrap();
     let mut stmt = conn
         .prepare("SELECT * FROM main WHERE uniqueid = ?")
         .unwrap();
-    let exists = stmt.exists([uniqueid.clone()]).unwrap();
+    let exists = stmt.exists([uniqueid]).unwrap();
     drop(stmt);
     conn.close().unwrap();
     debug!(
@@ -232,6 +239,7 @@ async fn create_punge_obj(
     features: String,
     jpg_dir: String,
     mp3_dir: String,
+    jpg_file: String,
     vid_id: String,
     vid_length: u32, // pass in this and vid_id to avoid calling .await unnecessarily
     order: usize,    // tells us where in 'main' the object sits
@@ -241,8 +249,12 @@ async fn create_punge_obj(
     let author = clean_inputs_for_win_saving(clean_author(youtube_data.author));
     let title = clean_inputs_for_win_saving(youtube_data.title);
     let album = clean_inputs_for_win_saving(youtube_data.album);
+    // i am also choosing to have the naming conventions for the jpg & mp3 files to be different, for a few reasons:
+    // 1. if jpg becomes similar to the "author - title" variation, we do not know at the time of the jpg download
+    // (only if it is a temp file) what the author - title actually is. so we cannot just move it over
+    // 2. if the mp3 becomes like the jpg file (uniqueid.jpg) then debugging the audio (and what has downloaded) is much harder
+    // and it also makes moving the files around platforms much easier
     let naming_conv = format!("{} - {}{}", author, title, vid_id.clone());
-    let jpg_name = format!("{}{}.jpg", jpg_dir, naming_conv);
     let mp3_name = format!("{}{}.mp3", mp3_dir, naming_conv);
     info!("we are downloading to {}", &mp3_name);
     if std::path::Path::new(&mp3_name).exists() {
@@ -250,14 +262,7 @@ async fn create_punge_obj(
         return Err(AppError::DatabaseError(DatabaseErrors::FileExistsError));
     }
     // keep in mind that this will add to db whether it fails or not. which is intended
-    download_to_punge(
-        vid.clone(),
-        mp3_dir,
-        jpg_dir,
-        mp3_name.clone(),
-        jpg_name.clone(),
-    )
-    .await?;
+    download_to_punge(vid.clone(), mp3_dir, jpg_dir.clone(), mp3_name.clone()).await?;
     info!("The video has downloaded, it would've failed by now");
     Ok(PungeMusicObject {
         title,
@@ -266,7 +271,7 @@ async fn create_punge_obj(
         features,
         length: vid_length,
         savelocationmp3: mp3_name,
-        savelocationjpg: jpg_name,
+        savelocationjpg: jpg_file,
         datedownloaded: chrono::Local::now().date_naive(),
         lastlistenedto: chrono::Local::now().date_naive(),
         ischild: false, // is changed if obj is passed in to be modified by sep_video.rs
@@ -293,13 +298,24 @@ pub fn clean_inputs_for_win_saving(to_check: String) -> String {
 async fn download_to_punge(
     vid: Video,
     mp3_path: String,
-    _jpg_path: String,
+    jpg_path: String,
     new_mp3_name: String,
-    _new_jpg_name: String, // unused rn
 ) -> Result<(), AppError> {
     // let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
     // first we downlaod it as '.mp4' then ffmpeg it over to mp3
     let id = vid.get_basic_info().unwrap();
+    let potential_path = format!("./img/temp/{}", &id.video_details.video_id);
+    if std::path::Path::new(&potential_path).exists() {
+        // copy the file instead of downloading. we check the tmp directory to see if it is there
+        info!(
+            "We are copying from our temp storage: {}. this was searched?",
+            &jpg_path
+        );
+        std::fs::copy(potential_path, jpg_path).unwrap();
+    } else {
+        crate::utils::image::get_raw_thumbnail_from_link(&id.video_details.video_id, &jpg_path)
+            .unwrap();
+    };
     let mp4_name = format!(
         "{}{}.mp4",
         mp3_path.clone(),

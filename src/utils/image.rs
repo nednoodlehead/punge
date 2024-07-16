@@ -3,14 +3,11 @@
 // in theory these images will come from the youtube thumbnail, then are processed
 use reqwest;
 // returns the path to the downloaded thumbnail
-pub fn _get_raw_thumbnail_from_link(youtube_id: &str, dir_path: &str) -> Result<String, ()> {
+pub fn get_raw_thumbnail_from_link(youtube_id: &str, dir_path: &str) -> Result<String, ()> {
     // https://youtube.com/watch?v=NPqDIwWMtxg
     // turns into: https://img.youtube.com/vi/NPqDIwWMtxg/maxresdefault.jpg
-    let base_url = format!(
-        "https://img.youtube.com/vi/{}/maxresdefault.jpg",
-        youtube_id
-    );
-    let file_path: String = format!("{}{}.png", dir_path, youtube_id);
+    let base_url = format!("https://img.youtube.com/vi/{}/default.jpg", youtube_id);
+    let file_path: String = format!("{}{}.jpg", dir_path, youtube_id);
     // check if it is downloaded?!
     if std::path::Path::exists(&std::path::Path::new(&file_path)) {
         return Err(());
@@ -26,7 +23,8 @@ pub fn _get_raw_thumbnail_from_link(youtube_id: &str, dir_path: &str) -> Result<
 
 // overarching concept:
 // images are stored in one of two places
-// some temp folder: searched images and whatnot
+// ./img/temp/ is for thumbnails that are searched via the search function
+// ./img/temp/'s contents are cleared each time a search is performed
 // ./default/jpg/ for thumbnails that are used for videos!
 
 // pub fn fetch_and_crop_image(youtube_id: &str, dir_path: &str) -> Result<String, ()> {

@@ -169,6 +169,7 @@ pub struct MusicData {
     pub title: String, // used to updated active songs and whatnot
     pub author: String,
     pub album: String,
+    pub thumbnail: String, // path to the thumbnail
     pub song_id: String,
     pub previous_id: Option<String>, // used only inside of skip_forward database subscription, None otherwise.
     pub volume: f32,
@@ -186,6 +187,7 @@ impl MusicData {
             title: "".to_string(),
             author: "".to_string(),
             album: "".to_string(),
+            thumbnail: "".to_string(),
             song_id: "".to_string(),
             previous_id: None,
             volume: 0.0,

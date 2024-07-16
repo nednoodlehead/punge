@@ -412,14 +412,19 @@ impl Application for App {
                 self.media_page.download_feedback.push(val);
                 Command::none()
             }
-            Self::Message::SearchYouTube(str) => Command::perform(
-                crate::yt::search::content_to_text(
-                    str,
-                    self.download_page.include_videos,
-                    self.download_page.include_playlists,
-                ),
-                ProgramCommands::SearchYouTubeResults,
-            ),
+            Self::Message::SearchYouTube(str) => {
+                // should *in theory* get rid of the images in memory so there is no problem deleteing them from the
+                // content_to_text() call (remove_all_in_temp_dir)
+                self.download_page.youtube_content = vec![];
+                Command::perform(
+                    crate::yt::search::content_to_text(
+                        str,
+                        self.download_page.include_videos,
+                        self.download_page.include_playlists,
+                    ),
+                    ProgramCommands::SearchYouTubeResults,
+                )
+            }
             Self::Message::SearchYouTubeResults(search) => {
                 self.download_page.youtube_content = search;
                 Command::none()
