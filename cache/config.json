@@ -1,10 +1,10 @@
 {
-  "backup_path": "C:/",
-  "mp3_path": "C:/",
-  "jpg_path": "C:/",
+  "backup_path": ".\\",
+  "mp3_path": ".\\default\\mp3\\",
+  "jpg_path": ".\\default\\jpg\\",
   "static_increment": 1,
   "static_reduction": 1,
-  "media_path": "C:/",
+  "media_path": ".\\",
   "keybinds": {
     "1912779161": {
       "code": "ArrowLeft",
@@ -12,17 +12,11 @@
       "mod2": null,
       "command": "ProgramCommands::SkipBackwards"
     },
-    "3009842507": {
-      "code": "End",
+    "4174001518": {
+      "code": "ArrowDown",
       "mod1": "CONTROL",
       "mod2": null,
-      "command": "ProgramCommands::PlayToggle"
-    },
-    "4121890298": {
-      "code": "ArrowRight",
-      "mod1": "CONTROL",
-      "mod2": null,
-      "command": "ProgramCommands::SkipForwards"
+      "command": "ProgramCommands::StaticVolumeDown"
     },
     "3520754938": {
       "code": "PageDown",
@@ -30,18 +24,34 @@
       "mod2": null,
       "command": "ProgramCommands::ShuffleToggle"
     },
-    "4174001518": {
-      "code": "ArrowDown",
+    "3009842507": {
+      "code": "End",
       "mod1": "CONTROL",
       "mod2": null,
-      "command": "ProgramCommands::StaticVolumeDown"
+      "command": "ProgramCommands::PlayToggle"
     },
     "2037224482": {
       "code": "ArrowUp",
       "mod1": "CONTROL",
       "mod2": null,
       "command": "ProgramCommands::StaticVolumeUp"
+    },
+    "4121890298": {
+      "code": "ArrowRight",
+      "mod1": "CONTROL",
+      "mod2": null,
+      "command": "ProgramCommands::SkipForwards"
     }
   },
-  "shuffle_type": "WeightBias"
+  "shuffle_type": "WeightBias",
+  "idle_strings": [
+    "chillin in punge",
+    "listening to nothin!",
+    "listening to the birds chirp",
+    "idle in punge menus",
+    "touching grass",
+    "busy improving punge",
+    "listening to silence",
+    "Right ear: Silence. Left ear tinnitus"
+  ]
 }
