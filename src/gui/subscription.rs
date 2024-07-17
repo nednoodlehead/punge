@@ -724,7 +724,11 @@ impl App {
         })
     }
 
-    pub fn discord_loop(&self, obj: Arc<ArcSwap<MusicData>>) -> Subscription<ProgramCommands> {
+    pub fn discord_loop(
+        &self,
+        obj: Arc<ArcSwap<MusicData>>,
+        config: Arc<ArcSwap<Config>>,
+    ) -> Subscription<ProgramCommands> {
         iced::subscription::channel(13, 32, |mut _sender| async move {
             let mut client = DiscordIpcClient::new("1219029975441608737").unwrap();
             let punge_img = activity::Assets::new().large_image("punge_icon_for_discord-02");
@@ -741,8 +745,9 @@ impl App {
                         .set_activity(
                             activity::Activity::new()
                                 .state(
-                                    IDLE_STRINGS
-                                        [rand::thread_rng().gen_range(0..IDLE_STRINGS.len())],
+                                    config.load().idle_strings[rand::thread_rng()
+                                        .gen_range(0..config.load().idle_strings.len())]
+                                    .as_str(),
                                 )
                                 .assets(punge_img.clone()),
                         )

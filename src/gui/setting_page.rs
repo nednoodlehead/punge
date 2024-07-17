@@ -3,7 +3,8 @@ use crate::gui::style::button::PungeButton;
 use crate::types::{Config, PungeKeyBind};
 use crate::utils::key::{self};
 use iced::widget::{
-    button, column, combo_box, horizontal_space, row, scrollable, text, text_input, Container,
+    button, column, combo_box, horizontal_space, row, scrollable, text, text_editor, text_input,
+    Container,
 };
 use iced::Element;
 use std::hash::Hash;
@@ -47,6 +48,7 @@ pub struct SettingPage {
     pub gotoalbum_mod1_value: String,
     pub gotoalbum_mod2_value: String,
     pub shuffle_type: String,
+    pub idle_string_content: iced::widget::text_editor::Content,
 }
 // how the hotkey numbers are created !!!
 pub fn generate_hash(mods: [String; 2], key: String) -> u32 {
@@ -138,6 +140,9 @@ impl SettingPage {
             gotoalbum_mod1_value: "".to_string(),
             gotoalbum_mod2_value: "".to_string(),
             shuffle_type: config.shuffle_type.to_string(),
+            idle_string_content: iced::widget::text_editor::Content::with_text(
+                &idle_strings_to_app(config.idle_strings.clone()),
+            ),
         };
         for (_, bind) in &config.keybinds {
             match bind.command {
@@ -300,6 +305,13 @@ impl SettingPage {
                     horizontal_space()
                 ],
                 self.render_keybinds(),
+                row![
+                    text("Discord Idle Strings (use comma to separate quips)"),
+                    text_editor(&self.idle_string_content)
+                        .on_action(ProgramCommands::UpdateEditor)
+                        .height(75)
+                ]
+                .padding(10),
                 row![button(text("Save!"))
                     .on_press(ProgramCommands::SaveConfig)
                     .style(iced::theme::Button::Custom(Box::new(PungeButton)))],
@@ -500,9 +512,30 @@ impl SettingPage {
                 )
                 .width(233),
             ]
-            .padding(10)
+            .padding(10),
         ]
         .spacing(10)
         .into()
     }
+}
+
+pub fn idle_strings_to_app(idle_strings: Vec<String>) -> String {
+    let mut ret_str = String::new();
+    for string in idle_strings {
+        ret_str.push_str(&string);
+        ret_str.push_str(", ")
+    }
+    ret_str.truncate(ret_str.len() - 2); // remove the final ", "
+    ret_str
+}
+
+pub fn idle_strings_to_config(idle_string: String) -> Vec<String> {
+    let mut ret_vec: Vec<String> = Vec::new();
+    let splot = idle_string.split(',');
+    for string in splot.into_iter() {
+        let s = string.trim();
+        let s = &s.replace("\n", "");
+        ret_vec.push(s.to_string())
+    }
+    ret_vec
 }

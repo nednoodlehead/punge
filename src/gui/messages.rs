@@ -74,6 +74,7 @@ pub enum ProgramCommands {
     UpdateSong(crate::gui::table::Row), // happens to be a convient type for this data
     QuickSwapTitleAuthor,               // uniqueid
     PushScrubber,
+    UpdateEditor(iced::widget::text_editor::Action), // updating the idle string editor in gui::settings
 }
 
 #[derive(Debug, Copy, Clone)]

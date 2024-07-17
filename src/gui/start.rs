@@ -148,6 +148,7 @@ impl Application for App {
                     media_path: String::from("C:/"),
                     keybinds: std::collections::HashMap::new(), // empty!
                     shuffle_type: ShuffleType::Regular,
+                    idle_strings: vec!["listening to nothin".to_string()],
                 }
             }
         };
@@ -932,6 +933,9 @@ impl Application for App {
                     media_path: self.setting_page.media_path.clone(),
                     keybinds: bind_config,
                     shuffle_type: ShuffleType::from_str(&self.setting_page.shuffle_type),
+                    idle_strings: crate::gui::setting_page::idle_strings_to_config(
+                        self.setting_page.idle_string_content.text(),
+                    ),
                 };
                 // mostly useful for updating keybinds in real time
                 self.config.store(Arc::new(obj.clone())); // refresh the config with this data :D
@@ -1121,6 +1125,10 @@ impl Application for App {
                 }
                 Command::none()
             }
+            Self::Message::UpdateEditor(action) => {
+                self.setting_page.idle_string_content.perform(action);
+                Command::none()
+            }
 
             _ => Command::none(),
         }
@@ -1221,7 +1229,7 @@ impl Application for App {
             self.hotkey_loop(self.config.clone()),
             self.database_subscription(self.current_song.clone()),
             self.close_app_sub(),
-            self.discord_loop(self.current_song.clone()), // self.database_sub(database_receiver),
+            self.discord_loop(self.current_song.clone(), self.config.clone()),
             self.scrubbing_bar_sub(self.current_song.clone()),
         ]) // is two batches required?? prolly not
     }

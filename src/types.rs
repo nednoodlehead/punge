@@ -215,6 +215,7 @@ pub struct Config {
     // correct content. it should stay consistent with what is registered with the manager
     pub keybinds: HashMap<u32, PungeKeyBind>,
     pub shuffle_type: ShuffleType,
+    pub idle_strings: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
