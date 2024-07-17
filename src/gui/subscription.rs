@@ -17,23 +17,6 @@ use std::sync::Arc;
 use tokio::{self}; // for benchmarking the skip function
 
 // makes idling a bit more interesting. Could pull these from json one day...
-const IDLE_STRINGS: &[&str] = &[
-    "Chillin in Punge",
-    "Listening to nothin..",
-    "Listening to the birds chirp",
-    "Idle in Punge menus",
-    "Probably afk lol",
-    "Currently touching grass..",
-    "Busy improving Punge",
-    "Taking the dog for a walk",
-    "Listening to silence",
-    "Music stopped, locked in 😈",
-    "Honestly, probably getting food.",
-    "Piggin out",
-    "Writing more stupid quips",
-    "Doing a war attack",
-    "Right ear: Silence. Left ear: tinnitus",
-];
 impl App {
     // difference between this database subscription is that no sender and receiver is needed, instead we check the status of self.current_obj every 20 seconds or so and do some calculations for inserting into db
     // now the question you may have is, "ok, i see how this can work for weight, but how for plays?", because the weight can be adjusted maybe += 1 for each 20 seconds its listened
