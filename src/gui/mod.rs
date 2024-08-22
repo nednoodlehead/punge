@@ -8,4 +8,4 @@ pub mod song_edit_page;
 pub mod start;
 pub mod style;
 pub mod subscription;
-pub mod table;
+pub mod widgets;

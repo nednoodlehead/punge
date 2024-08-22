@@ -7,7 +7,6 @@ use crate::db::update::{
 use crate::gui::messages::{
     AppEvent, CheckBoxType, ComboBoxType, Context, Page, ProgramCommands, PungeCommand, TextType,
 };
-use crate::gui::table::{Column, ColumnKind, Row};
 use crate::gui::{download_page, setting_page};
 use crate::player::player_cache;
 use crate::player::sort::get_values_from_db;
@@ -19,8 +18,8 @@ use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::subscription::Subscription;
-use iced::widget::{column, container, image, responsive, row, scrollable, text};
-use iced::{executor, Application, Command, Element, Length, Settings, Theme};
+use iced::widget::{button, column, container, image, row, scrollable, text};
+use iced::{executor, Command, Element, Length, Settings, Theme};
 use log::{debug, error, info, warn};
 use simplelog::{CombinedLogger, TermLogger, WriteLogger};
 use std::sync::Arc;
@@ -44,40 +43,43 @@ pub fn begin() -> iced::Result {
         ),
     ])
     .unwrap();
-    App::run(Settings {
-        id: None,
-        flags: (),
-        window: iced::window::Settings {
-            size: iced::Size {
-                width: 1250.0,
-                height: 700.0,
+    iced::program("Punge!!", App::update, App::view)
+        .settings(Settings {
+            id: None,
+            flags: (),
+            window: iced::window::Settings {
+                size: iced::Size {
+                    width: 1250.0,
+                    height: 700.0,
+                },
+                position: iced::window::Position::Default,
+                min_size: Some(iced::Size {
+                    width: 1250.0,
+                    height: 700.0,
+                }),
+                max_size: Some(iced::Size {
+                    width: 2920.0,
+                    height: 2080.0,
+                }),
+                visible: true,
+                resizable: true,
+                decorations: true,
+                transparent: false,
+                level: iced::window::Level::Normal,
+                icon: Some(iced::window::icon::from_file("./img/punge icon.ico").unwrap()),
+                platform_specific: iced::window::settings::PlatformSpecific::default(),
+                exit_on_close_request: false,
             },
-            position: iced::window::Position::Default,
-            min_size: Some(iced::Size {
-                width: 1250.0,
-                height: 700.0,
-            }),
-            max_size: Some(iced::Size {
-                width: 2920.0,
-                height: 2080.0,
-            }),
-            visible: true,
-            resizable: true,
-            decorations: true,
-            transparent: false,
-            level: iced::window::Level::Normal,
-            icon: Some(iced::window::icon::from_file("./img/punge icon.ico").unwrap()),
-            platform_specific: iced::window::settings::PlatformSpecific::default(),
-            exit_on_close_request: false,
-        },
-        default_font: iced::Font::with_name("Punge!!"),
-        default_text_size: iced::Pixels(16.0),
-        antialiasing: false,
-        fonts: vec![std::borrow::Cow::Borrowed(iced_aw::BOOTSTRAP_FONT_BYTES)], // thanks source code?
-    })
+            default_font: iced::Font::with_name("Punge!!"),
+            default_text_size: iced::Pixels(16.0),
+            antialiasing: false,
+            fonts: vec![std::borrow::Cow::Borrowed(iced_aw::BOOTSTRAP_FONT_BYTES)], // thanks source code?
+        })
+        .subscription(App::subscription)
+        .theme(App::theme)
+        .run()
 }
 // pages for the gui
-
 pub struct App {
     pub is_paused: bool,
     pub current_song: Arc<ArcSwap<MusicData>>, // represents title, auth, album, song_id, volume, shuffle, playlist
@@ -101,21 +103,87 @@ pub struct App {
     selected_songs: Vec<String>, // song(s) that the user is going to edit
     pub user_playlists: Vec<UserPlaylist>,
     // tarkah table stuff
-    header: scrollable::Id,
-    body: scrollable::Id,
-    _footer: scrollable::Id, // maybe i should use this one day ...
-    columns: Vec<Column>,
-    rows: Vec<Row>,
-    toggle_table_edit: bool, // used to toggle the 'edit' mode. keeps track of it
+    table_content: iced::widget::list::Content<crate::gui::widgets::row::RowData>,
 }
 
-impl Application for App {
-    type Executor = executor::Default;
-    type Message = ProgramCommands;
-    type Theme = Theme;
-    type Flags = ();
+impl Default for App {
+    fn default() -> Self {
+        let manager = GlobalHotKeyManager::new().unwrap();
+        let player_cache = player_cache::fetch_cache();
+        let config_cache = match cache::read_from_cache() {
+            Ok(t) => {
+                // what abt no mods? maybe should check
+                for (_, bind) in t.keybinds.iter() {
+                    let hotkey = if bind.mod1.is_none() {
+                        HotKey::new(bind.mod2, bind.code.unwrap())
+                    } else if bind.mod2.is_none() {
+                        HotKey::new(bind.mod1, bind.code.unwrap())
+                    } else {
+                        HotKey::new(
+                            Some(bind.mod1.unwrap() | bind.mod2.unwrap()),
+                            bind.code.unwrap(),
+                        )
+                    };
+                    manager.register(hotkey).unwrap();
+                }
+                t
+            }
+            Err(_) => {
+                warn!("Cannot fetch cache, resorting to default");
+                Config {
+                    backup_path: format!("C:/Users/{}/Documents/", whoami::username()),
+                    mp3_path: String::from("C:/"),
+                    jpg_path: String::from("C:/"),
+                    static_increment: 1,
+                    static_reduction: 1,
+                    media_path: String::from("C:/"),
+                    keybinds: std::collections::HashMap::new(), // empty!
+                    shuffle_type: ShuffleType::Regular,
+                    idle_strings: vec!["listening to nothin".to_string()],
+                }
+            }
+        };
+        App {
+            is_paused: true,
+            current_song: Arc::new(ArcSwap::from_pointee(MusicData::default())),
+            sender: None,
+            volume: (player_cache.volume * 80.0) as u8, // 80 is out magic number from sink volume -> slider
+            shuffle: player_cache.shuffle,
+            scrubber: 0,
+            time_elapsed: 0,
+            total_time: player_cache.length,
+            current_view: Page::Main,
+            download_page: download_page::DownloadPage::new(),
+            setting_page: setting_page::SettingPage::new(&config_cache),
+            media_page: crate::gui::media_page::MediaPage::new(&config_cache),
+            playlist_page: crate::gui::new_playlist_page::PlaylistPage::new(None),
+            song_edit_page: crate::gui::song_edit_page::SongEditPage::new(),
+            download_list: vec![],
+            manager,
+            config: Arc::new(ArcSwap::from_pointee(config_cache)),
+            search: "".to_string(),
+            viewing_playlist: "main".to_string(),
+            selected_songs: vec![],
+            user_playlists: get_all_playlists().unwrap(), // im addicted to unwraping
+            // maybe do most recent playlist next? from cache?
+            table_content: get_all_main()
+                .unwrap()
+                .into_iter()
+                .enumerate()
+                .map(|(count, item)| crate::gui::widgets::row::RowData {
+                    title: item.title.clone(),
+                    author: item.author.clone(),
+                    album: item.album.clone(),
+                    row_num: count,
+                    uniqueid: item.uniqueid.clone(),
+                })
+                .collect(),
+        }
+    }
+}
 
-    fn new(_flags: Self::Flags) -> (App, iced::Command<Self::Message>) {
+impl App {
+    fn new() -> (App, iced::Command<ProgramCommands>) {
         // hotkey management and this is where new keybinds are to be added
         let manager = GlobalHotKeyManager::new().unwrap();
         let player_cache = player_cache::fetch_cache();
@@ -175,48 +243,36 @@ impl Application for App {
                 viewing_playlist: "main".to_string(),
                 selected_songs: vec![],
                 user_playlists: get_all_playlists().unwrap(), // im addicted to unwraping
-                header: scrollable::Id::unique(),
-                body: scrollable::Id::unique(),
-                _footer: scrollable::Id::unique(),
-                columns: vec![
-                    Column::new(ColumnKind::PlayButton),
-                    Column::new(ColumnKind::Author),
-                    Column::new(ColumnKind::Title),
-                    Column::new(ColumnKind::Album),
-                    Column::new(ColumnKind::Edit),
-                ],
-                rows: get_all_main()
+                // maybe do most recent playlist next? from cache?
+                table_content: get_all_main()
                     .unwrap()
                     .into_iter()
-                    .map(|item| Row {
-                        title: item.title,
-                        author: item.author,
-                        album: item.album,
-                        uniqueid: item.uniqueid,
-                        ischecked: false,
+                    .enumerate()
+                    .map(|(count, item)| crate::gui::widgets::row::RowData {
+                        title: item.title.clone(),
+                        author: item.author.clone(),
+                        album: item.album.clone(),
+                        row_num: count,
+                        uniqueid: item.uniqueid.clone(),
                     })
-                    .collect(), // get it from the other file lol
-                toggle_table_edit: false,
+                    .collect(),
             },
             Command::none(),
         )
     }
-    fn theme(&self) -> Self::Theme {
-        Theme::Dark
+
+    fn theme(&self) -> Theme {
+        iced::Theme::Dark
     }
 
-    fn title(&self) -> String {
-        String::from("Punge!!")
-    }
-
-    fn update(&mut self, msg: Self::Message) -> iced::Command<ProgramCommands> {
+    fn update(&mut self, msg: ProgramCommands) -> iced::Command<ProgramCommands> {
         match msg {
-            Self::Message::UpdateSender(sender) => {
+            ProgramCommands::UpdateSender(sender) => {
                 info!("Sender sent!");
                 self.sender = sender;
                 Command::none()
             }
-            Self::Message::NewData(data) => {
+            ProgramCommands::NewData(data) => {
                 self.total_time = data.length;
                 match &data.context {
                     &Context::Default => {}
@@ -235,7 +291,7 @@ impl Application for App {
                 self.current_song.store(Arc::new(data));
                 Command::none()
             }
-            Self::Message::VolumeChange(val) => {
+            ProgramCommands::VolumeChange(val) => {
                 self.volume = val;
                 self.sender
                     .as_mut()
@@ -244,12 +300,12 @@ impl Application for App {
                     .expect("failure sending msg");
                 Command::none()
             }
-            Self::Message::MoveSlider(val) => {
+            ProgramCommands::MoveSlider(val) => {
                 self.scrubber = val;
                 // change self.time_elapsed so it makes sense... might be too laggy to calc
                 Command::none()
             }
-            Self::Message::SkipToSeconds(num) => {
+            ProgramCommands::SkipToSeconds(num) => {
                 info!("lets skip to: {}, len: {}", num, self.total_time);
                 self.sender
                     .as_mut()
@@ -258,7 +314,7 @@ impl Application for App {
                     .unwrap();
                 Command::none()
             }
-            Self::Message::StaticVolumeUp => {
+            ProgramCommands::StaticVolumeUp => {
                 // should we try to limit this to 30? the slider max value? makes sense
                 self.volume = if self.volume == 30 {
                     30
@@ -272,7 +328,7 @@ impl Application for App {
                     .unwrap();
                 Command::none()
             }
-            Self::Message::StaticVolumeDown => {
+            ProgramCommands::StaticVolumeDown => {
                 self.volume = self
                     .volume
                     .saturating_sub(self.setting_page.static_reduction.parse::<u8>().unwrap());
@@ -283,7 +339,7 @@ impl Application for App {
                     .unwrap();
                 Command::none()
             }
-            Self::Message::ShuffleToggle => {
+            ProgramCommands::ShuffleToggle => {
                 self.shuffle = !self.shuffle;
                 self.sender
                     .as_mut()
@@ -292,7 +348,7 @@ impl Application for App {
                     .unwrap();
                 Command::none()
             }
-            Self::Message::PlayToggle => {
+            ProgramCommands::PlayToggle => {
                 self.is_paused = !self.is_paused;
                 self.sender
                     .as_mut()
@@ -301,7 +357,7 @@ impl Application for App {
                     .unwrap();
                 Command::none()
             }
-            Self::Message::SkipForwards => {
+            ProgramCommands::SkipForwards => {
                 // if it is paused, and this is called, update the stop/play
                 if self.is_paused {
                     self.is_paused = false;
@@ -313,7 +369,7 @@ impl Application for App {
                     .unwrap();
                 Command::none()
             }
-            Self::Message::SkipBackwards => {
+            ProgramCommands::SkipBackwards => {
                 if self.is_paused {
                     self.is_paused = false;
                 }
@@ -324,11 +380,11 @@ impl Application for App {
                     .unwrap();
                 Command::none()
             }
-            Self::Message::ChangePage(page) => {
+            ProgramCommands::ChangePage(page) => {
                 self.current_view = page;
                 Command::none()
             }
-            Self::Message::Download(link) => {
+            ProgramCommands::Download(link) => {
                 // we need to find the current length for main
                 let download = if link.contains("list=") {
                     Command::perform(
@@ -359,7 +415,7 @@ impl Application for App {
                 download
                 // Command::none()
             }
-            Self::Message::PlaylistResults(link, playlist_or_err) => {
+            ProgramCommands::PlaylistResults(link, playlist_or_err) => {
                 if playlist_or_err.is_err() {
                     self.download_page
                         .download_feedback
@@ -393,7 +449,7 @@ impl Application for App {
                 // add the empty entries!
                 Command::batch(list_cmd)
             }
-            Self::Message::DownloadMedia(link, path, mp3_4) => {
+            ProgramCommands::DownloadMedia(link, path, mp3_4) => {
                 self.media_page
                     .download_feedback
                     .push(format!("Starting download on {}", &link));
@@ -403,7 +459,7 @@ impl Application for App {
                     ProgramCommands::DownloadMediaWorked,
                 )
             }
-            Self::Message::DownloadMediaWorked(maybe) => {
+            ProgramCommands::DownloadMediaWorked(maybe) => {
                 let val = match maybe {
                     Ok(t) => t,
                     Err(e) => {
@@ -413,7 +469,7 @@ impl Application for App {
                 self.media_page.download_feedback.push(val);
                 Command::none()
             }
-            Self::Message::SearchYouTube(str) => {
+            ProgramCommands::SearchYouTube(str) => {
                 // should *in theory* get rid of the images in memory so there is no problem deleteing them from the
                 // content_to_text() call (remove_all_in_temp_dir)
                 self.download_page.youtube_content = vec![];
@@ -426,12 +482,12 @@ impl Application for App {
                     ProgramCommands::SearchYouTubeResults,
                 )
             }
-            Self::Message::SearchYouTubeResults(search) => {
+            ProgramCommands::SearchYouTubeResults(search) => {
                 self.download_page.youtube_content = search;
                 Command::none()
             }
 
-            Self::Message::AddToDownloadFeedback(link, youtubedata) => {
+            ProgramCommands::AddToDownloadFeedback(link, youtubedata) => {
                 // remove it from the download list, since it has either been downloaded, or failed to download
                 self.download_list.swap_remove(
                     // swap remove is a little quicker, and order doesn't matter :)
@@ -478,8 +534,8 @@ impl Application for App {
 
                 Command::none()
             }
-            Self::Message::Debug => Command::none(),
-            Self::Message::InAppEvent(t) => match t {
+            ProgramCommands::Debug => Command::none(),
+            ProgramCommands::InAppEvent(t) => match t {
                 AppEvent::CloseRequested => {
                     let lcl = self.current_song.load();
                     let cache = player_cache::Cache {
@@ -492,14 +548,14 @@ impl Application for App {
                     player_cache::dump_cache(cache); // dumps user cache
                     info!("dumpepd cache! goodbye :)");
 
-                    iced::window::close::<Self::Message>(iced::window::Id::MAIN)
+                    iced::window::close::<ProgramCommands>(iced::window::Id::MAIN)
                 }
             },
-            Self::Message::UpdateSearch(input) => {
+            ProgramCommands::UpdateSearch(input) => {
                 self.search = input;
                 Command::none()
             }
-            Self::Message::SongFound(obj_or_err) => {
+            ProgramCommands::SongFound(obj_or_err) => {
                 match obj_or_err {
                     Ok(obj) => {
                         if self.is_paused {
@@ -517,14 +573,14 @@ impl Application for App {
                 Command::none()
             }
 
-            Self::Message::GoToSong => Command::perform(
+            ProgramCommands::GoToSong => Command::perform(
                 get_values_from_db(
                     self.current_song.load().playlist.clone(),
                     self.search.clone(),
                 ),
                 ProgramCommands::SongFound,
             ),
-            Self::Message::PlaySong(song) => {
+            ProgramCommands::PlaySong(song) => {
                 // this is only used from the 'play' buttons on the songs
                 if self.is_paused {
                     self.is_paused = false;
@@ -549,110 +605,85 @@ impl Application for App {
                 self.scrubber = 0;
                 Command::none()
             }
-            Self::Message::ChangeViewingPlaylist(playlist) => {
+            ProgramCommands::ChangeViewingPlaylist(playlist) => {
                 // we will change the current view to the playlist view, and pass in the playlist to fill the content
                 self.current_view = Page::Main;
                 self.viewing_playlist = playlist.clone();
                 self.selected_songs.clear(); // clear them! (so we dont select some, switch playlist and edit unintentionally)
                                              // main should be treated just like a regular playlist !?
                 self.refresh_playlist();
-                debug!(
-                    "rows? {} | {:?} name: {}",
-                    self.rows.len(),
-                    self.rows,
-                    &playlist
-                );
+                // debug!( i currently have 154 errors in console, im fixin things one at a time
+                //     "rows? {} | {:?} name: {}",
+                //     self.rows.len(),
+                //     self.rows,
+                //     &playlist
+                // );
                 Command::none()
             }
-            Self::Message::SelectSong(uniqueid, boolean, row) => {
+            ProgramCommands::SelectSong(uniqueid, boolean) => {
                 // when the song is selected from the table, update the song in the top right
-                if boolean {
-                    self.selected_songs.push(uniqueid);
-                    self.rows[row].ischecked = !self.rows[row].ischecked;
-                } else {
-                    self.selected_songs.swap_remove(
-                        self.selected_songs
-                            .iter()
-                            .position(|t| t == &uniqueid)
-                            .unwrap(),
-                    ); // remove it?
-                    self.rows[row].ischecked = !self.rows[row].ischecked;
-                }
+                // if boolean { // TODO
+                //     self.selected_songs.push(uniqueid);
+                //     self.rows[row].ischecked = !self.rows[row].ischecked;
+                // } else {
+                //     self.selected_songs.swap_remove(
+                //         self.selected_songs
+                //             .iter()
+                //             .position(|t| t == &uniqueid)
+                //             .unwrap(),
+                //     ); // remove it?
+                //     self.rows[row].ischecked = !self.rows[row].ischecked;
+                // }
                 // maybe buttons should bring title with it??? idk
                 Command::none()
             }
-            Self::Message::AddToPlaylist(playlist) => {
+            ProgramCommands::AddToPlaylist(playlist_id, song_id) => {
                 let local_songcount = self.user_playlists[self
                     .user_playlists
                     .iter()
-                    .position(|play| &play.uniqueid == &playlist)
+                    .position(|play| &play.uniqueid == &playlist_id)
                     .unwrap()]
                 .songcount;
-                info!("we will add: {:?} to {}", &self.selected_songs, &playlist);
-                if self.selected_songs.is_empty() {
-                    add_to_playlist(
-                        &playlist,
-                        vec![self.current_song.load().song_id.clone()],
-                        local_songcount,
-                    )
-                    .unwrap();
-                } else {
-                    add_to_playlist(&playlist, self.selected_songs.clone(), local_songcount)
-                        .unwrap()
-                }
-                for row in &mut self.rows {
-                    row.ischecked = false; // close all!
-                }
+                info!(
+                    "we will add: {:?} to {}",
+                    &self.selected_songs, &playlist_id
+                );
+                // TODO
+                // add_to_playlist(, , )
+                // for row in &mut self.rows { // rewrite
+                //     row.ischecked = false; // close all!
+                // }
                 Command::none()
             }
-            Self::Message::DeleteSong => {
+            ProgramCommands::DeleteSong(uuid) => {
                 // should ask user if they are sure ?
-                let to_delete: Vec<String> = if self.selected_songs.is_empty() {
-                    vec![self.current_song.load().song_id.clone()]
-                } else {
-                    self.selected_songs.clone()
-                };
-                // seems mildly more simple than handling 1 vs multiple, just put in vec and iter
-                // also iced has no type of 'conformation' screen i dont think. Might be more hassle than not to add
+                // TODO rewrite for the new interface
                 if self.viewing_playlist == "main" {
-                    for uuid in to_delete {
-                        match delete_record_and_file(uuid) {
-                            Ok(_t) => {
-                                info!("delete successful!")
-                            }
-                            Err(e) => {
-                                error!("error deleting {:?}", e)
-                            }
+                    match delete_record_and_file(uuid.clone()) {
+                        Ok(t) => {
+                            info!("Success removing {:?} from main", t);
+                        }
+                        Err(e) => {
+                            error!("Could not remove from main: {:?}", e);
                         }
                     }
                 } else {
-                    for uuid in to_delete {
-                        delete_from_playlist(uuid, self.viewing_playlist.clone()).unwrap();
+                    match delete_from_playlist(uuid.clone(), self.viewing_playlist.clone()) {
+                        Ok(t) => {
+                            info!("Success removing {:?} from playlist", t)
+                        }
+                        Err(e) => {
+                            error!("Could not remove from playlist! {:?}", e)
+                        }
                     }
                 }
                 // refresh current playlist
                 // should i function this? used twice..
+                delete_from_playlist(uuid, self.viewing_playlist.clone()).unwrap();
                 self.refresh_playlist();
                 Command::none()
             }
-            Self::Message::ToggleList => {
-                // it is ok if this does nothing while the user has only 1 song
-                // it should be depreciated at some point. list widget iced 0.13 pls !!
-                if self.rows.len() == 1 {
-                    // takes into account different playlists :D
-                    self.refresh_playlist();
-                } else {
-                    self.rows = vec![Row {
-                        title: "be fixed soon".to_string(),
-                        author: "This will".to_string(),
-                        album: "I promise".to_string(),
-                        uniqueid: "".to_string(),
-                        ischecked: false,
-                    }]
-                }
-                Command::none()
-            }
-            Self::Message::CreateBackup => {
+            ProgramCommands::CreateBackup => {
                 // get backup path from config and use it :)
 
                 match create_backup(self.setting_page.backup_text.clone()) {
@@ -665,7 +696,7 @@ impl Application for App {
                 };
                 Command::none()
             }
-            Self::Message::UpdateWidgetText(text_type, txt) => match text_type {
+            ProgramCommands::UpdateWidgetText(text_type, txt) => match text_type {
                 TextType::BackupText => {
                     self.setting_page.backup_text = txt;
                     Command::none()
@@ -731,7 +762,7 @@ impl Application for App {
                     Command::none()
                 }
             },
-            Self::Message::CheckBoxEvent(checkbox, val) => match checkbox {
+            ProgramCommands::CheckBoxEvent(checkbox, val) => match checkbox {
                 CheckBoxType::IncludeVideos => {
                     self.download_page.include_videos = val;
                     Command::none()
@@ -741,7 +772,7 @@ impl Application for App {
                     Command::none()
                 }
             },
-            Self::Message::UpdateCombobox(boxtype, txt) => {
+            ProgramCommands::UpdateCombobox(boxtype, txt) => {
                 // is there any merit in making a hashmap and matching?
                 match boxtype {
                     ComboBoxType::PlayKey => {
@@ -817,7 +848,7 @@ impl Application for App {
                 Command::none()
             }
 
-            Self::Message::SaveConfig => {
+            ProgramCommands::SaveConfig => {
                 let static_increment = self
                     .setting_page
                     .static_increment
@@ -951,7 +982,7 @@ impl Application for App {
                 self.media_page.download_to_location = self.setting_page.media_path.clone();
                 Command::none()
             }
-            Self::Message::NewPlaylist => {
+            ProgramCommands::NewPlaylist => {
                 if !self.playlist_page.user_title.is_empty() {
                     // check to see if it is empty..
                     let playlist = UserPlaylist::new(
@@ -970,17 +1001,8 @@ impl Application for App {
                 }
                 Command::none()
             }
-            Self::Message::OpenSongEditPage => {
-                // empty uniqueid will crash program, check against it
-                // uhhh we dont know the status of the checked...
-                // if !uniqueid.is_empty() {
-                //     let item = song_from_uuid(&uniqueid).unwrap();
-                //     self.song_edit_page
-                //         // TODO how can we get the "checked" status?
-                //         .update_info(item.0, item.1, item.2, uniqueid, false);
-                //     self.current_view = Page::SongEdit;
-                // }
-                let data = if self.selected_songs.is_empty() {
+            ProgramCommands::OpenSongEditPage(maybe_string) => {
+                let data = if maybe_string.is_none() {
                     let info = self.current_song.load();
                     (
                         info.title.clone(),
@@ -989,8 +1011,8 @@ impl Application for App {
                         info.song_id.clone(),
                     )
                 } else {
-                    let info = get_obj_from_uuid(&self.selected_songs[0]).unwrap(); // no real guarentee that this is the right one
-                                                                                    // since we use remove_swap...
+                    let info = get_obj_from_uuid(&maybe_string.unwrap()).unwrap(); // no real guarentee that this is the right one
+                                                                                   // since we use remove_swap...
                     (info.title, info.author, info.album, info.uniqueid)
                 };
                 self.song_edit_page.update_info(
@@ -1004,7 +1026,7 @@ impl Application for App {
                 self.current_view = Page::SongEdit;
                 Command::none()
             }
-            Self::Message::UpdateSong(row) => {
+            ProgramCommands::UpdateSong(row) => {
                 if self.song_edit_page.multi_select {
                     // if multiple songs are selected
                     for id in self.selected_songs.iter() {
@@ -1022,18 +1044,10 @@ impl Application for App {
                 self.current_view = Page::Main;
                 Command::none()
             }
-            ProgramCommands::QuickSwapTitleAuthor => {
+            ProgramCommands::QuickSwapTitleAuthor(uuid_to_swap) => {
                 // if none are selected, do current song
-                if self.selected_songs.is_empty() {
-                    update_title_auth(&self.current_song.load().song_id.clone()).unwrap();
-                } else {
-                    for id in self.selected_songs.iter() {
-                        update_title_auth(id).unwrap();
-                    }
-                    self.selected_songs.clear();
-                    // clear the checkmarks?
-                    // refresh the playlist
-                }
+                // TODO
+                // it can only be one song at a time (for now.. selection part of widget coming eventually!!)
                 self.refresh_playlist();
                 Command::none()
             }
@@ -1092,40 +1106,41 @@ impl Application for App {
                 Command::none()
             }
             ProgramCommands::ToggleEditMode => {
-                if self.toggle_table_edit {
-                    if let Some(col) = self.columns.get_mut(4) {
-                        col.width = 35.0;
-                    }
-                    self.toggle_table_edit = false;
-                    self.columns[3].width = 275.0;
-                } else {
-                    if let Some(col) = self.columns.get_mut(4) {
-                        col.width = 100.0;
-                    }
-                    self.columns[3].width = 210.0;
-                    self.toggle_table_edit = true;
-                };
+                println!("TODO, will revisit soon!");
+                // if self.toggle_table_edit {
+                //     if let Some(col) = self.columns.get_mut(4) {
+                //         col.width = 35.0;
+                //     }
+                //     self.toggle_table_edit = false;
+                //     self.columns[3].width = 275.0;
+                // } else {
+                //     if let Some(col) = self.columns.get_mut(4) {
+                //         col.width = 100.0;
+                //     }
+                //     self.columns[3].width = 210.0;
+                //     self.toggle_table_edit = true;
+                // };
                 Command::none()
             }
-            Self::Message::MoveSongUp(uuid, position) => {
-                if position != 0 {
-                    move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
-                    self.refresh_playlist();
-                } else {
-                    warn!("MoveSongUp called on song in position 0!")
-                }
-                Command::none()
-            }
-            Self::Message::MoveSongDown(uuid, position) => {
-                if position.saturating_sub(1) != self.rows.len() {
-                    move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
-                    self.refresh_playlist();
-                } else {
-                    warn!("MoveSongDown called on lowest song")
-                }
-                Command::none()
-            }
-            Self::Message::UpdateEditor(action) => {
+            // ProgramCommands::MoveSongUp(uuid, position) => {
+            //     if position != 0 {
+            //         move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+            //         self.refresh_playlist();
+            //     } else {
+            //         warn!("MoveSongUp called on song in position 0!")
+            //     }
+            //     Command::none()
+            // }  TODO
+            // ProgramCommands::MoveSongDown(uuid, position) => {
+            //     if position.saturating_sub(1) != self.rows.len() {
+            //         move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+            //         self.refresh_playlist();
+            //     } else {
+            //         warn!("MoveSongDown called on lowest song")
+            //     }
+            //     Command::none()
+            // }
+            ProgramCommands::UpdateEditor(action) => {
                 self.setting_page.idle_string_content.perform(action);
                 Command::none()
             }
@@ -1134,17 +1149,38 @@ impl Application for App {
         }
     }
 
-    fn view(&self) -> Element<'_, Self::Message> {
-        let table = responsive(|_size| {
-            let table = iced_table::table(
-                self.header.clone(),
-                self.body.clone(),
-                &self.columns,
-                &self.rows,
-                ProgramCommands::SyncHeader,
-            );
-            table.into()
-        });
+    fn view(&self) -> Element<'_, ProgramCommands> {
+        let table = scrollable(iced::widget::list(&self.table_content, |index, item| {
+            crate::gui::widgets::row::RowWidget::new(
+                row![
+                    button(text(index.to_string()))
+                        .width(30)
+                        .clip(true)
+                        .padding(0),
+                    text("  "), // space between button and title
+                    text(&item.title).width(350),
+                    text(&item.author).width(350),
+                    text(&item.album).width(350)
+                ]
+                .into(),
+                index,
+                ProgramCommands::DeleteSong,
+                ProgramCommands::QuickSwapTitleAuthor, // needs updating..
+                ProgramCommands::SelectSong,
+                ProgramCommands::AddToPlaylist,
+                ProgramCommands::PlaySong,
+                ProgramCommands::MoveSongUp,
+                ProgramCommands::MoveSongDown,
+                ProgramCommands::OpenSongEditPage,
+                self.user_playlists
+                    .iter()
+                    .map(|playl| (playl.uniqueid.clone(), playl.title.clone()))
+                    .collect(),
+                item.uniqueid.clone(),
+            )
+            .into()
+        }))
+        .width(1000);
 
         let mut all_playlists_but_main = self.user_playlists.clone();
         // user should always have the 'main' playlist
@@ -1167,7 +1203,7 @@ impl Application for App {
                 text(active_playlist.description),
             ]
             .padding(5)
-            .align_items(iced_core::Alignment::End)
+            .align_items(iced::Alignment::End)
             .spacing(25),
             table_cont
         ];
@@ -1178,7 +1214,6 @@ impl Application for App {
         ]);
         match self.current_view {
             // which page to display
-            // Page::Main => row![main_page, self.render_sidebar()].into(), // this format makes it a bit easier to deal with all contents
             Page::Main => main_page_2.into(),
             Page::Download => column![
                 row![
@@ -1223,7 +1258,7 @@ impl Application for App {
         }
     }
 
-    fn subscription(&self) -> Subscription<Self::Message> {
+    fn subscription(&self) -> Subscription<ProgramCommands> {
         iced::subscription::Subscription::batch(vec![
             self.music_loop(self.config.clone()),
             self.hotkey_loop(self.config.clone()),
@@ -1237,29 +1272,32 @@ impl Application for App {
 
 impl App {
     fn refresh_playlist(&mut self) {
+        // are we able to replace .enumerate() with item.count? <-- when it is consistent!!
         if self.viewing_playlist.to_lowercase() == "main" {
             let new = get_all_main().unwrap();
-            self.rows = new
+            self.table_content = new
                 .into_iter()
-                .map(|item| Row {
+                .enumerate()
+                .map(|(count, item)| crate::gui::widgets::row::RowData {
                     title: item.title,
                     author: item.author,
                     album: item.album,
                     uniqueid: item.uniqueid,
-                    ischecked: false,
+                    row_num: count,
                 })
                 .collect();
         } else {
             let new = get_all_from_playlist(&self.viewing_playlist).unwrap();
             debug!("viewing_playlist: {}", &self.viewing_playlist);
-            self.rows = new
+            self.table_content = new
                 .into_iter()
-                .map(|item| Row {
+                .enumerate()
+                .map(|(count, item)| crate::gui::widgets::row::RowData {
                     title: item.title,
                     author: item.author,
                     album: item.album,
                     uniqueid: item.uniqueid,
-                    ischecked: false,
+                    row_num: count,
                 })
                 .collect();
         }

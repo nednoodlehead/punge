@@ -42,13 +42,15 @@ impl SongEditPage {
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
         let update_or_leave_buttons = row![
-            button("Update!").on_press(ProgramCommands::UpdateSong(crate::gui::table::Row {
-                title: self.title.clone(),
-                author: self.author.clone(),
-                album: self.album.clone(),
-                uniqueid: self.uniqueid.clone(),
-                ischecked: self.ischecked,
-            })),
+            button("Update!").on_press(ProgramCommands::UpdateSong(
+                crate::gui::widgets::row::RowData {
+                    title: self.title.clone(),
+                    author: self.author.clone(),
+                    album: self.album.clone(),
+                    uniqueid: self.uniqueid.clone(),
+                    row_num: 0, // doesn't matter. we're using this type for convinence sake...
+                }
+            )),
             button(text("Discard")).on_press(ProgramCommands::ChangePage(Page::Main))
         ]
         .spacing(10.0);

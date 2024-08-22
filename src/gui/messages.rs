@@ -52,13 +52,10 @@ pub enum ProgramCommands {
     SongFound(Result<PungeMusicObject, AppError>), // when the song is found from GoToSong, this is called
     ChangeViewingPlaylist(String), // pass only the unqiueid i guess. problem was making self.viewing_playlist
     PlaySong(String),              // unqiueid
-    SelectSong(String, bool, usize), // uniqueid is_checked, row #, used to do stuff to the current song
-    DeleteSong, // TODO do this interface.. probably want some type of confirmation..
-    MoveSongUp(String, usize), // song_uuid, current position
-    MoveSongDown(String, usize), // song_uuid, current position
+    MoveSongUp(String, usize),     // song_uuid, current position
+    MoveSongDown(String, usize),   // song_uuid, current position
     SyncHeader(scrollable::AbsoluteOffset), // not used, could revamp table tbh..
-    AddToPlaylist(String), // uuid of playlist choosen song is based on checkboxes, playlist is determined by viewing list
-    ToggleList,
+    AddToPlaylist(String, String), // uuid of playlist, uuid of song
     ToggleEditMode,
     CreateBackup,
     UpdateWidgetText(TextType, String),
@@ -70,11 +67,15 @@ pub enum ProgramCommands {
     ClearPlaylistPage,
     MovePlaylistUp(String, u16),
     MovePlaylistDown(String, u16),
-    OpenSongEditPage,
-    UpdateSong(crate::gui::table::Row), // happens to be a convient type for this data
-    QuickSwapTitleAuthor,               // uniqueid
+    OpenSongEditPage(Option<String>),
+    UpdateSong(crate::gui::widgets::row::RowData), // happens to be a convient type for this data
+    QuickSwapTitleAuthor(String),                  // uniqueid
     PushScrubber,
     UpdateEditor(iced::widget::text_editor::Action), // updating the idle string editor in gui::settings
+    // messages from the right-click menu on the table
+    // playsong from above
+    DeleteSong(String), // TODO do this interface.. probably want some type of confirmation.. also the playlist is pulled from self.active_playlist or whatever its called
+    SelectSong(usize, bool), // row, is_selected
 }
 
 #[derive(Debug, Copy, Clone)]

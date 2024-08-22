@@ -1,5 +1,5 @@
 use crate::gui::messages::{ComboBoxType, ProgramCommands, TextType};
-use crate::gui::style::button::PungeButton;
+use crate::gui::style::button::punge_button_style;
 use crate::types::AppError;
 use crate::types::Config;
 use iced::widget::{
@@ -61,7 +61,7 @@ impl MediaPage {
                 })
                 .width(50.0),
                 button(text("Download!"))
-                    .style(iced::theme::Button::Custom(Box::new(PungeButton)))
+                    .style(|_t, status| punge_button_style(status))
                     .on_press(ProgramCommands::DownloadMedia(
                         self.download_input.clone(),
                         self.download_to_location.clone(),

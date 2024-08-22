@@ -1,5 +1,5 @@
 use crate::gui::messages::{ComboBoxType, ProgramCommands, TextType};
-use crate::gui::style::button::PungeButton;
+use crate::gui::style::button::punge_button_style;
 use crate::types::{Config, PungeKeyBind};
 use crate::utils::key::{self};
 use iced::widget::{
@@ -196,10 +196,12 @@ impl SettingPage {
                     horizontal_space(),
                     if std::path::Path::new(&self.backup_text).exists() {
                         // thumbs up
-                        text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                        // text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                        text("yes")
                     } else {
                         // thumbs down
-                        text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                        text("no")
+                        // text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
                     },
                     text_input(&self.backup_text, &self.backup_text)
                         .on_input(|txt| {
@@ -208,7 +210,7 @@ impl SettingPage {
                         .width(630),
                     button(text("Backup!"))
                         .on_press(ProgramCommands::CreateBackup)
-                        .style(iced::theme::Button::Custom(Box::new(PungeButton)))
+                        .style(|_theme, status| punge_button_style(status))
                 ]
                 .padding(10.0),
                 row![
@@ -216,10 +218,12 @@ impl SettingPage {
                     horizontal_space(),
                     if std::path::Path::new(&self.mp3_path_text).exists() {
                         // thumbs up
-                        text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                        // text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                        text("yes")
                     } else {
                         // thumbs down
-                        text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                        // text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                        text("no")
                     },
                     text_input(&self.mp3_path_text, &self.mp3_path_text)
                         .on_input(|txt| {
@@ -233,10 +237,12 @@ impl SettingPage {
                     horizontal_space(),
                     if std::path::Path::new(&self.jpg_path_text).exists() {
                         // thumbs up
-                        text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                        // text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                        text("yes")
                     } else {
                         // thumbs down
-                        text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                        // text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                        text("no")
                     },
                     text_input(&self.jpg_path_text, &self.jpg_path_text)
                         .on_input(|txt| {
@@ -250,10 +256,12 @@ impl SettingPage {
                     horizontal_space(),
                     if std::path::Path::new(&self.media_path).exists() {
                         // thumbs up
-                        text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                        // text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
+                        text("yes")
                     } else {
                         // thumbs down
-                        text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                        // text("\u{F404}").font(iced_aw::BOOTSTRAP_FONT)
+                        text("no")
                     },
                     text_input(&self.media_path, &self.media_path)
                         .on_input(|txt| {
@@ -314,7 +322,7 @@ impl SettingPage {
                 .padding(10),
                 row![button(text("Save!"))
                     .on_press(ProgramCommands::SaveConfig)
-                    .style(iced::theme::Button::Custom(Box::new(PungeButton)))],
+                    .style(|_t, status| punge_button_style(status))],
             ]
             .spacing(10.0),
         ))

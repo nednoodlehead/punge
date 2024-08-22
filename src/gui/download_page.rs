@@ -1,5 +1,5 @@
 use crate::gui::messages::{CheckBoxType, ProgramCommands, TextType};
-use crate::gui::style::button::PungeButton;
+use crate::gui::style::button::punge_button_style;
 use crate::types::YouTubeSearchResult;
 use iced::widget::{
     button, checkbox, column, horizontal_space, row, scrollable, text, text_input, Column,
@@ -37,7 +37,7 @@ impl DownloadPage {
                                 ProgramCommands::UpdateWidgetText(TextType::YouTubeSearchInput, txt)
                             }),
                             button(text("Search!"))
-                                .style(iced::theme::Button::Custom(Box::new(PungeButton)))
+                                .style(|_t, status| punge_button_style(status))
                                 .on_press(ProgramCommands::SearchYouTube(self.search_text.clone()))
                         ],
                         self.create_searcher_scrollable(),
@@ -62,7 +62,7 @@ impl DownloadPage {
                                 ProgramCommands::UpdateWidgetText(TextType::DownloadLinkInput, txt)
                             }),
                             button(text("Download!"))
-                                .style(iced::theme::Button::Custom(Box::new(PungeButton)))
+                                .style(|_t, status| punge_button_style(status))
                                 .on_press(ProgramCommands::Download(self.text.clone()))
                         ],
                         self.create_feedback_scrollable(),
@@ -105,7 +105,7 @@ impl DownloadPage {
                                 horizontal_space(),
                                 column![
                                     button(text("Download!"))
-                                        .style(iced::theme::Button::Custom(Box::new(PungeButton)))
+                                        .style(|_t, status| punge_button_style(status))
                                         .on_press(ProgramCommands::Download(results.link.clone())),
                                     text("Stream!")
                                 ],
@@ -124,7 +124,7 @@ impl DownloadPage {
                                 horizontal_space(),
                                 column![
                                     button(text("Download!"))
-                                        .style(iced::theme::Button::Custom(Box::new(PungeButton)))
+                                        .style(|_t, status| punge_button_style(status))
                                         .on_press(ProgramCommands::Download(results.link.clone())),
                                     text("Stream!")
                                 ],

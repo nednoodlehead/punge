@@ -1,17 +1,10 @@
 use iced::widget::slider;
-use iced_core::border::Radius;
-use iced_core::Color;
-pub struct ScrubberStyle;
+use iced::widget::slider::{Status, Style};
+use iced::{border::Radius, Border, Color};
 
-// impl Into<iced::theme::Slider> for ScrubberStyle {
-//     fn into(self) -> iced::theme::Slider {self}
-// }
-
-impl slider::StyleSheet for ScrubberStyle {
-    type Style = iced::Theme;
-
-    fn hovered(&self, _style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
-        slider::Appearance {
+pub fn scrubber_style(status: Status) -> Style {
+    match status {
+        Status::Hovered => Style {
             rail: slider::Rail {
                 colors: (
                     Color {
@@ -46,10 +39,8 @@ impl slider::StyleSheet for ScrubberStyle {
                     a: 0.0,
                 },
             },
-        }
-    }
-    fn active(&self, _style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
-        slider::Appearance {
+        },
+        Status::Active => Style {
             rail: slider::Rail {
                 colors: (
                     Color {
@@ -84,10 +75,8 @@ impl slider::StyleSheet for ScrubberStyle {
                     a: 0.0,
                 },
             },
-        }
-    }
-    fn dragging(&self, _style: &Self::Style) -> iced::widget::vertical_slider::Appearance {
-        slider::Appearance {
+        },
+        Status::Dragged => Style {
             rail: slider::Rail {
                 colors: (
                     Color {
@@ -117,6 +106,6 @@ impl slider::StyleSheet for ScrubberStyle {
                 border_width: 0.0,
                 border_color: Color::BLACK,
             },
-        }
+        },
     }
 }
