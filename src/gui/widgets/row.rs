@@ -1,7 +1,8 @@
+use crate::gui::style::button::punge_button_style;
 use crate::gui::widgets::row_overlay::OverlayButtons;
 use iced::advanced::mouse;
 use iced::advanced::{layout, renderer, widget::Tree, widget::Widget};
-use iced::widget::{button, column, row, text, Column, Row};
+use iced::widget::{button, column, row, text, Column, Row, Themer};
 use iced::Event;
 use iced::{Border, Color, Element, Length, Point, Shadow, Size, Theme, Vector};
 
@@ -69,7 +70,17 @@ where
         edit_song_msg: fn(Option<String>) -> Message,
         uuid_list: Vec<(String, String)>,
         song_uuid: String,
-    ) -> Self {
+    ) -> Self
+    where
+        <Theme as iced::widget::button::Catalog>::Class<'_>: From<
+            std::boxed::Box<
+                dyn for<'a> std::ops::Fn(
+                    &'a Theme,
+                    iced::widget::button::Status,
+                ) -> iced::widget::button::Style,
+            >,
+        >,
+    {
         // .width(30)
         // .clip(true)
         // .padding(0),
@@ -77,7 +88,8 @@ where
             .on_press((play_msg)(song_uuid.clone()))
             .width(30)
             .clip(true)
-            .padding(0)];
+            .padding(0)
+            .style(|_t, status| punge_button_style(status))];
         for disp_text in [title, author, album] {
             if disp_text.len() < 30 {
                 rowdata = rowdata.push(text(disp_text).width(350));
@@ -308,9 +320,8 @@ where
                 // println!("current viewport: {:?}", &viewport);
                 if cursor.is_over(layout.bounds()) {
                     self.show_menu = true; // will make the menu appear in the first place
-
-                    // we offset the viewport and the cursor position to place the cursor where it needs to be
-                    // i found this out all on my own omg im so smart :3
+                                           // we offset the viewport and the cursor position to place the cursor where it needs to be
+                                           // i found this out all on my own omg im so smart :3
                     let mut def_cursor = cursor.position().unwrap();
                     let actual_y_coord = (def_cursor.y - viewport.y) + 100.0; // 30 = approv def. length of button
                     def_cursor.y = actual_y_coord;
@@ -326,18 +337,22 @@ where
                 // for selecting rows and such
                 if cursor.is_over(layout.bounds()) {
                     if self.is_selected {
+                        println!("but not here");
                         self.is_selected = false;
+                        // shell.publish((self.selection_msg)(self.row_num, false));
 
                         // it would make sense to have a shell.publish and take the msg, add it to a list on the app, then when an
                         // action is done, do whatever to the contents of the list, then set the values all to false.
                         // but this stupid shell.publish stuff makes no sense..
 
                         // shell.publish((self.selection_msg)(self.row_num, false));
+                        iced::event::Status::Captured
                     } else {
+                        println!("right on here");
                         self.is_selected = true;
                         // shell.publish((self.selection_msg)(self.row_num, true));
+                        iced::event::Status::Captured
                     }
-                    iced::event::Status::Captured
                 } else {
                     iced::event::Status::Ignored
                 }

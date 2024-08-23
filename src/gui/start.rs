@@ -620,23 +620,6 @@ impl App {
                 // );
                 Command::none()
             }
-            ProgramCommands::SelectSong(uniqueid, boolean) => {
-                // when the song is selected from the table, update the song in the top right
-                // if boolean { // TODO
-                //     self.selected_songs.push(uniqueid);
-                //     self.rows[row].ischecked = !self.rows[row].ischecked;
-                // } else {
-                //     self.selected_songs.swap_remove(
-                //         self.selected_songs
-                //             .iter()
-                //             .position(|t| t == &uniqueid)
-                //             .unwrap(),
-                //     ); // remove it?
-                //     self.rows[row].ischecked = !self.rows[row].ischecked;
-                // }
-                // maybe buttons should bring title with it??? idk
-                Command::none()
-            }
             ProgramCommands::AddToPlaylist(playlist_id, song_id) => {
                 let local_songcount = self.user_playlists[self
                     .user_playlists
@@ -1125,6 +1108,10 @@ impl App {
             }
             ProgramCommands::UpdateEditor(action) => {
                 self.setting_page.idle_string_content.perform(action);
+                Command::none()
+            }
+            ProgramCommands::SelectSong(row_num, is_selected) => {
+                println!("{} is selected: {}", row_num, is_selected);
                 Command::none()
             }
 
