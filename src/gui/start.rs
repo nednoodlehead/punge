@@ -1105,41 +1105,24 @@ impl App {
                 self.user_playlists = get_all_playlists().unwrap();
                 Command::none()
             }
-            ProgramCommands::ToggleEditMode => {
-                println!("TODO, will revisit soon!");
-                // if self.toggle_table_edit {
-                //     if let Some(col) = self.columns.get_mut(4) {
-                //         col.width = 35.0;
-                //     }
-                //     self.toggle_table_edit = false;
-                //     self.columns[3].width = 275.0;
-                // } else {
-                //     if let Some(col) = self.columns.get_mut(4) {
-                //         col.width = 100.0;
-                //     }
-                //     self.columns[3].width = 210.0;
-                //     self.toggle_table_edit = true;
-                // };
+            ProgramCommands::MoveSongUp(uuid, position) => {
+                if position != 0 {
+                    move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+                    self.refresh_playlist();
+                } else {
+                    warn!("MoveSongUp called on song in position 0!")
+                }
                 Command::none()
             }
-            // ProgramCommands::MoveSongUp(uuid, position) => {
-            //     if position != 0 {
-            //         move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
-            //         self.refresh_playlist();
-            //     } else {
-            //         warn!("MoveSongUp called on song in position 0!")
-            //     }
-            //     Command::none()
-            // }  TODO
-            // ProgramCommands::MoveSongDown(uuid, position) => {
-            //     if position.saturating_sub(1) != self.rows.len() {
-            //         move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
-            //         self.refresh_playlist();
-            //     } else {
-            //         warn!("MoveSongDown called on lowest song")
-            //     }
-            //     Command::none()
-            // }
+            ProgramCommands::MoveSongDown(uuid, position) => {
+                if position.saturating_sub(1) != self.table_content.len() {
+                    move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+                    self.refresh_playlist();
+                } else {
+                    warn!("MoveSongDown called on lowest song")
+                }
+                Command::none()
+            }
             ProgramCommands::UpdateEditor(action) => {
                 self.setting_page.idle_string_content.perform(action);
                 Command::none()
@@ -1152,17 +1135,9 @@ impl App {
     fn view(&self) -> Element<'_, ProgramCommands> {
         let table = scrollable(iced::widget::list(&self.table_content, |index, item| {
             crate::gui::widgets::row::RowWidget::new(
-                row![
-                    button(text(index.to_string()))
-                        .width(30)
-                        .clip(true)
-                        .padding(0),
-                    text("  "), // space between button and title
-                    text(&item.title).width(350),
-                    text(&item.author).width(350),
-                    text(&item.album).width(350)
-                ]
-                .into(),
+                &item.title,
+                &item.author,
+                &item.album,
                 index,
                 ProgramCommands::DeleteSong,
                 ProgramCommands::QuickSwapTitleAuthor, // needs updating..

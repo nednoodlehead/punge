@@ -55,7 +55,9 @@ where
     Message: 'a + Clone,
 {
     pub fn new(
-        rowdata: Element<'a, Message, Theme, Renderer>,
+        title: &'a String,
+        author: &'a String,
+        album: &'a String,
         row_num: usize,
         delete_msg: fn(String) -> Message,
         quick_swap_msg: fn(String) -> Message,
@@ -68,8 +70,26 @@ where
         uuid_list: Vec<(String, String)>,
         song_uuid: String,
     ) -> Self {
+        // .width(30)
+        // .clip(true)
+        // .padding(0),
+        let mut rowdata = row![button(text(row_num.to_string()))
+            .on_press((play_msg)(song_uuid.clone()))
+            .width(30)
+            .clip(true)
+            .padding(0)];
+        for disp_text in [title, author, album] {
+            if disp_text.len() < 30 {
+                rowdata = rowdata.push(text(disp_text).width(350));
+            } else if disp_text.len() > 50 {
+                rowdata = rowdata.push(text(disp_text).size(8).width(350));
+            } else {
+                // text that is sort of large, but not huge like ^^
+                rowdata = rowdata.push(text(disp_text).size(13).width(350));
+            }
+        }
         RowWidget {
-            rowdata,
+            rowdata: rowdata.spacing(10).into(),
             row_overlay: crate::gui::persistent::create_whole_menu,
             is_selected: false,
             delete_msg,
@@ -252,11 +272,37 @@ where
         event: iced::Event,
         layout: layout::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn iced::advanced::Clipboard,
+        renderer: &Renderer,
+        clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
         viewport: &iced::Rectangle,
     ) -> iced::advanced::graphics::core::event::Status {
+        // alows the button to actually do something
+        // println!("lay: {:#?}", &layout.children().next().unwrap());
+        if cursor.is_over(
+            // this is the button!!
+            layout
+                .children()
+                .next()
+                .unwrap()
+                .children()
+                .next()
+                .unwrap()
+                .bounds(),
+        ) {
+            self.rowdata.as_widget_mut().on_event(
+                &mut state.children[0],
+                event.clone(),
+                layout,
+                cursor,
+                renderer,
+                clipboard,
+                shell,
+                viewport,
+            );
+            // shell.publish((self.play_msg)(self.song_uuid.clone()));
+            return iced::event::Status::Captured;
+        }
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
                 // println!("current viewport: {:?}", &viewport);

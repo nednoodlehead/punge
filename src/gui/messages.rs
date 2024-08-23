@@ -54,9 +54,7 @@ pub enum ProgramCommands {
     PlaySong(String),              // unqiueid
     MoveSongUp(String, usize),     // song_uuid, current position
     MoveSongDown(String, usize),   // song_uuid, current position
-    SyncHeader(scrollable::AbsoluteOffset), // not used, could revamp table tbh..
     AddToPlaylist(String, String), // uuid of playlist, uuid of song
-    ToggleEditMode,
     CreateBackup,
     UpdateWidgetText(TextType, String),
     SaveConfig,
