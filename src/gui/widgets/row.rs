@@ -17,6 +17,8 @@ pub struct RowData {
 
 pub struct RowWidget<'a, Message, Theme, Renderer>
 where
+    // <Theme as iced::widget::button::Catalog>::Class<'a>:
+    //     From<Box<dyn Fn(&Theme, iced::widget::button::Status) -> iced::widget::button::Style + 'a>>,
     Renderer: iced::advanced::Renderer + iced::advanced::text::Renderer,
     Theme: iced::widget::text::Catalog + iced::widget::button::Catalog,
 {
@@ -72,13 +74,8 @@ where
         song_uuid: String,
     ) -> Self
     where
-        <Theme as iced::widget::button::Catalog>::Class<'_>: From<
-            std::boxed::Box<
-                dyn for<'a> std::ops::Fn(
-                    &'a Theme,
-                    iced::widget::button::Status,
-                ) -> iced::widget::button::Style,
-            >,
+        <Theme as iced::widget::button::Catalog>::Class<'a>: From<
+            Box<dyn Fn(&Theme, iced::widget::button::Status) -> iced::widget::button::Style + 'a>,
         >,
     {
         // .width(30)

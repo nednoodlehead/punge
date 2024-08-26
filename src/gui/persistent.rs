@@ -28,8 +28,10 @@ pub fn create_whole_menu<'a, Message, Theme, Renderer>(
     row_num: usize,
 ) -> Element<'a, Message, Theme, Renderer>
 where
+    <Theme as iced::widget::button::Catalog>::Class<'a>:
+        From<Box<dyn Fn(&Theme, iced::widget::button::Status) -> iced::widget::button::Style + 'a>>,
     Message: 'a + Clone,
-    Theme: 'a + button::Catalog + iced::widget::text::Catalog,
+    Theme: 'a + button::Catalog + iced::widget::text::Catalog + iced::widget::button::Catalog,
     Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
     let mut col = column![
@@ -323,33 +325,5 @@ impl App {
             ..Default::default()
         }
         // is this like the only way to set it ..?
-    }
-}
-
-pub type StyleFn<'a, Theme, Style> = Box<dyn Fn(&Theme, Status) -> Style + 'a>;
-
-use iced::widget::button::{Status, Style};
-use iced::Theme;
-
-pub trait Catalog {
-    ///Style for the trait to use.
-    type Class<'a>;
-
-    /// The default class produced by the [`Catalog`].
-    fn default<'a>() -> Self::Class<'a>;
-
-    /// The [`Style`] of a class with the given status.
-    fn style(&self, class: &Self::Class<'_>, status: Status) -> Style;
-}
-
-impl Catalog for Theme {
-    type Class<'a> = StyleFn<'a, Self, Style>;
-
-    fn default<'a>() -> Self::Class<'a> {
-        Box::new(|_theme, status| punge_button_style(status))
-    }
-
-    fn style(&self, class: &Self::Class<'_>, status: Status) -> Style {
-        class(self, status)
     }
 }
