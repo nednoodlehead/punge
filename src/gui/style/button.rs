@@ -283,6 +283,32 @@ pub fn punge_button_style(status: Status) -> Style {
             },
             shadow: Shadow::default(),
         },
+        Status::Pressed => Style {
+            background: Some(Background::Color(Color {
+                r: 0.2,
+                g: 0.2,
+                b: 0.2,
+                a: 1.0,
+            })),
+            text_color: Color {
+                r: 0.3,
+                g: 0.3,
+                b: 0.3,
+                a: 1.0,
+            },
+            border: Border {
+                color: Color {
+                    r: 0.75,
+                    g: 0.75,
+                    b: 0.75,
+                    a: 1.0,
+                },
+                radius: Radius::default(),
+                width: 1.0,
+            },
+            shadow: Shadow::default(),
+        },
+
         _ => Style::default(),
     }
 }
