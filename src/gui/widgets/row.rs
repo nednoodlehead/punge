@@ -249,7 +249,8 @@ where
         renderer: &Renderer,
         translation: Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
-        if !self.show_menu {
+        let state = tree.state.downcast_mut::<RowState>();
+        if !state.show_bar {
             return None;
         }
         Some(
@@ -277,7 +278,7 @@ where
 
     fn on_event(
         &mut self,
-        state: &mut Tree,
+        tree: &mut Tree,
         event: iced::Event,
         layout: layout::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
@@ -287,7 +288,6 @@ where
         viewport: &iced::Rectangle,
     ) -> iced::advanced::graphics::core::event::Status {
         // alows the button to actually do something
-        // println!("lay: {:#?}", &layout.children().next().unwrap());
         if cursor.is_over(
             // this is the button!!
             layout
@@ -300,7 +300,7 @@ where
                 .bounds(),
         ) {
             self.rowdata.as_widget_mut().on_event(
-                &mut state.children[0],
+                &mut tree.children[0],
                 event.clone(),
                 layout,
                 cursor,
@@ -312,20 +312,22 @@ where
             // shell.publish((self.play_msg)(self.song_uuid.clone()));
             return iced::event::Status::Captured;
         }
+        let state = tree.state.downcast_mut::<RowState>();
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
-                // println!("current viewport: {:?}", &viewport);
                 if cursor.is_over(layout.bounds()) {
-                    self.show_menu = true; // will make the menu appear in the first place
-                                           // we offset the viewport and the cursor position to place the cursor where it needs to be
-                                           // i found this out all on my own omg im so smart :3
+                    state.show_bar = true;
+                    // self.show_menu = true; // will make the menu appear in the first place
+                    // we offset the viewport and the cursor position to place the cursor where it needs to be
+                    // i found this out all on my own omg im so smart :3
                     let mut def_cursor = cursor.position().unwrap();
                     let actual_y_coord = (def_cursor.y - viewport.y) + 100.0; // 30 = approv def. length of button
                     def_cursor.y = actual_y_coord;
-                    self.cursor_pos = def_cursor;
+                    state.cursor_pos = def_cursor;
+                    println!("set cursor to: {:#?}", &state.cursor_pos);
                     iced::event::Status::Captured
                 } else {
-                    self.show_menu = false; // makes it so there is only one menu open at a time
+                    // self.show_menu = false; // makes it so there is only one menu open at a time
                     iced::event::Status::Captured
                 }
             }
@@ -357,21 +359,27 @@ where
 
             Event::Mouse(mouse::Event::CursorMoved { position }) => {
                 // it aint perfect by any means, but it works fairly well. we are going to leave it in!!
-                let tmp_cursor = cursor.position();
-                match tmp_cursor {
-                    None => return iced::event::Status::Ignored,
-                    Some(tmp) => {
-                        let overlayed = tmp.y - viewport.y + 30.0;
-                        let mut new_layout = layout.bounds();
-                        new_layout.y = new_layout.y - viewport.y + 30.0;
-                        let m = iced::advanced::mouse::Cursor::Available(position);
-                        if !m.is_over(new_layout) {
-                            self.show_menu = false;
-                            iced::event::Status::Captured
-                        } else {
-                            iced::event::Status::Ignored
+                if state.show_bar {
+                    let tmp_cursor = cursor.position();
+                    match tmp_cursor {
+                        None => return iced::event::Status::Ignored,
+                        Some(_) => {
+                            // should be the menu...?
+                            let mut new_layout = layout.children().next().unwrap().bounds();
+                            new_layout.y = new_layout.y - viewport.y + 30.0;
+                            let m = iced::advanced::mouse::Cursor::Available(position);
+                            if !m.is_over(new_layout) {
+                                println!("break!");
+                                state.show_bar = false;
+                                // self.show_menu = false;
+                                iced::event::Status::Captured
+                            } else {
+                                iced::event::Status::Ignored
+                            }
                         }
                     }
+                } else {
+                    iced::event::Status::Ignored
                 }
             }
             _ => iced::event::Status::Ignored,

@@ -49,18 +49,19 @@ where
     Renderer: iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
     fn layout(&mut self, renderer: &Renderer, bounds: Size) -> layout::Node {
+        let state = self.tree.state.downcast_ref::<RowState>();
         let limits = Limits::new(Size::ZERO, bounds);
         let node = layout::Node::with_children(
             Size {
-                width: 200.0,
-                height: 600.0,
+                width: 110.0,
+                height: 300.0,
             },
             vec![self
                 .overlay
                 .as_widget()
                 .layout(&mut self.tree.children[1], renderer, &limits)],
         );
-        node.move_to(self.position)
+        node.move_to(state.cursor_pos)
     }
     fn draw(
         &self,
@@ -90,6 +91,8 @@ where
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
     ) -> iced::advanced::graphics::core::event::Status {
+        // let st = self.tree.state.downcast_mut::<RowState>();
+        // st.show_bar = false;
         self.overlay.as_widget_mut().on_event(
             &mut self.tree.children[1],
             event,
