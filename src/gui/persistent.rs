@@ -35,17 +35,37 @@ where
     Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
     let mut col = column![
-        button(text("Play!")).on_press((play_msg)(song_uuid.clone())),
-        button(text("Edit")).on_press((edit_song_msg)(Some(song_uuid.clone()))),
-        button(text("Quickswap")).on_press((quick_swap)(song_uuid.clone())),
-        button(text("Move up")).on_press((move_song_up_msg)(song_uuid.clone(), row_num)),
-        button(text("Move down")).on_press((move_song_down_msg)(song_uuid.clone(), row_num)),
-        button(text("Delete!")).on_press((delete_msg)(song_uuid.clone())),
+        button(text("Play!"))
+            .on_press((play_msg)(song_uuid.clone()))
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
+        button(text("Edit"))
+            .on_press((edit_song_msg)(Some(song_uuid.clone())))
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
+        button(text("Quickswap"))
+            .on_press((quick_swap)(song_uuid.clone()))
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
+        button(text("Move up"))
+            .on_press((move_song_up_msg)(song_uuid.clone(), row_num))
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
+        button(text("Move down"))
+            .on_press((move_song_down_msg)(song_uuid.clone(), row_num))
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
+        button(text("Delete!"))
+            .on_press((delete_msg)(song_uuid.clone()))
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
     ];
     for (uuid, title) in uuid_list {
         col = col.push(
             button(text(format!("Add to: {}", &title)))
-                .on_press((add_to_msg)(uuid, song_uuid.clone())),
+                .on_press((add_to_msg)(uuid, song_uuid.clone()))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
         )
     }
     col.into()
