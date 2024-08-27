@@ -37,7 +37,7 @@ where
     ) -> Element<'a, Message, Theme, Renderer>,
     delete_msg: fn(String) -> Message,
     quick_swap_msg: fn(String) -> Message,
-    selection_msg: fn(usize, bool) -> Message, // should be like: Selection(bool, String), "is 'uniqueid' selected" type of message
+    selection_msg: fn(usize, bool, String) -> Message, // should be like: Selection(bool, String), "is 'uniqueid' selected" type of message
     add_to_msg: fn(String, String) -> Message,
     play_msg: fn(String) -> Message,
     move_song_up_msg: fn(String, usize) -> Message,
@@ -64,7 +64,7 @@ where
         row_num: usize,
         delete_msg: fn(String) -> Message,
         quick_swap_msg: fn(String) -> Message,
-        selection_msg: fn(usize, bool) -> Message,
+        selection_msg: fn(usize, bool, String) -> Message,
         add_to_msg: fn(String, String) -> Message,
         play_msg: fn(String) -> Message,
         move_song_up_msg: fn(String, usize) -> Message,
@@ -166,6 +166,7 @@ where
         iced::advanced::widget::tree::State::new(RowState {
             cursor_pos: self.cursor_pos,
             show_bar: self.show_menu,
+            is_selected: false,
         })
     }
 
@@ -197,7 +198,8 @@ where
         viewport: &iced::Rectangle,
     ) {
         // varying cell colors
-        let cell_color = if self.is_selected {
+        let st = tree.state.downcast_ref::<RowState>();
+        let cell_color = if st.is_selected {
             Color {
                 r: 0.2,
                 g: 0.2,
@@ -335,10 +337,13 @@ where
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 // for selecting rows and such
                 if cursor.is_over(layout.bounds()) {
-                    if self.is_selected {
-                        println!("but not here");
-                        self.is_selected = false;
-                        // shell.publish((self.selection_msg)(self.row_num, false));
+                    if state.is_selected {
+                        state.is_selected = false;
+                        shell.publish((self.selection_msg)(
+                            self.row_num,
+                            false,
+                            self.song_uuid.clone(),
+                        ));
 
                         // it would make sense to have a shell.publish and take the msg, add it to a list on the app, then when an
                         // action is done, do whatever to the contents of the list, then set the values all to false.
@@ -347,9 +352,12 @@ where
                         // shell.publish((self.selection_msg)(self.row_num, false));
                         iced::event::Status::Captured
                     } else {
-                        println!("right on here");
-                        self.is_selected = true;
-                        // shell.publish((self.selection_msg)(self.row_num, true));
+                        state.is_selected = true;
+                        shell.publish((self.selection_msg)(
+                            self.row_num,
+                            true,
+                            self.song_uuid.clone(),
+                        ));
                         iced::event::Status::Captured
                     }
                 } else {
@@ -362,7 +370,9 @@ where
                 if state.show_bar {
                     let tmp_cursor = cursor.position();
                     match tmp_cursor {
-                        None => return iced::event::Status::Ignored,
+                        None => {
+                            return iced::event::Status::Ignored;
+                        }
                         Some(_) => {
                             // should be the menu...?
                             let mut new_layout = layout.children().next().unwrap().bounds();
@@ -391,4 +401,5 @@ where
 pub struct RowState {
     pub cursor_pos: Point,
     pub show_bar: bool,
+    pub is_selected: bool,
 }

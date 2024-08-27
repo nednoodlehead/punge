@@ -73,7 +73,7 @@ pub enum ProgramCommands {
     // messages from the right-click menu on the table
     // playsong from above
     DeleteSong(String), // TODO do this interface.. probably want some type of confirmation.. also the playlist is pulled from self.active_playlist or whatever its called
-    SelectSong(usize, bool), // row, is_selected
+    SelectSong(usize, bool, String), // row, is_selected, uuid of song
 }
 
 #[derive(Debug, Copy, Clone)]

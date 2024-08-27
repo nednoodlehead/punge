@@ -1,4 +1,5 @@
 use crate::gui::messages::{Page, ProgramCommands, TextType};
+use crate::gui::style::button::punge_button_style;
 use iced::widget::{button, column, container, row, text, text_input};
 use iced::Element;
 
@@ -42,16 +43,20 @@ impl SongEditPage {
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
         let update_or_leave_buttons = row![
-            button("Update!").on_press(ProgramCommands::UpdateSong(
-                crate::gui::widgets::row::RowData {
-                    title: self.title.clone(),
-                    author: self.author.clone(),
-                    album: self.album.clone(),
-                    uniqueid: self.uniqueid.clone(),
-                    row_num: 0, // doesn't matter. we're using this type for convinence sake...
-                }
-            )),
-            button(text("Discard")).on_press(ProgramCommands::ChangePage(Page::Main))
+            button("Update!")
+                .on_press(ProgramCommands::UpdateSong(
+                    crate::gui::widgets::row::RowData {
+                        title: self.title.clone(),
+                        author: self.author.clone(),
+                        album: self.album.clone(),
+                        uniqueid: self.uniqueid.clone(),
+                        row_num: 0, // doesn't matter. we're using this type for convinence sake...
+                    }
+                ))
+                .style(|t, status| punge_button_style(status)),
+            button(text("Discard"))
+                .on_press(ProgramCommands::ChangePage(Page::Main))
+                .style(|_t, status| punge_button_style(status))
         ]
         .spacing(10.0);
         // if multiple songs are selected, we don't want to change the title!!

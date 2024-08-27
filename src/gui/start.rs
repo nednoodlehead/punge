@@ -100,7 +100,7 @@ pub struct App {
     pub config: Arc<ArcSwap<Config>>, // also contains hotkeys :D
     pub search: String,
     viewing_playlist: String, // could derive from cache soon... just the uniqueid rn
-    selected_songs: Vec<String>, // song(s) that the user is going to edit
+    selected_songs: Vec<(Option<usize>, String)>, // songs that the user will edit. if is_some, unselect the rows in the table
     pub user_playlists: Vec<UserPlaylist>,
     // tarkah table stuff
     table_content: iced::widget::list::Content<crate::gui::widgets::row::RowData>,
@@ -1013,7 +1013,7 @@ impl App {
                 if self.song_edit_page.multi_select {
                     // if multiple songs are selected
                     for id in self.selected_songs.iter() {
-                        update_auth_album(row.author.clone(), row.album.clone(), id.to_string())
+                        update_auth_album(row.author.clone(), row.album.clone(), id.1.to_string())
                             .unwrap();
                     }
                 } else {
@@ -1110,8 +1110,19 @@ impl App {
                 self.setting_page.idle_string_content.perform(action);
                 Command::none()
             }
-            ProgramCommands::SelectSong(row_num, is_selected) => {
+            ProgramCommands::SelectSong(row_num, is_selected, uuid) => {
                 println!("{} is selected: {}", row_num, is_selected);
+                if is_selected {
+                    self.selected_songs.push((Some(row_num), uuid));
+                } else {
+                    self.selected_songs.swap_remove(
+                        self.selected_songs
+                            .iter()
+                            .position(|item| item.1 == uuid)
+                            .unwrap(),
+                    );
+                }
+                println!("{:#?}", &self.selected_songs);
                 Command::none()
             }
 

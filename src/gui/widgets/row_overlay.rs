@@ -91,8 +91,6 @@ where
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
     ) -> iced::advanced::graphics::core::event::Status {
-        // let st = self.tree.state.downcast_mut::<RowState>();
-        // st.show_bar = false;
         self.overlay.as_widget_mut().on_event(
             &mut self.tree.children[1],
             event,
