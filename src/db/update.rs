@@ -29,15 +29,10 @@ pub fn update_song(
     Ok(())
 }
 
-pub fn _quick_swap_title_author(
-    author: String,
-    title: String,
-    uniqueid: String,
-) -> Result<(), DatabaseErrors> {
+pub fn quick_swap_title_author(uniqueid: &str) -> Result<(), DatabaseErrors> {
     let conn: Connection = rusqlite::Connection::open("main.db")?;
-    let statement: &str = "UPDATE main SET author = ?, title = ? WHERE uniqueid = ?";
-    conn.execute(statement, params![title, author, uniqueid])?;
-    // conn.close() returns an err and connection. We drop the connection with .map_err()
+    let statement: &str = "UPDATE main SET author = title, title = author WHERE uniqueid = ?";
+    conn.execute(statement, params![uniqueid])?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }

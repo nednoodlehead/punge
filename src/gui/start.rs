@@ -1,8 +1,8 @@
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid};
 use crate::db::insert::{add_to_playlist, create_playlist};
 use crate::db::update::{
-    delete_from_playlist, delete_playlist, move_song_down_one, move_song_up_one, update_auth_album,
-    update_song, update_title_auth,
+    delete_from_playlist, delete_playlist, move_song_down_one, move_song_up_one,
+    quick_swap_title_author, update_auth_album, update_song, update_title_auth,
 };
 use crate::gui::messages::{
     AppEvent, CheckBoxType, ComboBoxType, Context, Page, ProgramCommands, PungeCommand, TextType,
@@ -1027,9 +1027,15 @@ impl App {
                 Command::none()
             }
             ProgramCommands::QuickSwapTitleAuthor(uuid_to_swap) => {
-                // if none are selected, do current song
-                // TODO
-                // it can only be one song at a time (for now.. selection part of widget coming eventually!!)
+                if self.song_edit_page.multi_select {
+                    for id in self.selected_songs.iter() {
+                        info!("swapping multiple uuids: {}", &id.1);
+                        quick_swap_title_author(&id.1).unwrap();
+                    }
+                } else {
+                    info!("swapping a single uuid");
+                    quick_swap_title_author(&uuid_to_swap).unwrap();
+                }
                 self.refresh_playlist();
                 Command::none()
             }
