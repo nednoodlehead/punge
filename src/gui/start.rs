@@ -1019,11 +1019,10 @@ impl App {
                 } else {
                     update_song(row.author, row.title, row.album, row.uniqueid).unwrap();
                 }
+                // i dont think there is a way to
+                self.refresh_playlist();
                 self.selected_songs.clear();
-                self.refresh_playlist();
-                // update the active playlists in memory with the new name, im not sure if there is a better way
-                // to do this, just reload the playlist ig
-                self.refresh_playlist();
+
                 self.current_view = Page::Main;
                 Command::none()
             }
