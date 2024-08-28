@@ -1,11 +1,12 @@
 // this is a file for converting time types for use in the player, and the resulting player
 // also, this commit should change the data type of "length" in "main" table
 
-pub fn sec_to_time(int: u32) -> String {
+pub fn sec_to_time(mut int: u32) -> String {
     // format: HH:MM:SS
     // thanks ai, i literally forget about the usefulnes of the modulus operator everday
-    let hours = int / 3600;
-    let minutes = (int % 600) / 60;
+    let hours = int / 3600; // how many hours are in our seconds
+    int = int - (hours * 3600); // need to remove the hours...
+    let minutes = int / 60;
     let seconds = int % 60;
     let hour_str = if hours == 0 {
         String::new()
