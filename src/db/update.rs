@@ -103,26 +103,31 @@ pub fn delete_playlist(uniqueid: &str) -> Result<(), DatabaseErrors> {
 // for these we have to also check to see if it CAN go down one more
 pub fn move_playlist_up_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
     // TODO!!!
-    let count = 0;
     let mut conn = Connection::open("main.db")?;
     // added a scope so the borrow is dropped :D
+    let mut prep = conn
+        .prepare("SELECT order_of_playlist FROM metadata WHERE playlist_id = ?")
+        .unwrap();
+    let count: usize = prep.query_row([uniqueid], |row| row.get(0)).unwrap();
     if count == 0 {
         // cant go up any further...
+        println!("??");
         return Ok(());
     }
+    drop(prep);
     let tx = conn.transaction()?;
 
     let new_count = count - 1;
     tx.execute(
-        "UPDATE metadata SET userorder = ? WHERE userorder = ?",
+        "UPDATE metadata SET order_of_playlist = ? WHERE order_of_playlist = ?",
         params![count, new_count],
     )?;
     tx.execute(
-        "UPDATE metadata SET userorder = ? WHERE playlist_id = ?",
+        "UPDATE metadata SET order_of_playlist = ? WHERE playlist_id = ?",
         params![new_count, uniqueid],
     )?;
     tx.commit()?;
-
+    println!("SET?!");
     Ok(())
 }
 
@@ -140,6 +145,11 @@ pub fn move_playlist_down_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
     if count >= (max + 1) as u16 {
         return Ok(());
     }
+    let mut prep = conn
+        .prepare("SELECT order_of_playlist FROM metadata WHERE playlist_id = ?")
+        .unwrap();
+    let count: usize = prep.query_row([uniqueid], |row| row.get(0)).unwrap();
+    drop(prep);
     let tx = conn.transaction()?;
     let new_count = count + 1;
 

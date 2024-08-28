@@ -126,8 +126,12 @@ pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
     })?;
     let mut ret_vec = Vec::new();
     for item in playlist_obj_iter {
+        println!("item: {:?}", &item);
         ret_vec.push(item?)
     }
+    println!("order b4: {:?}", &ret_vec);
+    ret_vec.sort_unstable_by_key(|item| item.userorder);
+    println!("order after: {:?}", &ret_vec);
     drop(stmt);
     conn.close().map_err(|(_, err)| err)?;
     Ok(ret_vec)

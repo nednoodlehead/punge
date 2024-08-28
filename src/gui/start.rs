@@ -1084,11 +1084,13 @@ impl App {
                 Command::none()
             }
             ProgramCommands::MovePlaylistUp(uniqueid) => {
+                println!("Goin up!!");
                 crate::db::update::move_playlist_up_one(&uniqueid).unwrap();
                 self.user_playlists = get_all_playlists().unwrap();
                 Command::none()
             }
             ProgramCommands::MovePlaylistDown(uniqueid) => {
+                println!("GOING DOWN");
                 crate::db::update::move_playlist_down_one(&uniqueid).unwrap();
                 self.user_playlists = get_all_playlists().unwrap();
                 Command::none()
@@ -1161,6 +1163,7 @@ impl App {
         .width(1000);
 
         let mut all_playlists_but_main = self.user_playlists.clone();
+        all_playlists_but_main.remove(0);
         // user should always have the 'main' playlist
         let active_playlist = self.user_playlists[self
             .user_playlists
@@ -1169,7 +1172,6 @@ impl App {
             .unwrap_or(0)]
         .clone();
 
-        all_playlists_but_main.remove(0);
         let table_cont = container(table).height(Length::Fill).padding(5);
         let table_cont_wrapper = column![
             row![
