@@ -378,6 +378,7 @@ where
                             let mut new_layout = layout.children().next().unwrap().bounds();
                             new_layout.y = new_layout.y - viewport.y + 30.0;
                             let m = iced::advanced::mouse::Cursor::Available(position);
+                            println!("mouse pos: {:#?}", &m);
                             if !m.is_over(new_layout) {
                                 println!("break!");
                                 state.show_bar = false;

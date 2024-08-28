@@ -61,10 +61,12 @@ pub enum ProgramCommands {
     NewPlaylist,
     DeletePlaylist(String),
     UpdatePlaylist, // update playlist with the content from self.playlist_page
-    OpenPlaylistEditPage(UserPlaylist),
+    OpenPlaylistEditPage(UserPlaylist), // i think this can be a &UserPlaylist ??
     ClearPlaylistPage,
-    MovePlaylistUp(String, u16),
-    MovePlaylistDown(String, u16),
+    MovePlaylistUp(String),
+    MovePlaylistDown(String),
+    DuplicatePlaylist(String),
+    PlayFromPlaylist(String), // right click menu on the playlist button. shuffles and plays randomly
     OpenSongEditPage(Option<String>),
     UpdateSong(crate::gui::widgets::row::RowData), // happens to be a convient type for this data
     QuickSwapTitleAuthor(String),                  // uniqueid

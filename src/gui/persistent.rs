@@ -14,6 +14,7 @@ use iced::{Alignment, Element};
 use iced_aw::menu::{Item, Menu};
 use iced_aw::widgets::quad;
 use iced_aw::widgets::InnerBounds;
+use itertools::Itertools;
 
 pub fn create_whole_menu<'a, Message, Theme, Renderer>(
     delete_msg: fn(String) -> Message,
@@ -69,6 +70,45 @@ where
         )
     }
     col.into()
+}
+
+pub fn create_playlist_button_menu<'a, Message, Theme, Renderer>(
+    edit_msg: Message,
+    move_up_msg: Message,
+    move_down_msg: Message,
+    duplicate_msg: Message,
+    play_msg: Message,
+) -> Element<'a, Message, Theme, Renderer>
+where
+    <Theme as iced::widget::button::Catalog>::Class<'a>:
+        From<Box<dyn Fn(&Theme, iced::widget::button::Status) -> iced::widget::button::Style + 'a>>,
+    Message: 'a + Clone,
+    Theme: 'a + button::Catalog + iced::widget::text::Catalog + iced::widget::button::Catalog,
+    Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
+{
+    column![
+        button(text("Edit"))
+            .on_press(edit_msg)
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
+        button(text("Move Up"))
+            .on_press(move_up_msg)
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
+        button(text("Move Down"))
+            .on_press(move_down_msg)
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
+        button(text("Duplicate"))
+            .on_press(duplicate_msg)
+            .style(|_t, status| punge_button_style(status))
+            .width(110),
+        button(text("Play"))
+            .on_press(play_msg)
+            .style(|_t, status| punge_button_style(status))
+            .width(110)
+    ]
+    .into()
 }
 
 impl App {
@@ -163,118 +203,30 @@ impl App {
         .style(|_status| bottom_bar_container())
         .into()
     }
-    pub fn render_buttons_side(&self, ignore: Page) -> Element<'static, ProgramCommands> {
-        // let playlist_add_to_menu = Item::with_menu(
-        //     button(text("Add to...                     ->")) // this is mad goofy lol
-        //         .width(180)
-        //         .style(|_theme, status| sub_menu_button_style(status))
-        //         .on_press(ProgramCommands::Debug),
-        //     Menu::new(
-        //         self.user_playlists
-        //             .iter()
-        //             .map(|p| {
-        //                 Item::new(
-        //                     button(text(p.title.clone()))
-        //                         .style(|_t, status| sub_menu_button_style(status))
-        //                         .width(150)
-        //                         .on_press(ProgramCommands::AddToPlaylist(p.uniqueid.clone())),
-        //                 )
-        //             })
-        //             .collect(),
-        //     )
-        //     .max_width(150.0)
-        //     .offset(10.0),
-        // );
-        // let menu = iced_aw::menu_bar!((
-        //     button("Edit song")
-        //         .style(|_t, status| sub_menu_button_style(status))
-        //         .on_press(ProgramCommands::Debug),
-        //     Menu::new(vec![
-        //         Item::new(
-        //             button(text("Full Edit"))
-        //                 .on_press(ProgramCommands::OpenSongEditPage)
-        //                 .style(|_t, status| sub_menu_button_style(status))
-        //                 .width(180)
-        //         ),
-        //         Item::new(
-        //             button(text("Swap Title & Author"))
-        //                 .style(|_t, status| sub_menu_button_style(status))
-        //                 .on_press(ProgramCommands::QuickSwapTitleAuthor)
-        //                 .width(180),
-        //         ),
-        //         Item::new(
-        //             button(text("Delete!!"))
-        //                 .style(|_t, status| sub_menu_button_style(status))
-        //                 .on_press(ProgramCommands::DeleteSong)
-        //                 .width(180)
-        //         ),
-        //         playlist_add_to_menu,
-        //     ])
-        //     .offset(0.0)
-        //     .max_width(180.0)
-        // ))
-        // .style(|_t, status| punge_menu_style(status));
-
+    pub fn render_buttons_side(&self, ignore: Page) -> Element<'_, ProgramCommands> {
         let mut all_playlists_but_main = self.user_playlists.clone();
         // user should always have the 'main' playlist
 
-        // all_playlists_but_main.remove(0);
-        // let playlist_buttons: Vec<Element<ProgramCommands>> = self
-        //     .user_playlists
-        //     .iter()
-        //     .map(|playlist| {
-        //         let dropdown = iced_aw::additional_menu::Item::with_menu(
-        //             button(text(playlist.title.clone()))
-        //                 .style(|_t, status| playlist_text_style(status)),
-        //             iced_aw::additional_menu::Menu::new(vec![
-        //                 iced_aw::additional_menu::Item::new(
-        //                     button(text("Edit"))
-        //                         .on_press(ProgramCommands::OpenPlaylistEditPage(playlist.clone()))
-        //                         .width(180)
-        //                         .style(|_t, status| sub_menu_button_style(status)),
-        //                 ),
-        //                 iced_aw::additional_menu::Item::new(
-        //                     button(text("Duplicate?"))
-        //                         .width(180)
-        //                         .style(|_t, status| sub_menu_button_style(status)),
-        //                 ),
-        //                 iced_aw::additional_menu::Item::new(
-        //                     button(text("Move up one"))
-        //                         .width(180)
-        //                         .on_press(ProgramCommands::MovePlaylistUp(
-        //                             playlist.uniqueid.clone(),
-        //                             playlist.userorder,
-        //                         ))
-        //                         .style(|_t, status| sub_menu_button_style(status)),
-        //                 ),
-        //                 iced_aw::additional_menu::Item::new(
-        //                     button(text("Move down one"))
-        //                         .width(180)
-        //                         .on_press(ProgramCommands::MovePlaylistDown(
-        //                             playlist.uniqueid.clone(),
-        //                             playlist.userorder,
-        //                         ))
-        //                         .style(|_t, status| sub_menu_button_style(status)),
-        //                 ),
-        //                 iced_aw::additional_menu::Item::new(
-        //                     button(text(format!("delete {}", &playlist.title)))
-        //                         .width(180)
-        //                         .on_press(ProgramCommands::DeletePlaylist(
-        //                             playlist.uniqueid.clone(),
-        //                         ))
-        //                         .style(|_t, status| sub_menu_button_style(status)),
-        //                 ),
-        //             ])
-        //             .max_width(180.0),
-        //         );
-        //         iced_aw::additional_menu::MenuBar::new(vec![dropdown])
-        //             .style(|_t, status| punge_menu_style(status))
-        //             .on_press(ProgramCommands::ChangeViewingPlaylist(
-        //                 playlist.uniqueid.clone(),
-        //             ))
-        //             .into()
-        //     })
-        //     .collect();
+        all_playlists_but_main.remove(0);
+        let playlist_buttons: Vec<Element<ProgramCommands>> = self
+            .user_playlists
+            .iter()
+            .map(|playlist| {
+                crate::gui::widgets::playlist_button::PlaylistButton::new(
+                    button(text(&playlist.title))
+                        .style(|_t, status| playlist_text_style(status))
+                        .into(),
+                    ProgramCommands::ChangeViewingPlaylist(playlist.uniqueid.clone()),
+                    create_playlist_button_menu,
+                    ProgramCommands::OpenPlaylistEditPage(playlist.clone()),
+                    ProgramCommands::MovePlaylistUp(playlist.uniqueid.clone()),
+                    ProgramCommands::MovePlaylistDown(playlist.uniqueid.clone()),
+                    ProgramCommands::DuplicatePlaylist(playlist.uniqueid.clone()),
+                    ProgramCommands::PlayFromPlaylist(playlist.uniqueid.clone()),
+                )
+                .into()
+            })
+            .collect_vec();
         let buttons = [
             ("Home", Page::Main),
             ("Download!", Page::Download),
@@ -300,12 +252,22 @@ impl App {
         // btn.push(menu.into()); // the stupid button clips over the container border. so add this so it doesnt ...
         // btn.push(self.horizontal_separator().into()); // separater between buttons and playlists :)
         // btn.extend(playlist_buttons);
-        container(row![Column::with_children(btn), text("spacing")].spacing(5))
-            .height(iced::Length::Fill)
-            // .style(iced::theme::Container::Custom(Box::new(
-            //     ContainerWithBorder,
-            // )))
-            .into()
+        container(
+            row![
+                column![
+                    Column::with_children(btn),
+                    text("temp space"),
+                    Column::with_children(playlist_buttons)
+                ],
+                text("spacing")
+            ]
+            .spacing(5),
+        )
+        .height(iced::Length::Fill)
+        // .style(iced::theme::Container::Custom(Box::new(
+        //     ContainerWithBorder,
+        // )))
+        .into()
     }
     fn horizontal_separator(&self) -> quad::Quad {
         quad::Quad {
