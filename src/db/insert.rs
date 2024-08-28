@@ -11,6 +11,11 @@ pub fn add_to_main(music_obj: PungeMusicObject) -> Result<String, DatabaseErrors
                  params![music_obj.title, music_obj.author, music_obj.album, music_obj.features, music_obj.length, music_obj.savelocationmp3,
                  music_obj.savelocationjpg, music_obj.datedownloaded, music_obj.lastlistenedto, music_obj.ischild, music_obj.uniqueid,
                  music_obj.plays, music_obj.weight, music_obj.threshold, music_obj.order])?;
+    // untested... should work..?
+    conn.execute(
+        "UPDATE metadata SET songcount = songcount + 1, totaltime = totaltime + ? WHERE playlist_id = main",
+        params![music_obj.length],
+    )?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(format!("{} - {}", &music_obj.title, &music_obj.author))
 }
