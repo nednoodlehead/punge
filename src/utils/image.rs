@@ -9,7 +9,7 @@ pub fn get_raw_thumbnail_from_link(youtube_id: &str, dir_path: &str) -> Result<S
     let base_url = format!("https://img.youtube.com/vi/{}/default.jpg", youtube_id);
     let file_path: String = format!("{}{}.jpg", dir_path, youtube_id);
     // check if it is downloaded?!
-    if std::path::Path::exists(&std::path::Path::new(&file_path)) {
+    if std::path::Path::exists(std::path::Path::new(&file_path)) {
         return Err(());
     }
     let mut file = std::fs::File::create(&file_path).unwrap();

@@ -2,9 +2,9 @@ use crate::gui::style::button::punge_button_style;
 use crate::gui::widgets::row_overlay::OverlayButtons;
 use iced::advanced::mouse;
 use iced::advanced::{layout, renderer, widget::Tree, widget::Widget};
-use iced::widget::{button, column, row, text, Column, Row, Themer};
+use iced::widget::{button, row, text};
 use iced::Event;
-use iced::{Border, Color, Element, Length, Point, Shadow, Size, Theme, Vector};
+use iced::{Border, Color, Element, Length, Point, Size, Vector};
 
 #[derive(Debug, Clone)]
 pub struct RowData {
@@ -140,14 +140,14 @@ where
     fn children(&self) -> Vec<Tree> {
         vec![
             Tree::new(&self.rowdata),
-            Tree::new((&self.row_overlay)(
-                self.delete_msg.clone(),
-                self.quick_swap_msg.clone(),
-                self.add_to_msg.clone(),
-                self.play_msg.clone(),
-                self.move_song_up_msg.clone(),
-                self.move_song_down_msg.clone(),
-                self.edit_song_msg.clone(),
+            Tree::new((self.row_overlay)(
+                self.delete_msg,
+                self.quick_swap_msg,
+                self.add_to_msg,
+                self.play_msg,
+                self.move_song_up_msg,
+                self.move_song_down_msg,
+                self.edit_song_msg,
                 self.uuid_list.clone(),
                 self.song_uuid.clone(),
                 0, // doesnt matter for the `children` part
@@ -241,7 +241,7 @@ where
             },
             layout.children().next().unwrap(),
             cursor,
-            &viewport,
+            viewport,
         );
     }
     fn overlay<'b>(
@@ -259,18 +259,17 @@ where
             OverlayButtons::new(
                 tree,
                 (self.row_overlay)(
-                    self.delete_msg.clone(),
-                    self.quick_swap_msg.clone(),
-                    self.add_to_msg.clone(),
-                    self.play_msg.clone(),
-                    self.move_song_up_msg.clone(),
-                    self.move_song_down_msg.clone(),
-                    self.edit_song_msg.clone(),
+                    self.delete_msg,
+                    self.quick_swap_msg,
+                    self.add_to_msg,
+                    self.play_msg,
+                    self.move_song_up_msg,
+                    self.move_song_down_msg,
+                    self.edit_song_msg,
                     self.uuid_list.clone(),
                     self.song_uuid.clone(),
                     self.row_num,
-                )
-                .into(),
+                ),
                 self.cursor_pos,
                 self.row_num,
             )
@@ -371,7 +370,7 @@ where
                     let tmp_cursor = cursor.position();
                     match tmp_cursor {
                         None => {
-                            return iced::event::Status::Ignored;
+                            iced::event::Status::Ignored
                         }
                         Some(_) => {
                             // should be the menu...?

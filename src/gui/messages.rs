@@ -2,8 +2,7 @@
 // as well as the actual music-playing portion of the app
 
 use crate::types::{AppError, PungeMusicObject, UserPlaylist};
-use crate::types::{MusicData, Playlist, YouTubeData};
-use iced::widget::scrollable;
+use crate::types::{MusicData, YouTubeData};
 use serde::{ser, Deserialize, Serialize};
 use tokio::sync::mpsc as async_sender;
 #[derive(Debug, Clone, Serialize, Deserialize)]

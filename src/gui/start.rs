@@ -1,8 +1,8 @@
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid};
-use crate::db::insert::{add_to_playlist, create_playlist};
+use crate::db::insert::{create_playlist};
 use crate::db::update::{
     delete_from_playlist, delete_playlist, move_song_down_one, move_song_up_one,
-    quick_swap_title_author, update_auth_album, update_song, update_title_auth,
+    quick_swap_title_author, update_auth_album, update_song,
 };
 use crate::gui::messages::{
     AppEvent, CheckBoxType, ComboBoxType, Context, Page, ProgramCommands, PungeCommand, TextType,
@@ -18,8 +18,8 @@ use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::subscription::Subscription;
-use iced::widget::{button, column, container, image, row, scrollable, text};
-use iced::{executor, Command, Element, Length, Settings, Theme};
+use iced::widget::{column, container, image, row, scrollable, text};
+use iced::{Command, Element, Length, Settings, Theme};
 use log::{debug, error, info, warn};
 use simplelog::{CombinedLogger, TermLogger, WriteLogger};
 use std::sync::Arc;

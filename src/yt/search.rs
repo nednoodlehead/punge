@@ -1,5 +1,4 @@
 use crate::types::YouTubeSearchResult;
-use async_std::channel::Send;
 use log::info;
 use rusty_ytdl::blocking::search;
 use rusty_ytdl::blocking::search::SearchResult;
@@ -72,7 +71,7 @@ pub async fn content_to_text(
 fn remove_all_in_temp_dir() {
     // no result, should never fail
     let tmp_path = "./img/temp/";
-    for file in std::fs::read_dir(&tmp_path).unwrap() {
+    for file in std::fs::read_dir(tmp_path).unwrap() {
         std::fs::remove_file(file.unwrap().path()).unwrap();
     }
 }

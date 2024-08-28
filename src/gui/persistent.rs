@@ -3,15 +3,13 @@
 use crate::gui::messages::{Page, ProgramCommands};
 use crate::gui::start::App;
 use crate::gui::style::button::{
-    just_text, menu_button_style, playlist_text_style, punge_button_style, sub_menu_button_style,
+    just_text, menu_button_style, playlist_text_style, punge_button_style,
 };
 use crate::gui::style::container::bottom_bar_container;
-use crate::gui::style::menu::punge_menu_style;
 use crate::gui::style::scrubber::scrubber_style;
 use crate::gui::style::volume::volume_style;
 use iced::widget::{button, column, container, horizontal_space, row, slider, text, Column, Image};
 use iced::{Alignment, Element};
-use iced_aw::menu::{Item, Menu};
 use iced_aw::widgets::quad;
 use iced_aw::widgets::InnerBounds;
 use itertools::Itertools;
@@ -234,7 +232,7 @@ impl App {
             ("Settings", Page::Settings),
             ("Add Playlist", Page::Playlist),
         ];
-        let mut btn: Vec<Element<ProgramCommands>> = buttons
+        let btn: Vec<Element<ProgramCommands>> = buttons
             .iter()
             .map(|(txt, page)| {
                 if *page == ignore {

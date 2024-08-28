@@ -154,7 +154,7 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
     // uploaded to insta, so we can rename it near the end to change that..
     // --no-video-thumbnails --no-captions --no-metadata-json
     // links look like: https://www.instagram.com/p/123456789 10 11
-    let split_str = link.split("/").collect_vec();
+    let split_str = link.split('/').collect_vec();
     let process = std::process::Command::new("instaloader")
         .args([
             "--filename-pattern={shortcode}",
@@ -199,13 +199,13 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
             // std::fs::File::set_times(, )
             // 2. move the mp4 to the correct directory
             // yadda
-            return Ok(link);
+            Ok(link)
         }
         Err(e) => {
-            return Err(AppError::FileError(format!(
+            Err(AppError::FileError(format!(
                 "instaloader error: {:?}. is it on your path!?",
                 e
             )))
         }
-    };
+    }
 }

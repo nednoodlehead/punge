@@ -1,6 +1,6 @@
 use iced::widget::slider;
 use iced::widget::slider::{Status, Style};
-use iced::{border::Radius, Border, Color};
+use iced::{border::Radius, Color};
 
 pub fn scrubber_style(status: Status) -> Style {
     match status {

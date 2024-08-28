@@ -542,7 +542,7 @@ pub fn idle_strings_to_config(idle_string: String) -> Vec<String> {
     let splot = idle_string.split(',');
     for string in splot.into_iter() {
         let s = string.trim();
-        let s = &s.replace("\n", "");
+        let s = &s.replace('\n', "");
         ret_vec.push(s.to_string())
     }
     ret_vec

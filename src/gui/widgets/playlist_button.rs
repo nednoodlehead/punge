@@ -3,9 +3,9 @@ use iced::advanced::layout::Limits;
 // and a right-click will show some playlist options (edit, move up, move down, duplicate, play)
 use iced::advanced::{layout, renderer, widget::Tree, widget::Widget};
 use iced::advanced::{mouse, Overlay};
-use iced::widget::{button, column, row, text, Button, Column, Row, Themer};
+use iced::widget::{button};
 use iced::Event;
-use iced::{Border, Color, Element, Length, Point, Shadow, Size, Theme, Vector};
+use iced::{Element, Length, Point, Size, Vector};
 
 pub struct PlaylistButtonState {
     show_menu: bool,
@@ -174,13 +174,13 @@ where
                     shell.publish(self.view_message.clone());
                     return iced::event::Status::Captured;
                 }
-                return iced::event::Status::Ignored;
+                iced::event::Status::Ignored
             }
             Event::Mouse(mouse::Event::CursorMoved { position }) => {
                 if st.show_menu {
                     let tmp = cursor.position();
                     match tmp {
-                        None => return iced::event::Status::Ignored,
+                        None => iced::event::Status::Ignored,
                         Some(_) => {
                             if !cursor.is_over(layout.children().next().unwrap().bounds()) {
                                 st.show_menu = false;
