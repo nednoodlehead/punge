@@ -115,6 +115,7 @@ impl App {
         let search_container = container(row![
             iced::widget::text_input("GoTo closest match", self.search.as_str())
                 .on_input(ProgramCommands::UpdateSearch)
+                .on_submit(ProgramCommands::GoToSong)
                 .width(iced::Length::Fixed(200.0)),
             button(text("Confirm"))
                 .on_press(ProgramCommands::GoToSong)
