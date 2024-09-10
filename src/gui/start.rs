@@ -185,85 +185,6 @@ impl Default for App {
 }
 
 impl App {
-    fn new() -> (App, iced::Command<ProgramCommands>) {
-        // hotkey management and this is where new keybinds are to be added
-        let manager = GlobalHotKeyManager::new().unwrap();
-        let player_cache = player_cache::fetch_cache();
-        let config_cache = match cache::read_from_cache() {
-            Ok(t) => {
-                // what abt no mods? maybe should check
-                for (_, bind) in t.keybinds.iter() {
-                    let hotkey = if bind.mod1.is_none() {
-                        HotKey::new(bind.mod2, bind.code.unwrap())
-                    } else if bind.mod2.is_none() {
-                        HotKey::new(bind.mod1, bind.code.unwrap())
-                    } else {
-                        HotKey::new(
-                            Some(bind.mod1.unwrap() | bind.mod2.unwrap()),
-                            bind.code.unwrap(),
-                        )
-                    };
-                    manager.register(hotkey).unwrap();
-                }
-                t
-            }
-            Err(_) => {
-                warn!("Cannot fetch cache, resorting to default");
-                Config {
-                    backup_path: format!("C:/Users/{}/Documents/", whoami::username()),
-                    mp3_path: String::from("C:/"),
-                    jpg_path: String::from("C:/"),
-                    static_increment: 1,
-                    static_reduction: 1,
-                    media_path: String::from("C:/"),
-                    keybinds: std::collections::HashMap::new(), // empty!
-                    shuffle_type: ShuffleType::Regular,
-                    idle_strings: vec!["listening to nothin".to_string()],
-                }
-            }
-        };
-        (
-            App {
-                is_paused: true,
-                current_song: Arc::new(ArcSwap::from_pointee(MusicData::default())),
-                sender: None,
-                volume: (player_cache.volume * 80.0) as u8, // 80 is out magic number from sink volume -> slider
-                shuffle: player_cache.shuffle,
-                silence_scrubber: false,
-                scrubber: 0,
-                time_elapsed: std::time::Duration::default(),
-                total_time: player_cache.length,
-                current_view: Page::Main,
-                download_page: download_page::DownloadPage::new(),
-                setting_page: setting_page::SettingPage::new(&config_cache),
-                media_page: crate::gui::media_page::MediaPage::new(&config_cache),
-                playlist_page: crate::gui::new_playlist_page::PlaylistPage::new(None),
-                song_edit_page: crate::gui::song_edit_page::SongEditPage::new(),
-                download_list: vec![],
-                manager,
-                config: Arc::new(ArcSwap::from_pointee(config_cache)),
-                search: "".to_string(),
-                viewing_playlist: "main".to_string(),
-                selected_songs: vec![],
-                user_playlists: get_all_playlists().unwrap(), // im addicted to unwraping
-                // maybe do most recent playlist next? from cache?
-                table_content: get_all_main()
-                    .unwrap()
-                    .into_iter()
-                    .enumerate()
-                    .map(|(count, item)| crate::gui::widgets::row::RowData {
-                        title: item.title.clone(),
-                        author: item.author.clone(),
-                        album: item.album.clone(),
-                        row_num: count,
-                        uniqueid: item.uniqueid.clone(),
-                    })
-                    .collect(),
-            },
-            Command::none(),
-        )
-    }
-
     fn theme(&self) -> Theme {
         iced::Theme::Dark
     }
@@ -1097,6 +1018,8 @@ impl App {
                 self.playlist_page.user_description = "".to_string();
                 self.playlist_page.user_thumbnail = "".to_string();
                 self.playlist_page.user_id = None;
+                // put user back to home screen
+                self.current_view = Page::Main;
                 Command::none()
             }
             ProgramCommands::MovePlaylistUp(uniqueid) => {
