@@ -10,8 +10,6 @@ use crate::gui::style::scrubber::scrubber_style;
 use crate::gui::style::volume::volume_style;
 use iced::widget::{button, column, container, horizontal_space, row, slider, text, Column, Image};
 use iced::{Alignment, Element};
-use iced_aw::widgets::quad;
-use iced_aw::widgets::InnerBounds;
 use itertools::Itertools;
 
 pub fn create_whole_menu<'a, Message, Theme, Renderer>(
@@ -251,16 +249,15 @@ impl App {
             })
             .collect();
         // btn.push(menu.into()); // the stupid button clips over the container border. so add this so it doesnt ...
-        // btn.push(self.horizontal_separator().into()); // separater between buttons and playlists :)
+        btn.push(crate::gui::widgets::separator::Separator{width: iced::Length::Fixed(150.0), height: iced::Length::Fixed(4.0)}.into()); // separater between buttons and playlists :)
         // btn.extend(playlist_buttons);
         container(
             row![
                 column![
                     Column::with_children(btn),
-                    text("temp space"),
                     Column::with_children(playlist_buttons)
                 ],
-                text("spacing")
+                crate::gui::widgets::separator::Separator{width: iced::Length::Fixed(4.0), height: iced::Length::Fill},
             ]
             .spacing(5),
         )
@@ -269,44 +266,5 @@ impl App {
         //     ContainerWithBorder,
         // )))
         .into()
-    }
-    fn horizontal_separator(&self) -> quad::Quad {
-        quad::Quad {
-            quad_color: iced_core::Background::Color(iced_core::Color {
-                r: 0.5,
-                g: 0.5,
-                b: 0.5,
-                a: 1.0,
-            }),
-            quad_border: iced_core::Border {
-                radius: [3.0; 4].into(),
-                ..Default::default()
-            },
-            inner_bounds: InnerBounds::Ratio(0.98, 0.2),
-            height: iced_core::Length::Fixed(20.0),
-            width: iced_core::Length::Fixed(180.0),
-            ..Default::default()
-        }
-        // is this like the only way to set it ..?
-    }
-
-    pub fn vertical_separator(&self) -> quad::Quad {
-        quad::Quad {
-            quad_color: iced_core::Background::Color(iced_core::Color {
-                r: 0.5,
-                g: 0.5,
-                b: 0.5,
-                a: 1.0,
-            }),
-            quad_border: iced_core::Border {
-                radius: [3.0; 4].into(),
-                ..Default::default()
-            },
-            inner_bounds: InnerBounds::Ratio(1.0, 1.0),
-            height: iced_core::Length::Fill,
-            width: iced_core::Length::Fixed(4.0),
-            ..Default::default()
-        }
-        // is this like the only way to set it ..?
     }
 }
