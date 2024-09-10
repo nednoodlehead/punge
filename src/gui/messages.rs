@@ -3,6 +3,7 @@
 
 use crate::types::{AppError, PungeMusicObject, UserPlaylist};
 use crate::types::{MusicData, YouTubeData};
+use rodio::Sink;
 use serde::{ser, Deserialize, Serialize};
 use tokio::sync::mpsc as async_sender;
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,7 +48,7 @@ pub enum ProgramCommands {
     AddToDownloadFeedback(String, Result<YouTubeData, AppError>), // String = youtubelink, Result<string> = title - author
     InAppEvent(AppEvent),
     UpdateSearch(String), // for updating the string that is used in the regex search
-    GoToSong,             //
+    GoToSong,
     SongFound(Result<PungeMusicObject, AppError>), // when the song is found from GoToSong, this is called
     ChangeViewingPlaylist(String), // pass only the unqiueid i guess. problem was making self.viewing_playlist
     PlaySong(String),              // unqiueid
@@ -69,7 +70,7 @@ pub enum ProgramCommands {
     OpenSongEditPage(Option<String>),
     UpdateSong(crate::gui::widgets::row::RowData), // happens to be a convient type for this data
     QuickSwapTitleAuthor(String),                  // uniqueid
-    PushScrubber,
+    PushScrubber(std::time::Duration),
     UpdateEditor(iced::widget::text_editor::Action), // updating the idle string editor in gui::settings
     // messages from the right-click menu on the table
     // playsong from above

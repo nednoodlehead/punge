@@ -160,13 +160,15 @@ impl App {
                         text(crate::utils::time::sec_to_time(self.time_elapsed)),
                         slider(
                             0..=self.total_time * 10,
-                            self.scrubber,
+                            self.scrubber.into(),
                             ProgramCommands::MoveSlider
                         )
                         .on_release(ProgramCommands::SkipToSeconds(self.scrubber / 10))
                         // .width(300.0)
                         .style(|_theme, status| scrubber_style(status)), // scrubberstyle
-                        text(crate::utils::time::sec_to_time(self.total_time))
+                        text(crate::utils::time::sec_to_time(
+                            std::time::Duration::from_secs(self.total_time.into())
+                        ))
                     ]
                     .spacing(25)
                 ]
@@ -233,7 +235,7 @@ impl App {
             ("Settings", Page::Settings),
             ("Add Playlist", Page::Playlist),
         ];
-        let btn: Vec<Element<ProgramCommands>> = buttons
+        let mut btn: Vec<Element<ProgramCommands>> = buttons
             .iter()
             .map(|(txt, page)| {
                 if *page == ignore {

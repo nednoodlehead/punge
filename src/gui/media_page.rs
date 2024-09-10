@@ -171,6 +171,10 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
         .unwrap()
         .wait_with_output();
     // this needs to block?
+    // we also need to check for multiple downloads. They can be a collection of jpgs / mp4
+    // we can either check the number of files in the directory (should be n * 4) or do a collection of match checks
+    // but how do we tell a thumbnail of a video vs a regular photo? Should we just scan for all jpgs & mp4s and move them all !?
+    // should probably do some testing for this...
     match process {
         Ok(_) => {
             // so the filename to move can either be `.jpg` or `.mp4`
@@ -201,11 +205,9 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
             // yadda
             Ok(link)
         }
-        Err(e) => {
-            Err(AppError::FileError(format!(
-                "instaloader error: {:?}. is it on your path!?",
-                e
-            )))
-        }
+        Err(e) => Err(AppError::FileError(format!(
+            "instaloader error: {:?}. is it on your path!?",
+            e
+        ))),
     }
 }

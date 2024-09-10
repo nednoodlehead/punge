@@ -1,13 +1,17 @@
 // this is a file for converting time types for use in the player, and the resulting player
 // also, this commit should change the data type of "length" in "main" table
 
-pub fn sec_to_time(mut int: u32) -> String {
+pub fn sec_to_time(int: std::time::Duration) -> String {
     // format: HH:MM:SS
-    // thanks ai, i literally forget about the usefulnes of the modulus operator everday
+    // i do not claim to be good at writing these "algo" type functions.
+    if int < std::time::Duration::from_secs(1) {
+        return String::from("0:00");
+    }
+    let int = int.as_secs();
     let hours = int / 3600; // how many hours are in our seconds
-    int = int - (hours * 3600); // need to remove the hours...
-    let minutes = int / 60;
-    let seconds = int % 60;
+    let no_hrs = int - (hours * 3600); // need to remove the hours...
+    let minutes = no_hrs / 60;
+    let seconds = no_hrs % 60;
     let hour_str = if hours == 0 {
         String::new()
     } else {

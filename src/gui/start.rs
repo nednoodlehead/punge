@@ -1,5 +1,5 @@
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid};
-use crate::db::insert::{create_playlist};
+use crate::db::insert::create_playlist;
 use crate::db::update::{
     delete_from_playlist, delete_playlist, move_song_down_one, move_song_up_one,
     quick_swap_title_author, update_auth_album, update_song,
@@ -87,8 +87,9 @@ pub struct App {
     pub volume: u8,
     pub shuffle: bool,
     pub scrubber: u32,
-    pub time_elapsed: u32, // needs to be a u32 im pretty sure
-    pub total_time: u32,
+    pub silence_scrubber: bool,            // when we start dragging
+    pub time_elapsed: std::time::Duration, // needs to be a u32 im pretty sure
+    pub total_time: u32,                   // not u64 because u cant go from u64 -> f64? ig
     current_view: Page,
     download_page: crate::gui::download_page::DownloadPage,
     pub setting_page: setting_page::SettingPage, // pub so src\gui\subscrip can see the user choosen value increments
@@ -150,7 +151,8 @@ impl Default for App {
             volume: (player_cache.volume * 80.0) as u8, // 80 is out magic number from sink volume -> slider
             shuffle: player_cache.shuffle,
             scrubber: 0,
-            time_elapsed: 0,
+            silence_scrubber: false,
+            time_elapsed: std::time::Duration::default(),
             total_time: player_cache.length,
             current_view: Page::Main,
             download_page: download_page::DownloadPage::new(),
@@ -227,8 +229,9 @@ impl App {
                 sender: None,
                 volume: (player_cache.volume * 80.0) as u8, // 80 is out magic number from sink volume -> slider
                 shuffle: player_cache.shuffle,
+                silence_scrubber: false,
                 scrubber: 0,
-                time_elapsed: 0,
+                time_elapsed: std::time::Duration::default(),
                 total_time: player_cache.length,
                 current_view: Page::Main,
                 download_page: download_page::DownloadPage::new(),
@@ -301,17 +304,22 @@ impl App {
                 Command::none()
             }
             ProgramCommands::MoveSlider(val) => {
+                // when this is called, we should silence any new information that the automatic change does
+                self.silence_scrubber = true;
                 self.scrubber = val;
-                // change self.time_elapsed so it makes sense... might be too laggy to calc
+                // maybe in the future, we should have a function about here that tells the user what time they are skipping to
+                // something like ( ( self.total_duration * 10 - val ) / 10 ) -> converted into MM:SS ??
                 Command::none()
             }
             ProgramCommands::SkipToSeconds(num) => {
+                // this command will release the silence on the automatic updates for the scrubbing bar
                 info!("lets skip to: {}, len: {}", num, self.total_time);
                 self.sender
                     .as_mut()
                     .unwrap()
                     .send(PungeCommand::SkipToSeconds(num))
                     .unwrap();
+                self.silence_scrubber = false;
                 Command::none()
             }
             ProgramCommands::StaticVolumeUp => {
@@ -1039,8 +1047,16 @@ impl App {
                 self.refresh_playlist();
                 Command::none()
             }
-            ProgramCommands::PushScrubber => {
-                self.scrubber += 1;
+            ProgramCommands::PushScrubber(duration) => {
+                // we need to figure out two things:
+                // what the current duration elapsed is (put it from 110s -> 1:30)
+                // where the scrubber bar should be (total steps = len * 10)
+                self.time_elapsed = duration;
+                if !self.silence_scrubber {
+                    self.scrubber = (duration.as_millis() / 100) as u32;
+                }
+                // self.scrubber = new as u32;
+
                 Command::none()
             }
             ProgramCommands::DeletePlaylist(id) => {
@@ -1245,7 +1261,7 @@ impl App {
             self.database_subscription(self.current_song.clone()),
             self.close_app_sub(),
             self.discord_loop(self.current_song.clone(), self.config.clone()),
-            self.scrubbing_bar_sub(self.current_song.clone()),
+            // need to just be able to read the memory. aaaaaaahhh
         ]) // is two batches required?? prolly not
     }
 }

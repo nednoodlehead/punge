@@ -102,15 +102,15 @@ impl App {
     pub fn music_loop(&self, config: Arc<ArcSwap<Config>>) -> Subscription<ProgramCommands> {
         iced::subscription::channel(0, 32, |mut sender| async move {
             // sender to give to the gui, and the receiver is used here to listen for clicking of buttons
+            let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
+            // maybe here  we need to get index of last song that was on?
+            // send the data to the program
+            let mut music_obj = interface::MusicPlayer::new(items);
             let (gui_send, mut gui_rec) = tokio::sync::mpsc::unbounded_channel();
             sender
                 .send(ProgramCommands::UpdateSender(Some(gui_send)))
                 .await
                 .unwrap(); // send the sender to the gui !!
-            let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
-            // maybe here  we need to get index of last song that was on?
-            // send the data to the program
-            let mut music_obj = interface::MusicPlayer::new(items);
             sender
                 .send(ProgramCommands::NewData(MusicData {
                     title: music_obj.current_object.title.clone(),
@@ -662,10 +662,15 @@ impl App {
                                         }
                                     }
                                 }
+
                                 _ => {
                                     // what gets hit when nothing happens
                                 }
                             }
+                            sender
+                                .send(ProgramCommands::PushScrubber(music_obj.sink.get_pos()))
+                                .await
+                                .unwrap();
                             if music_obj.sink.is_paused() {
                                 break;
                             } else if music_obj.sink.empty() {
@@ -702,7 +707,7 @@ impl App {
                         }
                     }
                 }
-                async_std::task::sleep(std::time::Duration::from_millis(50)).await;
+                async_std::task::sleep(std::time::Duration::from_millis(25)).await;
             }
         })
     }
@@ -757,28 +762,6 @@ impl App {
                 }
                 async_std::task::sleep(std::time::Duration::from_secs(5)).await;
             }
-        })
-    }
-    pub fn scrubbing_bar_sub(&self, obj: Arc<ArcSwap<MusicData>>) -> Subscription<ProgramCommands> {
-        iced::subscription::channel(4, 32, |mut sender| async move {
-            // every second, check if the song is playing, if the song is playing, push the bar.
-            // if it is not playing. Do not push the bar.
-            loop {
-                if obj.load().is_playing {
-                    // remember: the total len is total song (in sec) divided by 4
-                    sender.send(ProgramCommands::PushScrubber).await.unwrap();
-                } else {
-                    loop {
-                        if obj.load().is_playing {
-                            sender.send(ProgramCommands::PushScrubber).await.unwrap();
-                            break;
-                        }
-                        async_std::task::sleep(std::time::Duration::from_millis(10)).await;
-                    }
-                }
-                async_std::task::sleep(std::time::Duration::from_millis(95)).await;
-            }
-            // is this stupid? accounting for the time to run the code for accurate pushing?
         })
     }
 }
