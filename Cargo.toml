@@ -20,7 +20,7 @@ chrono = "0.4.24"  # date an time for db
 thiserror = "1.0"  # errors, should change this at some point
 uuid = {features = ["v4"], version = "1.3.1" }  # db uuids
 serde = {version ="1.0.160", features = ["derive"]}
-rodio = "0.18"  # audio playback :)
+rodio = "0.19"  # audio playback :)
 iced = {git = "https://github.com/iced-rs/iced", branch = "feature/list-widget-reloaded", features = ["advanced", "image"] }
 tokio = {version = "1.29.0", features = ["time", "sync"]} # async sender
 async-std = "1.12.0"  # sleeping in subscriptions
