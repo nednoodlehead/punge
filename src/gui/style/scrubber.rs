@@ -86,9 +86,9 @@ pub fn scrubber_style(status: Status) -> Style {
                         a: 1.0,
                     },
                     Color {
-                        r: 0.210,
-                        g: 0.210,
-                        b: 0.210,
+                        r: 0.410,
+                        g: 0.410,
+                        b: 0.410,
                         a: 1.0,
                     },
                 ),

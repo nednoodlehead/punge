@@ -667,10 +667,13 @@ impl App {
                                     // what gets hit when nothing happens
                                 }
                             }
-                            sender
-                                .send(ProgramCommands::PushScrubber(music_obj.sink.get_pos()))
-                                .await
-                                .unwrap();
+                            // weird bug where it sets it to 0 nano seconds...? rodio or me? idk
+                            if music_obj.sink.get_pos() != std::time::Duration::from_nanos(0) {
+                                sender
+                                    .send(ProgramCommands::PushScrubber(music_obj.sink.get_pos()))
+                                    .await
+                                    .unwrap();
+                            }
                             if music_obj.sink.is_paused() {
                                 break;
                             } else if music_obj.sink.empty() {
