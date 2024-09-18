@@ -1,10 +1,34 @@
-use crate::gui::style::button::punge_button_style;
+use crate::gui::widgets::hover_menu::create_hover_menu;
 use crate::gui::widgets::row_overlay::OverlayButtons;
 use iced::advanced::mouse;
 use iced::advanced::{layout, renderer, widget::Tree, widget::Widget};
-use iced::widget::{button, row, text};
+use iced::widget::{button, column, row, text, Column, Row};
 use iced::Event;
-use iced::{Border, Color, Element, Length, Point, Size, Vector};
+use iced::{Border, Color, Element, Length, Point, Shadow, Size, Theme, Vector};
+
+use crate::gui::style::button::punge_button_style;
+// i dont think this is the best way to make this work. but passing in the Element from main.rs just caused issues
+// like if it is held by the main struct, we cannot pass it into the overlay!?
+pub fn create_menu<'a, 'b, Message, Theme, Renderer>(
+    delete_msg: Message,
+    quick_swap_msg: Message,
+    add_to_msg: fn(String, String) -> Message,
+    uuid_list: Vec<(String, String)>,
+) -> Element<'a, Message, Theme, Renderer>
+where
+    Message: 'a + Clone,
+    Theme: 'a + button::Catalog + iced::widget::text::Catalog,
+    Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
+    'b: 'a,
+{
+    column![
+        button(text("delete")).on_press(delete_msg),
+        button(text("Edit")),
+        button(text("Quickswap 1")).on_press(quick_swap_msg),
+        button(text("Add to..."))
+    ]
+    .into()
+}
 
 #[derive(Debug, Clone)]
 pub struct RowData {
@@ -17,8 +41,6 @@ pub struct RowData {
 
 pub struct RowWidget<'a, Message, Theme, Renderer>
 where
-    // <Theme as iced::widget::button::Catalog>::Class<'a>:
-    //     From<Box<dyn Fn(&Theme, iced::widget::button::Status) -> iced::widget::button::Style + 'a>>,
     Renderer: iced::advanced::Renderer + iced::advanced::text::Renderer,
     Theme: iced::widget::text::Catalog + iced::widget::button::Catalog,
 {
@@ -78,9 +100,6 @@ where
             Box<dyn Fn(&Theme, iced::widget::button::Status) -> iced::widget::button::Style + 'a>,
         >,
     {
-        // .width(30)
-        // .clip(true)
-        // .padding(0),
         let mut rowdata = row![button(text(row_num.to_string()))
             .on_press((play_msg)(song_uuid.clone()))
             .width(30)
@@ -137,10 +156,16 @@ where
     Theme: 'a + iced::widget::text::Catalog + iced::widget::button::Catalog,
     Message: 'a + Clone,
 {
+    // needs to have 4 children:
+    // 1. the row itself
+    // 2. the primary buttons for the overlay (edit, play, moveup...)
+    // 3. the hover-button. so we can check if the cursor is above it, we show the submenu
+    // 4. the sub-menu. for same reasons ^^
     fn children(&self) -> Vec<Tree> {
+        let t: Element<Message, Theme, Renderer> = button(text("Add to...")).into();
         vec![
             Tree::new(&self.rowdata),
-            Tree::new((self.row_overlay)(
+            Tree::new((&self.row_overlay)(
                 self.delete_msg,
                 self.quick_swap_msg,
                 self.add_to_msg,
@@ -150,8 +175,13 @@ where
                 self.edit_song_msg,
                 self.uuid_list.clone(),
                 self.song_uuid.clone(),
-                0, // doesnt matter for the `children` part
-            )), // all of a sudden i need type params !?
+                0,
+            )),
+            Tree::new(create_hover_menu::<Message, Theme, Renderer>(
+                self.add_to_msg,
+                self.uuid_list.clone(),
+                String::from(""),
+            )),
         ]
     }
 
@@ -166,6 +196,8 @@ where
         iced::advanced::widget::tree::State::new(RowState {
             cursor_pos: self.cursor_pos,
             show_bar: self.show_menu,
+            show_sub_menu: false,
+            sub_menu_spot: Point::default(),
             is_selected: false,
         })
     }
@@ -192,14 +224,13 @@ where
         tree: &iced::advanced::widget::Tree,
         renderer: &mut Renderer,
         theme: &Theme,
-        _style: &renderer::Style,
+        style: &renderer::Style,
         layout: layout::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
         viewport: &iced::Rectangle,
     ) {
         // varying cell colors
-        let st = tree.state.downcast_ref::<RowState>();
-        let cell_color = if st.is_selected {
+        let cell_color = if self.is_selected {
             Color {
                 r: 0.2,
                 g: 0.2,
@@ -241,7 +272,7 @@ where
             },
             layout.children().next().unwrap(),
             cursor,
-            viewport,
+            &viewport,
         );
     }
     fn overlay<'b>(
@@ -251,17 +282,17 @@ where
         renderer: &Renderer,
         translation: Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
-        let state = tree.state.downcast_mut::<RowState>();
-        if !state.show_bar {
+        let st: &RowState = tree.state.downcast_ref();
+        if !st.show_bar {
             return None;
         }
         Some(
             OverlayButtons::new(
                 tree,
                 (self.row_overlay)(
-                    self.delete_msg,
-                    self.quick_swap_msg,
-                    self.add_to_msg,
+                    self.delete_msg.clone(),
+                    self.quick_swap_msg.clone(),
+                    self.add_to_msg.clone(),
                     self.play_msg,
                     self.move_song_up_msg,
                     self.move_song_down_msg,
@@ -269,9 +300,13 @@ where
                     self.uuid_list.clone(),
                     self.song_uuid.clone(),
                     self.row_num,
-                ),
-                self.cursor_pos,
+                )
+                .into(),
+                st.cursor_pos,
                 self.row_num,
+                self.add_to_msg.clone(),
+                self.uuid_list.clone(),
+                self.song_uuid.clone(),
             )
             .into(),
         )
@@ -279,56 +314,31 @@ where
 
     fn on_event(
         &mut self,
-        tree: &mut Tree,
+        state: &mut Tree,
         event: iced::Event,
         layout: layout::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
-        renderer: &Renderer,
-        clipboard: &mut dyn iced::advanced::Clipboard,
+        _renderer: &Renderer,
+        _clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
         viewport: &iced::Rectangle,
     ) -> iced::advanced::graphics::core::event::Status {
-        // alows the button to actually do something
-        if cursor.is_over(
-            // this is the button!!
-            layout
-                .children()
-                .next()
-                .unwrap()
-                .children()
-                .next()
-                .unwrap()
-                .bounds(),
-        ) {
-            self.rowdata.as_widget_mut().on_event(
-                &mut tree.children[0],
-                event.clone(),
-                layout,
-                cursor,
-                renderer,
-                clipboard,
-                shell,
-                viewport,
-            );
-            // shell.publish((self.play_msg)(self.song_uuid.clone()));
-            return iced::event::Status::Captured;
-        }
-        let state = tree.state.downcast_mut::<RowState>();
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
+                // println!("current viewport: {:?}", &viewport);
+                let st: &mut RowState = state.state.downcast_mut();
                 if cursor.is_over(layout.bounds()) {
-                    state.show_bar = true;
-                    // self.show_menu = true; // will make the menu appear in the first place
+                    st.show_bar = true;
+
                     // we offset the viewport and the cursor position to place the cursor where it needs to be
                     // i found this out all on my own omg im so smart :3
                     let mut def_cursor = cursor.position().unwrap();
                     let actual_y_coord = (def_cursor.y - viewport.y) + 100.0; // 30 = approv def. length of button
                     def_cursor.y = actual_y_coord;
-                    state.cursor_pos = def_cursor;
-                    println!("set cursor to: {:#?}", &state.cursor_pos);
+                    st.cursor_pos = def_cursor;
                     iced::event::Status::Captured
                 } else {
-                    // self.show_menu = false; // makes it so there is only one menu open at a time
+                    st.show_bar = false;
                     iced::event::Status::Captured
                 }
             }
@@ -336,29 +346,20 @@ where
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 // for selecting rows and such
                 if cursor.is_over(layout.bounds()) {
-                    if state.is_selected {
-                        state.is_selected = false;
-                        shell.publish((self.selection_msg)(
-                            self.row_num,
-                            false,
-                            self.song_uuid.clone(),
-                        ));
+                    let st: &mut RowState = state.state.downcast_mut();
+                    if st.is_selected {
+                        st.is_selected = false;
 
                         // it would make sense to have a shell.publish and take the msg, add it to a list on the app, then when an
                         // action is done, do whatever to the contents of the list, then set the values all to false.
                         // but this stupid shell.publish stuff makes no sense..
 
                         // shell.publish((self.selection_msg)(self.row_num, false));
-                        iced::event::Status::Captured
                     } else {
-                        state.is_selected = true;
-                        shell.publish((self.selection_msg)(
-                            self.row_num,
-                            true,
-                            self.song_uuid.clone(),
-                        ));
-                        iced::event::Status::Captured
+                        st.is_selected = true;
+                        // shell.publish((self.selection_msg)(self.row_num, true));
                     }
+                    iced::event::Status::Captured
                 } else {
                     iced::event::Status::Ignored
                 }
@@ -366,30 +367,22 @@ where
 
             Event::Mouse(mouse::Event::CursorMoved { position }) => {
                 // it aint perfect by any means, but it works fairly well. we are going to leave it in!!
-                if state.show_bar {
-                    let tmp_cursor = cursor.position();
-                    match tmp_cursor {
-                        None => {
+                let tmp_cursor = cursor.position();
+                let st: &mut RowState = state.state.downcast_mut();
+                match tmp_cursor {
+                    None => return iced::event::Status::Ignored,
+                    Some(tmp) => {
+                        let overlayed = tmp.y - viewport.y + 30.0;
+                        let mut new_layout = layout.bounds();
+                        new_layout.y = new_layout.y - viewport.y + 30.0;
+                        let m = iced::advanced::mouse::Cursor::Available(position);
+                        if !m.is_over(new_layout) {
+                            st.show_bar = false;
+                            iced::event::Status::Captured
+                        } else {
                             iced::event::Status::Ignored
                         }
-                        Some(_) => {
-                            // should be the menu...?
-                            let mut new_layout = layout.children().next().unwrap().bounds();
-                            new_layout.y = new_layout.y - viewport.y + 30.0;
-                            let m = iced::advanced::mouse::Cursor::Available(position);
-                            println!("mouse pos: {:#?}", &m);
-                            if !m.is_over(new_layout) {
-                                println!("break!");
-                                state.show_bar = false;
-                                // self.show_menu = false;
-                                iced::event::Status::Captured
-                            } else {
-                                iced::event::Status::Ignored
-                            }
-                        }
                     }
-                } else {
-                    iced::event::Status::Ignored
                 }
             }
             _ => iced::event::Status::Ignored,
@@ -401,5 +394,7 @@ where
 pub struct RowState {
     pub cursor_pos: Point,
     pub show_bar: bool,
+    pub show_sub_menu: bool,
+    pub sub_menu_spot: Point,
     pub is_selected: bool,
 }

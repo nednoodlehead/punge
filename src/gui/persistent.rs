@@ -31,7 +31,7 @@ where
     Theme: 'a + button::Catalog + iced::widget::text::Catalog + iced::widget::button::Catalog,
     Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
-    let mut col = column![
+    let col = column![
         button(text("Play!"))
             .on_press((play_msg)(song_uuid.clone()))
             .style(|_t, status| punge_button_style(status))
@@ -56,15 +56,10 @@ where
             .on_press((delete_msg)(song_uuid.clone()))
             .style(|_t, status| punge_button_style(status))
             .width(110),
+        button(text("Add to..."))
+            .style(|_t, status| punge_button_style(status))
+            .width(110)
     ];
-    for (uuid, title) in uuid_list {
-        col = col.push(
-            button(text(format!("Add to: {}", &title)))
-                .on_press((add_to_msg)(uuid, song_uuid.clone()))
-                .style(|_t, status| punge_button_style(status))
-                .width(110),
-        )
-    }
     col.into()
 }
 
@@ -249,15 +244,24 @@ impl App {
             })
             .collect();
         // btn.push(menu.into()); // the stupid button clips over the container border. so add this so it doesnt ...
-        btn.push(crate::gui::widgets::separator::Separator{width: iced::Length::Fixed(150.0), height: iced::Length::Fixed(4.0)}.into()); // separater between buttons and playlists :)
-        // btn.extend(playlist_buttons);
+        btn.push(
+            crate::gui::widgets::separator::Separator {
+                width: iced::Length::Fixed(150.0),
+                height: iced::Length::Fixed(4.0),
+            }
+            .into(),
+        ); // separater between buttons and playlists :)
+           // btn.extend(playlist_buttons);
         container(
             row![
                 column![
                     Column::with_children(btn),
                     Column::with_children(playlist_buttons)
                 ],
-                crate::gui::widgets::separator::Separator{width: iced::Length::Fixed(4.0), height: iced::Length::Fill},
+                crate::gui::widgets::separator::Separator {
+                    width: iced::Length::Fixed(4.0),
+                    height: iced::Length::Fill
+                },
             ]
             .spacing(5),
         )

@@ -913,6 +913,18 @@ impl App {
                 }
                 Command::none()
             }
+            ProgramCommands::DeletePlaylist(uuid) => {
+                // maybe we can "mark" a playlist for deletion? so the user has to click it twice?
+                // a little confirmation menu would be best. but i dont think there is support for that?
+                crate::db::update::delete_playlist(&uuid).unwrap();
+                Command::none()
+            }
+
+            ProgramCommands::DuplicatePlaylist(uuid) => {
+                crate::db::update::duplicate_playlist(&uuid).unwrap();
+                Command::none()
+            }
+
             ProgramCommands::OpenSongEditPage(maybe_string) => {
                 let data = if maybe_string.is_none() {
                     let info = self.current_song.load();

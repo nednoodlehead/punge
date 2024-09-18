@@ -1,9 +1,10 @@
-use crate::gui::widgets::row::{RowState};
+use crate::gui::widgets::row::{create_menu, RowState, RowWidget};
 use iced::advanced::layout::Limits;
 use iced::advanced::{layout, renderer, widget::Tree, widget::Widget, Overlay};
-use iced::advanced::{mouse};
-use iced::widget::{button};
-use iced::{Element, Event, Point, Size};
+use iced::advanced::{mouse, overlay};
+use iced::event::Status;
+use iced::widget::{button, column, row, text, Button, Row};
+use iced::{Border, Color, Element, Event, Length, Padding, Point, Shadow, Size, Theme, Vector};
 
 pub struct OverlayButtons<'a, Message, Theme, Renderer>
 where
@@ -16,6 +17,9 @@ where
     pub overlay: Element<'a, Message, Theme, Renderer>,
     pub position: Point,
     pub row_num: usize,
+    pub add_to_msg: fn(String, String) -> Message,
+    pub uuid_list: Vec<(String, String)>,
+    pub song_uuid: String,
 }
 
 impl<'a, Message, Theme, Renderer> OverlayButtons<'a, Message, Theme, Renderer>
@@ -29,6 +33,9 @@ where
         overlay: Element<'a, Message, Theme, Renderer>,
         position: Point,
         row_num: usize,
+        add_to_msg: fn(String, String) -> Message,
+        uuid_list: Vec<(String, String)>,
+        song_uuid: String,
     ) -> Self {
         OverlayButtons {
             tree,
@@ -36,6 +43,9 @@ where
             overlay,
             position,
             row_num,
+            add_to_msg,
+            uuid_list,
+            song_uuid,
         }
     }
 }
@@ -48,19 +58,15 @@ where
     Renderer: iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
     fn layout(&mut self, renderer: &Renderer, bounds: Size) -> layout::Node {
-        let state = self.tree.state.downcast_ref::<RowState>();
         let limits = Limits::new(Size::ZERO, bounds);
         let node = layout::Node::with_children(
-            Size {
-                width: 110.0,
-                height: 300.0,
-            },
+            bounds,
             vec![self
                 .overlay
                 .as_widget()
                 .layout(&mut self.tree.children[1], renderer, &limits)],
         );
-        node.move_to(state.cursor_pos)
+        node.move_to(self.position)
     }
     fn draw(
         &self,
@@ -77,6 +83,7 @@ where
             theme,
             style,
             lay_1,
+            // layout,
             cursor,
             &layout.bounds(),
         );
@@ -90,15 +97,75 @@ where
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
     ) -> iced::advanced::graphics::core::event::Status {
-        self.overlay.as_widget_mut().on_event(
-            &mut self.tree.children[1],
-            event,
-            layout.children().next().unwrap(),
-            cursor,
-            renderer,
-            clipboard,
-            shell,
-            &layout.bounds(),
+        match event {
+            Event::Mouse(mouse::Event::CursorMoved { position }) => {
+                // need to get the bottom button...
+                // this makes me upset
+                // this is compete garbage and I know it. i wish iced had more docs on this stuff. all of the iced_aw
+                // examples are insanely complex. also the api for passing widgets around is bad.
+                // should it not be: parent widget is aware of all children, and all children reference the tree?
+                // the tree is comprised of the widgets (and sub widgets)
+                // .expand is our padding here btw
+                let lc = layout.children().next().unwrap().bounds().expand(10.0);
+                let top_left_corner = lc.y;
+                let y_spot = top_left_corner + lc.height - 40.0;
+                let x_spot = lc.width + lc.x - 10.0;
+                let st: &mut RowState = self.tree.state.downcast_mut();
+                let mut top_of_btn = lc.position();
+                top_of_btn.y = top_of_btn.y + lc.height - 40.0;
+                // aprox size of the button at the bottom
+                let add_to_area = iced::Rectangle::new(top_of_btn, Size::new(80.0, 37.0));
+                let mut overlay_y = 0.0;
+                for _ in self.uuid_list.iter() {
+                    // size of the menu.. depends on existing buttons
+                    overlay_y += 40.0
+                }
+                let mut top_overlay = top_of_btn.clone();
+                top_overlay.x += 79.0;
+                let overlay_area = iced::Rectangle::new(top_overlay, Size::new(100.0, overlay_y));
+                if add_to_area.contains(position) || overlay_area.contains(position) {
+                    // we should show the sub menu
+                    st.sub_menu_spot = Point::new(x_spot, y_spot);
+                    st.show_sub_menu = true;
+                } else if !lc.contains(position) {
+                    // we are outside of the menus, stop showing them
+                    st.show_bar = false;
+                    st.show_sub_menu = false;
+                } else {
+                    // we are inside the menus, but not over the overlay area / bottom button, show just the menu!
+                    st.show_sub_menu = false;
+                }
+                return iced::event::Status::Captured;
+            }
+            _ => self.overlay.as_widget_mut().on_event(
+                &mut self.tree.children[1],
+                event,
+                layout.children().next().unwrap(),
+                cursor,
+                renderer,
+                clipboard,
+                shell,
+                &layout.bounds(),
+            ),
+        }
+    }
+    fn overlay<'b>(
+        &'b mut self,
+        _layout: layout::Layout<'_>,
+        _renderer: &Renderer,
+    ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
+        let state: &mut RowState = self.tree.state.downcast_mut();
+        if !state.show_sub_menu {
+            return None;
+        }
+        Some(
+            crate::gui::widgets::hover_menu::HoverMenu::new(
+                &mut self.tree,
+                self.add_to_msg,
+                self.uuid_list.clone(),
+                self.song_uuid.clone(),
+            )
+            .into(),
         )
     }
 }

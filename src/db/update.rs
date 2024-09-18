@@ -1,5 +1,7 @@
-use crate::types::{DatabaseErrors};
+use crate::types::{DatabaseErrors, UserPlaylist};
 use rusqlite::{params, Connection};
+
+use super::insert::add_to_playlist;
 
 pub fn update_playlist(
     new_title: &str,
@@ -232,4 +234,39 @@ pub fn move_song_down_one(
     }
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
+}
+
+pub fn duplicate_playlist(playlistid: &str) -> Result<(), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    let mut stmt = conn.prepare(
+        "SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, order_of_playlist FROM metadata WHERE playlist_id = ?",
+    )?;
+    let new_uuid = uuid::Uuid::new_v4();
+    let mut obj = stmt.query_row([playlistid], |row| {
+        Ok(UserPlaylist {
+            title: row.get(0)?,
+            description: row.get(1)?,
+            thumbnail: row.get(2)?,
+            datecreated: row.get(3)?,
+            songcount: row.get(4)?,
+            totaltime: row.get(5)?,
+            isautogen: row.get(6)?,
+            userorder: row.get(7)?,
+            uniqueid: new_uuid.to_string(),
+        })
+    })?;
+    drop(stmt);
+    obj.title = format!("{} Dupe", obj.title);
+    obj.userorder = crate::db::fetch::get_num_of_playlists() + 1;
+    crate::db::insert::create_playlist(obj).unwrap();
+    // copy all of the entries in playlist_relations that include the original playlistid, and copy them to the new one
+    let mut stmt2 = conn.prepare(
+        "SELECT song_id FROM playlist_relations WHERE playlist_id = ? ORDER BY user_playlist_order",
+    )?;
+    let iter_entries = stmt2.query_row([new_uuid.to_string()], |row| {
+        Ok(row.get::<_, String>(0)?)
+    })?;
+    crate::db::insert::add_to_playlist(playlistid, vec![iter_entries], 0)?;
+    Ok(())
+
 }
