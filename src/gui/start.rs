@@ -561,10 +561,8 @@ impl App {
                     &self.selected_songs, &playlist_id
                 );
                 // TODO
-                // add_to_playlist(, , )
-                // for row in &mut self.rows { // rewrite
-                //     row.ischecked = false; // close all!
-                // }
+                crate::db::insert::add_to_playlist(&playlist_id, &song_id, local_songcount)
+                    .unwrap();
                 Command::none()
             }
             ProgramCommands::DeleteSong(uuid) => {
@@ -589,9 +587,6 @@ impl App {
                         }
                     }
                 }
-                // refresh current playlist
-                // should i function this? used twice..
-                delete_from_playlist(uuid, self.viewing_playlist.clone()).unwrap();
                 self.refresh_playlist();
                 Command::none()
             }
@@ -1219,7 +1214,7 @@ impl App {
                 .collect();
         } else {
             let new = get_all_from_playlist(&self.viewing_playlist).unwrap();
-            debug!("viewing_playlist: {}", &self.viewing_playlist);
+            debug!("viewing_playlist: {:?}", &self.viewing_playlist);
             self.table_content = new
                 .into_iter()
                 .enumerate()

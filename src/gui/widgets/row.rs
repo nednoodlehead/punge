@@ -92,7 +92,7 @@ where
         move_song_up_msg: fn(String, usize) -> Message,
         move_song_down_msg: fn(String, usize) -> Message,
         edit_song_msg: fn(Option<String>) -> Message,
-        uuid_list: Vec<(String, String)>,
+        mut uuid_list: Vec<(String, String)>,
         song_uuid: String,
     ) -> Self
     where
@@ -100,6 +100,8 @@ where
             Box<dyn Fn(&Theme, iced::widget::button::Status) -> iced::widget::button::Style + 'a>,
         >,
     {
+        // remove 'main'
+        uuid_list.remove(0);
         let mut rowdata = row![button(text(row_num.to_string()))
             .on_press((play_msg)(song_uuid.clone()))
             .width(30)

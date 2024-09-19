@@ -113,7 +113,6 @@ pub fn move_playlist_up_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
     let count: usize = prep.query_row([uniqueid], |row| row.get(0)).unwrap();
     if count == 0 {
         // cant go up any further...
-        println!("??");
         return Ok(());
     }
     drop(prep);
@@ -129,7 +128,6 @@ pub fn move_playlist_up_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
         params![new_count, uniqueid],
     )?;
     tx.commit()?;
-    println!("SET?!");
     Ok(())
 }
 
@@ -178,13 +176,14 @@ pub fn move_song_up_one(
     // we must differenciate between a change on 'main' and playlist, since the sql is different
     let mut conn = Connection::open("main.db")?;
     if playlist_uuid != "main" {
-        // set the new number's number to +1
-        conn.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order - 1 WHERE user_playlist_order = ? AND playlist_id = ?", params![position, &playlist_uuid])?;
-        // update the one we are moving up to the new number
-        conn.execute(
-            "UPDATE playlist_relations SET user_playlist_order =  ",
-            params![position, &song_uuid, &playlist_uuid],
-        )?;
+        // set the new number's number to -1
+        let trans = conn.transaction()?;
+        let one_below = position - 1;
+        // sets the selected one correctly. moves the target's number up (0 -> 1)
+        trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND user_playlist_order = ?", params![position, &playlist_uuid, one_below])?;
+        // should set the other
+        trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND song_id = ?", params![one_below, playlist_uuid, song_uuid])?;
+        trans.commit()?;
     } else {
         let trans = conn.transaction()?;
         let one_below = position - 1;
@@ -210,13 +209,12 @@ pub fn move_song_down_one(
     // we must differenciate between a change on 'main' and playlist, since the sql is different
     let mut conn = Connection::open("main.db")?;
     if playlist_uuid != "main" {
-        // set the new number's number to +1
-        conn.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order - 1 WHERE user_playlist_order = ? AND playlist_id = ?", params![position, &playlist_uuid])?;
-        // update the one we are moving up to the new number
-        conn.execute(
-            "UPDATE playlist_relations SET user_playlist_order =  ",
-            params![position, &song_uuid, &playlist_uuid],
-        )?;
+        let one_above = position + 1;
+        let trans = conn.transaction()?;
+        trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND user_playlist_order = ?", params![position, &playlist_uuid, one_above])?;
+        // should set the other
+        trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND song_id = ?", params![one_above, playlist_uuid, song_uuid])?;
+        trans.commit()?;
     } else {
         // the one we are affecting but didnt select
         let trans = conn.transaction()?; // mowt says trans rights
@@ -263,10 +261,8 @@ pub fn duplicate_playlist(playlistid: &str) -> Result<(), DatabaseErrors> {
     let mut stmt2 = conn.prepare(
         "SELECT song_id FROM playlist_relations WHERE playlist_id = ? ORDER BY user_playlist_order",
     )?;
-    let iter_entries = stmt2.query_row([new_uuid.to_string()], |row| {
-        Ok(row.get::<_, String>(0)?)
-    })?;
-    crate::db::insert::add_to_playlist(playlistid, vec![iter_entries], 0)?;
+    let iter_entries =
+        stmt2.query_row([new_uuid.to_string()], |row| Ok(row.get::<_, String>(0)?))?;
+    crate::db::insert::add_to_playlist(playlistid, &iter_entries, 0)?;
     Ok(())
-
 }

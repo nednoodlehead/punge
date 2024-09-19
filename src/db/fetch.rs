@@ -69,6 +69,8 @@ pub fn get_all_main() -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     for obj in song_iter {
         ret_vec.push(obj?)
     }
+    drop(stmt);
+    conn.close().map_err(|(_, err)| err)?;
     Ok(ret_vec)
 }
 

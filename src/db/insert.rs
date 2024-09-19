@@ -47,7 +47,7 @@ pub fn create_playlist(new_playlist: UserPlaylist) -> Result<(), DatabaseErrors>
 // although it would seem intelligent to include the length of the song, there is nowhere where that data can really live, and make sense
 // like when we select from the table, should length be included? sounds sort of stupid. so we just query it here...
 /// order num is the current length of the playlist. so if there is 3 songs, order_num should be three
-pub fn add_to_playlist(
+pub fn add_to_playlist_bulk(
     playlist_uuid: &str,
     uniqueid: Vec<String>,
     order_num: usize,
@@ -61,6 +61,23 @@ pub fn add_to_playlist(
         // also maybe in the future we have a "dateupdated" field or something that we also update here with a chrono::Local::now()
         conn.execute("UPDATE metadata SET songcount = songcount + 1 totaltime = totaltime + (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?", params![special_id, playlist_uuid])?;
     }
+    conn.close().map_err(|(_, err)| err)?;
+    info!("added to playlist successfully!");
+    Ok(())
+}
+
+pub fn add_to_playlist(
+    playlist_uuid: &str,
+    uniqueid: &str,
+    order_num: usize,
+) -> Result<(), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    conn.execute(
+            "INSERT INTO playlist_relations (playlist_id, song_id, user_playlist_order) VALUES (?1, ?2, ?3)",
+            params![&playlist_uuid, uniqueid, order_num + 1],
+        )?;
+    // also maybe in the future we have a "dateupdated" field or something that we also update here with a chrono::Local::now()
+    conn.execute("UPDATE metadata SET songcount = songcount + 1, totaltime = totaltime + (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?", params![uniqueid, playlist_uuid])?;
     conn.close().map_err(|(_, err)| err)?;
     info!("added to playlist successfully!");
     Ok(())
