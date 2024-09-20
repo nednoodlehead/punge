@@ -1,6 +1,6 @@
 use crate::gui::messages::{ProgramCommands, TextType};
 use crate::gui::style::button::punge_button_style;
-use iced::widget::{button, column, container, row, text, text_input};
+use iced::widget::{button, column, container, horizontal_space, row, text, text_input};
 use iced::Element;
 
 // maybe have ability to update playlists from here?
@@ -45,13 +45,21 @@ impl PlaylistPage {
             rows_and_labels,
             if self.user_id.is_some() {
                 // variable button
-                container(column![
-                    button(text(format!("Update {}", &self.user_title)))
-                        .style(|_t, status| punge_button_style(status))
-                        .on_press(ProgramCommands::UpdatePlaylist),
-                    button(text("Stop editing"))
-                        .on_press(ProgramCommands::ClearPlaylistPage)
-                        .style(|_t, status| punge_button_style(status))
+                container(row![
+                    column![
+                        button(text(format!("Update {}", &self.user_title)))
+                            .style(|_t, status| punge_button_style(status))
+                            .on_press(ProgramCommands::UpdatePlaylist),
+                        button(text("Stop editing"))
+                            .on_press(ProgramCommands::ClearPlaylistPage)
+                            .style(|_t, status| punge_button_style(status))
+                    ],
+                    horizontal_space(),
+                    button(text("Delete playlist (no undo)"))
+                        .on_press(ProgramCommands::DeletePlaylist(
+                            self.user_id.clone().unwrap()
+                        ))
+                        .style(|_, status| punge_button_style(status))
                 ])
             } else {
                 container(

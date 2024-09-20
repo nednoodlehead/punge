@@ -1,7 +1,7 @@
-use crate::types::{DatabaseErrors, UserPlaylist};
-use rusqlite::{params, Connection};
-
 use super::insert::add_to_playlist;
+use crate::types::{DatabaseErrors, UserPlaylist};
+use log::info;
+use rusqlite::{params, Connection};
 
 pub fn update_playlist(
     new_title: &str,
@@ -236,6 +236,7 @@ pub fn move_song_down_one(
 
 pub fn duplicate_playlist(playlistid: &str) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
+    info!("duplicating: {}", playlistid);
     let mut stmt = conn.prepare(
         "SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, order_of_playlist FROM metadata WHERE playlist_id = ?",
     )?;

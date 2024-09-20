@@ -908,11 +908,14 @@ impl App {
                 // maybe we can "mark" a playlist for deletion? so the user has to click it twice?
                 // a little confirmation menu would be best. but i dont think there is support for that?
                 crate::db::update::delete_playlist(&uuid).unwrap();
+                self.user_playlists = get_all_playlists().unwrap();
+                self.current_view = Page::Main;
                 Command::none()
             }
 
             ProgramCommands::DuplicatePlaylist(uuid) => {
                 crate::db::update::duplicate_playlist(&uuid).unwrap();
+                self.user_playlists = get_all_playlists().unwrap();
                 Command::none()
             }
 
