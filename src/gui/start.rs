@@ -70,10 +70,7 @@ pub fn begin() -> iced::Result {
                 platform_specific: iced::window::settings::PlatformSpecific::default(),
                 exit_on_close_request: false,
             },
-            ..Default::default() // default_font: iced::Font::with_name("Punge!!"),
-                                 // default_text_size: iced::Pixels(16.0),
-                                 // antialiasing: false,
-                                 // fonts: vec![std::borrow::Cow::Borrowed(iced_aw::BOOTSTRAP_FONT_BYTES)], // thanks source code?
+            ..Default::default()
         })
         .subscription(App::subscription)
         .theme(App::theme)
@@ -97,14 +94,13 @@ pub struct App {
     playlist_page: crate::gui::new_playlist_page::PlaylistPage,
     song_edit_page: crate::gui::song_edit_page::SongEditPage,
     download_list: Vec<String>, // full link, songs are removed when finished / errored. Used so multiple downloads are not started
-    manager: GlobalHotKeyManager, // TODO at some point: make interface for re-binding
+    manager: GlobalHotKeyManager, // our interface for messing with global keybinds
     pub config: Arc<ArcSwap<Config>>, // also contains hotkeys :D
     pub search: String,
     viewing_playlist: String, // could derive from cache soon... just the uniqueid rn
     selected_songs: Vec<(Option<usize>, String)>, // songs that the user will edit. if is_some, unselect the rows in the table
     pub user_playlists: Vec<UserPlaylist>,
-    // tarkah table stuff
-    table_content: iced::widget::list::Content<crate::gui::widgets::row::RowData>,
+    table_content: iced::widget::list::Content<crate::gui::widgets::row::RowData>, // pls list widget for 0.14...
 }
 
 impl Default for App {
@@ -132,7 +128,7 @@ impl Default for App {
             Err(_) => {
                 warn!("Cannot fetch cache, resorting to default");
                 Config {
-                    backup_path: format!("C:/Users/{}/Documents/", whoami::username()),
+                    backup_path: format!("C:/"),
                     mp3_path: String::from("C:/"),
                     jpg_path: String::from("C:/"),
                     static_increment: 1,
