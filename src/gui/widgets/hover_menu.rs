@@ -28,6 +28,7 @@ where
             col = col.push(
                 // .1 = name .0 = uuid
                 button(text(item.1))
+                    .width(110)
                     .on_press((add_to_msg)(item.0.clone(), song_uuid.clone()))
                     .style(|_, status| punge_button_style(status)),
             );
@@ -103,7 +104,6 @@ where
             renderer,
             theme,
             style,
-            // layout.children().next().unwrap(),
             layout,
             cursor,
             &layout.bounds(),
@@ -122,7 +122,6 @@ where
         self.content.as_widget_mut().on_event(
             &mut self.tree.children[2],
             event,
-            // layout.children().next().unwrap(),
             layout,
             cursor,
             renderer,

@@ -128,11 +128,11 @@ where
                 let mut overlay_y = 0.0;
                 for _ in self.uuid_list.iter() {
                     // size of the menu.. depends on existing buttons
-                    overlay_y += 40.0
+                    overlay_y += 42.5
                 }
                 let mut top_overlay = top_of_btn.clone();
                 top_overlay.x += 79.0;
-                let overlay_area = iced::Rectangle::new(top_overlay, Size::new(100.0, overlay_y));
+                let overlay_area = iced::Rectangle::new(top_overlay, Size::new(150.0, overlay_y));
                 if add_to_area.contains(position) || overlay_area.contains(position) {
                     // we should show the sub menu
                     st.sub_menu_spot = Point::new(x_spot, y_spot);
