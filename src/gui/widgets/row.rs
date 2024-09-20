@@ -1,41 +1,18 @@
-use crate::gui::widgets::hover_menu::create_hover_menu;
 use crate::gui::widgets::row_overlay::OverlayButtons;
 use iced::advanced::mouse;
 use iced::advanced::{layout, renderer, widget::Tree, widget::Widget};
-use iced::widget::{button, column, row, text, Column, Row};
+use iced::widget::{button, row, text};
 use iced::Event;
-use iced::{Border, Color, Element, Length, Point, Shadow, Size, Theme, Vector};
+use iced::{Border, Color, Element, Length, Point, Size, Vector};
 
 use crate::gui::style::button::punge_button_style;
 // i dont think this is the best way to make this work. but passing in the Element from main.rs just caused issues
 // like if it is held by the main struct, we cannot pass it into the overlay!?
-pub fn create_menu<'a, 'b, Message, Theme, Renderer>(
-    delete_msg: Message,
-    quick_swap_msg: Message,
-    add_to_msg: fn(String, String) -> Message,
-    uuid_list: Vec<(String, String)>,
-) -> Element<'a, Message, Theme, Renderer>
-where
-    Message: 'a + Clone,
-    Theme: 'a + button::Catalog + iced::widget::text::Catalog,
-    Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
-    'b: 'a,
-{
-    column![
-        button(text("delete")).on_press(delete_msg),
-        button(text("Edit")),
-        button(text("Quickswap 1")).on_press(quick_swap_msg),
-        button(text("Add to..."))
-    ]
-    .into()
-}
-
 #[derive(Debug, Clone)]
 pub struct RowData {
     pub title: String,
     pub author: String,
     pub album: String,
-    pub row_num: usize,
     pub uniqueid: String,
 }
 

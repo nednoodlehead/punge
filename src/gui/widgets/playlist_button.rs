@@ -3,7 +3,6 @@ use iced::advanced::layout::Limits;
 // and a right-click will show some playlist options (edit, move up, move down, duplicate, play)
 use iced::advanced::{layout, renderer, widget::Tree, widget::Widget};
 use iced::advanced::{mouse, Overlay};
-use iced::widget::{button};
 use iced::Event;
 use iced::{Element, Length, Point, Size, Vector};
 
@@ -176,7 +175,7 @@ where
                 }
                 iced::event::Status::Ignored
             }
-            Event::Mouse(mouse::Event::CursorMoved { position }) => {
+            Event::Mouse(mouse::Event::CursorMoved { position: _ }) => {
                 if st.show_menu {
                     let tmp = cursor.position();
                     match tmp {
@@ -228,7 +227,7 @@ where
 pub struct PlaylistButtonOverlay<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
-    Theme: button::Catalog,
+    Theme: iced::widget::button::Catalog,
     Renderer: iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
     pub tree: &'a mut Tree,
@@ -240,7 +239,7 @@ impl<'a, Message, Theme, Renderer> Overlay<Message, Theme, Renderer>
     for PlaylistButtonOverlay<'a, Message, Theme, Renderer>
 where
     Message: Clone,
-    Theme: button::Catalog + iced::widget::text::Catalog,
+    Theme: iced::widget::button::Catalog + iced::widget::text::Catalog,
     Renderer: iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
     fn layout(&mut self, renderer: &Renderer, bounds: Size) -> layout::Node {
@@ -296,7 +295,7 @@ impl<'a, Message, Theme, Renderer> From<PlaylistButtonOverlay<'a, Message, Theme
     for iced::advanced::overlay::Element<'a, Message, Theme, Renderer>
 where
     Message: 'a + Clone,
-    Theme: 'a + button::Catalog + iced::widget::text::Catalog,
+    Theme: 'a + iced::widget::button::Catalog + iced::widget::text::Catalog,
     Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
     fn from(overlay: PlaylistButtonOverlay<'a, Message, Theme, Renderer>) -> Self {

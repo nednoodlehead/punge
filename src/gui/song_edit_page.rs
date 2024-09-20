@@ -50,7 +50,6 @@ impl SongEditPage {
                         author: self.author.clone(),
                         album: self.album.clone(),
                         uniqueid: self.uniqueid.clone(),
-                        row_num: 0, // doesn't matter. we're using this type for convinence sake...
                     }
                 ))
                 .style(|t, status| punge_button_style(status)),

@@ -122,6 +122,7 @@ pub enum DatabaseErrors {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // nice to have for errors...
 pub enum AppError {
     DatabaseError(DatabaseErrors),
     YoutubeError(String), // url, what went wrong
@@ -171,7 +172,6 @@ pub struct MusicData {
     pub album: String,
     pub thumbnail: String, // path to the thumbnail
     pub song_id: String,
-    pub previous_id: Option<String>, // used only inside of skip_forward database subscription, None otherwise.
     pub volume: f32,
     pub is_playing: bool,
     pub shuffle: bool,
@@ -189,7 +189,6 @@ impl MusicData {
             album: "".to_string(),
             thumbnail: "".to_string(),
             song_id: "".to_string(),
-            previous_id: None,
             volume: 0.0,
             is_playing: false,
             shuffle: false,
@@ -232,7 +231,6 @@ pub struct YouTubeData {
     pub title: String,
     pub author: String,
     pub album: String,
-    pub url: String,
 }
 
 #[derive(Debug, Clone)]

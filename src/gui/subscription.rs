@@ -118,7 +118,6 @@ impl App {
                     album: music_obj.current_object.album.clone(),
                     thumbnail: music_obj.current_object.savelocationjpg.clone(),
                     song_id: music_obj.current_object.uniqueid.clone(),
-                    previous_id: None, // doesnt matter unless we are on skip_forward
                     volume: music_obj.sink.volume(),
                     is_playing: false,
                     shuffle: music_obj.shuffle,
@@ -151,7 +150,6 @@ impl App {
                                     album: music_obj.current_object.album.clone(),
                                     thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
-                                    previous_id: None, // i dont think we can know this here?
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
@@ -166,7 +164,6 @@ impl App {
                         PungeCommand::SkipForwards => {
                             // so i guess the answer is doing .stop()? not .clear(). ig cause .stop() also clears the queue
                             music_obj.sink.stop();
-                            let old_id = music_obj.current_object.uniqueid.clone();
                             music_obj.count =
                                 change_count(true, music_obj.count, music_obj.list.len());
                             music_obj.current_object = music_obj.list[music_obj.count].clone();
@@ -183,7 +180,6 @@ impl App {
                                     album: music_obj.current_object.album.clone(),
                                     thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
-                                    previous_id: Some(old_id),
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
@@ -212,7 +208,6 @@ impl App {
                                     album: music_obj.current_object.album.clone(),
                                     thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
-                                    previous_id: None,
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
@@ -249,7 +244,6 @@ impl App {
                                     album: music_obj.current_object.album.clone(),
                                     thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
-                                    previous_id: None,
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,
@@ -287,7 +281,6 @@ impl App {
                                     album: music_obj.current_object.album.clone(),
                                     thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
-                                    previous_id: None,
                                     volume: music_obj.sink.volume(),
                                     is_playing: false,
                                     shuffle: music_obj.shuffle,
@@ -395,7 +388,6 @@ impl App {
                                                         .current_object
                                                         .uniqueid
                                                         .clone(),
-                                                    previous_id: None, // not known.
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: false, // we can only pause...
                                                     shuffle: music_obj.shuffle,
@@ -439,7 +431,6 @@ impl App {
                                                         .current_object
                                                         .uniqueid
                                                         .clone(),
-                                                    previous_id: Some(old_id),
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle,
@@ -486,7 +477,6 @@ impl App {
                                                         .current_object
                                                         .uniqueid
                                                         .clone(),
-                                                    previous_id: None,
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle,
@@ -530,7 +520,6 @@ impl App {
                                                         .current_object
                                                         .uniqueid
                                                         .clone(),
-                                                    previous_id: None,
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle,
@@ -645,7 +634,6 @@ impl App {
                                                         .current_object
                                                         .uniqueid
                                                         .clone(),
-                                                    previous_id: None,
                                                     volume: music_obj.sink.volume(),
                                                     is_playing: true,
                                                     shuffle: music_obj.shuffle,
@@ -696,7 +684,6 @@ impl App {
                                     album: music_obj.current_object.album.clone(),
                                     thumbnail: music_obj.current_object.savelocationjpg.clone(),
                                     song_id: music_obj.current_object.uniqueid.clone(),
-                                    previous_id: None,
                                     volume: music_obj.sink.volume(),
                                     is_playing: true,
                                     shuffle: music_obj.shuffle,

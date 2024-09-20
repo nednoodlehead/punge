@@ -3,7 +3,6 @@
 
 use crate::types::{AppError, PungeMusicObject, UserPlaylist};
 use crate::types::{MusicData, YouTubeData};
-use rodio::Sink;
 use serde::{ser, Deserialize, Serialize};
 use tokio::sync::mpsc as async_sender;
 #[derive(Debug, Clone, Serialize, Deserialize)]

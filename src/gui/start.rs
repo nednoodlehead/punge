@@ -1,8 +1,8 @@
 use crate::db::fetch::{get_all_from_playlist, get_all_main, get_all_playlists, get_obj_from_uuid};
 use crate::db::insert::create_playlist;
 use crate::db::update::{
-    delete_from_playlist, delete_playlist, move_song_down_one, move_song_up_one,
-    quick_swap_title_author, update_auth_album, update_song,
+    delete_from_playlist, move_song_down_one, move_song_up_one, quick_swap_title_author,
+    update_auth_album, update_song,
 };
 use crate::gui::messages::{
     AppEvent, CheckBoxType, ComboBoxType, Context, Page, ProgramCommands, PungeCommand, TextType,
@@ -167,12 +167,10 @@ impl Default for App {
             table_content: get_all_main()
                 .unwrap()
                 .into_iter()
-                .enumerate()
-                .map(|(count, item)| crate::gui::widgets::row::RowData {
+                .map(|item| crate::gui::widgets::row::RowData {
                     title: item.title.clone(),
                     author: item.author.clone(),
                     album: item.album.clone(),
-                    row_num: count,
                     uniqueid: item.uniqueid.clone(),
                 })
                 .collect(),
@@ -986,15 +984,6 @@ impl App {
 
                 Command::none()
             }
-            ProgramCommands::DeletePlaylist(id) => {
-                // you cannot delete main.
-                if id.to_lowercase() != "main" {
-                    delete_playlist(&id).unwrap();
-                    // refresh the playlist...
-                    self.user_playlists = get_all_playlists().unwrap();
-                }
-                Command::none()
-            }
             ProgramCommands::UpdatePlaylist => {
                 crate::db::update::update_playlist(
                     &self.playlist_page.user_title,
@@ -1208,13 +1197,11 @@ impl App {
             let new = get_all_main().unwrap();
             self.table_content = new
                 .into_iter()
-                .enumerate()
-                .map(|(count, item)| crate::gui::widgets::row::RowData {
+                .map(|item| crate::gui::widgets::row::RowData {
                     title: item.title,
                     author: item.author,
                     album: item.album,
                     uniqueid: item.uniqueid,
-                    row_num: count,
                 })
                 .collect();
         } else {
@@ -1222,13 +1209,11 @@ impl App {
             debug!("viewing_playlist: {:?}", &self.viewing_playlist);
             self.table_content = new
                 .into_iter()
-                .enumerate()
-                .map(|(count, item)| crate::gui::widgets::row::RowData {
+                .map(|item| crate::gui::widgets::row::RowData {
                     title: item.title,
                     author: item.author,
                     album: item.album,
                     uniqueid: item.uniqueid,
-                    row_num: count,
                 })
                 .collect();
         }

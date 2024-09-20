@@ -2,9 +2,8 @@ use iced::border::Radius;
 use iced::widget::container::Style;
 use iced::{Background, Border, Color, Shadow, Vector};
 
-pub struct ContainerWithBorder;
-
-pub fn container_with_border() -> Style {
+// most was for debugging the container size lol
+pub fn _container_with_border() -> Style {
     Style {
         text_color: None,
         background: None,

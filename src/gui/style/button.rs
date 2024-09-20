@@ -129,8 +129,8 @@ pub fn menu_button_style(status: Status) -> Style {
         _ => Style::default(),
     }
 }
-
-pub fn sub_menu_button_style(status: Status) -> Style {
+// might come back and use this style..
+pub fn _sub_menu_button_style(status: Status) -> Style {
     match status {
         Status::Active => Style {
             background: None,
@@ -332,7 +332,5 @@ pub fn punge_button_style(status: Status) -> Style {
             },
             shadow: Shadow::default(),
         },
-
-        _ => Style::default(),
     }
 }

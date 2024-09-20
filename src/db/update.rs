@@ -1,4 +1,3 @@
-use super::insert::add_to_playlist;
 use crate::types::{DatabaseErrors, UserPlaylist};
 use log::info;
 use rusqlite::{params, Connection};

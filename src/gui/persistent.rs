@@ -266,9 +266,6 @@ impl App {
             .spacing(5),
         )
         .height(iced::Length::Fill)
-        // .style(iced::theme::Container::Custom(Box::new(
-        //     ContainerWithBorder,
-        // )))
         .into()
     }
 }

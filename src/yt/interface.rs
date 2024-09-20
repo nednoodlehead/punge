@@ -61,7 +61,6 @@ pub async fn download_interface(
             title,
             author,
             album,
-            url: url.clone(),
         };
         let obj = create_punge_obj(
             video,
@@ -87,7 +86,6 @@ pub async fn download_interface(
             title,
             author: author.unwrap().name.to_string(),
             album,
-            url: url.clone(),
         };
         let obj = create_punge_obj(
             video,
@@ -118,7 +116,6 @@ pub async fn download_interface(
             title: String::from("no title here :)"),
             author: auth,
             album,
-            url: url.clone(),
         };
         let temp_punge_obj = create_punge_obj(
             video.clone(),
@@ -153,7 +150,6 @@ pub async fn download_interface(
             title,
             author: author.unwrap().name,
             album,
-            url: url.clone(),
         };
         let obj = create_punge_obj(
             video,
@@ -175,7 +171,6 @@ pub async fn download_interface(
             title: details.title,
             author: details.author.unwrap().name,
             album: String::from("Single"),
-            url: url.clone(),
         };
         let obj = create_punge_obj(
             video,
