@@ -241,19 +241,21 @@ pub fn duplicate_playlist(playlistid: &str) -> Result<(), DatabaseErrors> {
         "SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, order_of_playlist FROM metadata WHERE playlist_id = ?",
     )?;
     let new_uuid = uuid::Uuid::new_v4();
-    let mut obj = stmt.query_row([playlistid], |row| {
-        Ok(UserPlaylist {
-            title: row.get(0)?,
-            description: row.get(1)?,
-            thumbnail: row.get(2)?,
-            datecreated: row.get(3)?,
-            songcount: row.get(4)?,
-            totaltime: row.get(5)?,
-            isautogen: row.get(6)?,
-            userorder: row.get(7)?,
-            uniqueid: new_uuid.to_string(),
+    let mut obj = stmt
+        .query_row([playlistid], |row| {
+            Ok(UserPlaylist {
+                title: row.get(0)?,
+                description: row.get(1)?,
+                thumbnail: row.get(2)?,
+                datecreated: row.get(3)?,
+                songcount: row.get(4)?,
+                totaltime: row.get(5)?,
+                isautogen: row.get(6)?,
+                userorder: row.get(7)?,
+                uniqueid: new_uuid.to_string(),
+            })
         })
-    })?;
+        .unwrap();
     drop(stmt);
     obj.title = format!("{} Dupe", obj.title);
     obj.userorder = crate::db::fetch::get_num_of_playlists() + 1;
@@ -262,8 +264,16 @@ pub fn duplicate_playlist(playlistid: &str) -> Result<(), DatabaseErrors> {
     let mut stmt2 = conn.prepare(
         "SELECT song_id FROM playlist_relations WHERE playlist_id = ? ORDER BY user_playlist_order",
     )?;
-    let iter_entries =
-        stmt2.query_row([new_uuid.to_string()], |row| Ok(row.get::<_, String>(0)?))?;
-    crate::db::insert::add_to_playlist(playlistid, &iter_entries, 0)?;
+    // you're probably thinking: ned, you moron. why use two loops for this!? just do it in one
+    // and i tell you: SqliteFailure(Error Databasebusy)
+    let mut tmp = vec![];
+    let iter_entries = stmt2.query_map([playlistid], |row| Ok(row.get::<_, String>(0)?))?;
+    for item in iter_entries {
+        tmp.push(item.unwrap())
+    }
+    for (count, string) in tmp.iter().enumerate() {
+        crate::db::insert::add_to_playlist_silent(&new_uuid.to_string(), &string, count)
+    }
+
     Ok(())
 }

@@ -82,3 +82,16 @@ pub fn add_to_playlist(
     info!("added to playlist successfully!");
     Ok(())
 }
+
+pub fn add_to_playlist_silent(playlist_uuid: &str, uniqueid: &str, count: usize) {
+    // this is only called from duplicating a playlist.
+    // usually metadata is handled by add_to_playlist. but in playlist duplication, we already copy that data over. so this function makes it so we aren't
+    // taking the length (for example) and then adding the len of each song, effectively doubling the metadata.
+    // oh, also `count`'s number is completely handled by duplicate_playlist
+    let conn = Connection::open("main.db").unwrap();
+    conn.execute(
+            "INSERT INTO playlist_relations (playlist_id, song_id, user_playlist_order) VALUES (?1, ?2, ?3)",
+            params![&playlist_uuid, uniqueid, count],
+        ).unwrap();
+    conn.close().map_err(|(_, err)| err).unwrap();
+}

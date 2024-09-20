@@ -553,8 +553,8 @@ impl App {
                     .unwrap()]
                 .songcount;
                 info!(
-                    "we will add: {:?} to {}",
-                    &self.selected_songs, &playlist_id
+                    "we will add: {:?} to {} @ poisition: {}",
+                    &self.selected_songs, &playlist_id, local_songcount
                 );
                 // TODO
                 crate::db::insert::add_to_playlist(&playlist_id, &song_id, local_songcount)
@@ -1029,15 +1029,21 @@ impl App {
                 Command::none()
             }
             ProgramCommands::MovePlaylistUp(uniqueid) => {
-                println!("Goin up!!");
-                crate::db::update::move_playlist_up_one(&uniqueid).unwrap();
-                self.user_playlists = get_all_playlists().unwrap();
+                if self.user_playlists[0].uniqueid != uniqueid {
+                    crate::db::update::move_playlist_up_one(&uniqueid).unwrap();
+                    self.user_playlists = get_all_playlists().unwrap();
+                } else {
+                    warn!("attempting to move first playlist up (error)")
+                }
                 Command::none()
             }
             ProgramCommands::MovePlaylistDown(uniqueid) => {
-                println!("GOING DOWN");
-                crate::db::update::move_playlist_down_one(&uniqueid).unwrap();
-                self.user_playlists = get_all_playlists().unwrap();
+                if self.user_playlists[self.user_playlists.len() - 1].uniqueid != uniqueid {
+                    crate::db::update::move_playlist_down_one(&uniqueid).unwrap();
+                    self.user_playlists = get_all_playlists().unwrap();
+                } else {
+                    warn!("attempting to move lowest playlist down (error)")
+                }
                 Command::none()
             }
             ProgramCommands::MoveSongUp(uuid, position) => {
@@ -1050,7 +1056,7 @@ impl App {
                 Command::none()
             }
             ProgramCommands::MoveSongDown(uuid, position) => {
-                if position.saturating_sub(1) != self.table_content.len() {
+                if position.saturating_add(1) != self.table_content.len() {
                     move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
                     self.refresh_playlist();
                 } else {
