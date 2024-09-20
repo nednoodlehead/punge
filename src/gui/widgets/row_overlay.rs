@@ -15,6 +15,11 @@ where
     pub tree: &'a mut Tree,
     // maybe change this at some point idk.. having both .overlay and .overlay()??
     pub overlay: Element<'a, Message, Theme, Renderer>,
+    pub hover_menu: fn(
+        fn(String, String) -> Message,
+        Vec<(String, String)>,
+        String,
+    ) -> Element<'a, Message, Theme, Renderer>,
     pub position: Point,
     pub row_num: usize,
     pub add_to_msg: fn(String, String) -> Message,
@@ -31,6 +36,11 @@ where
     pub fn new(
         tree: &'a mut Tree,
         overlay: Element<'a, Message, Theme, Renderer>,
+        hover_menu: fn(
+            fn(String, String) -> Message,
+            Vec<(String, String)>,
+            String,
+        ) -> Element<'a, Message, Theme, Renderer>,
         position: Point,
         row_num: usize,
         add_to_msg: fn(String, String) -> Message,
@@ -39,8 +49,8 @@ where
     ) -> Self {
         OverlayButtons {
             tree,
-            // state,
             overlay,
+            hover_menu,
             position,
             row_num,
             add_to_msg,
@@ -161,6 +171,7 @@ where
         Some(
             crate::gui::widgets::hover_menu::HoverMenu::new(
                 &mut self.tree,
+                self.hover_menu,
                 self.add_to_msg,
                 self.uuid_list.clone(),
                 self.song_uuid.clone(),

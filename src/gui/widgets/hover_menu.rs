@@ -14,6 +14,8 @@ pub fn create_hover_menu<'a, Message, Theme, Renderer>(
     song_uuid: String,
 ) -> Element<'a, Message, Theme, Renderer>
 where
+    <Theme as iced::widget::button::Catalog>::Class<'a>:
+        From<Box<dyn Fn(&Theme, iced::widget::button::Status) -> iced::widget::button::Style + 'a>>,
     Message: 'a + Clone,
     Theme: 'a + iced::widget::button::Catalog + iced::widget::text::Catalog,
     Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
@@ -25,8 +27,9 @@ where
         for item in uuid_list {
             col = col.push(
                 // .1 = name .0 = uuid
-                button(text(item.1)).on_press((add_to_msg)(item.0.clone(), song_uuid.clone())),
-                // .style(|_, status| punge_button_style(status)),
+                button(text(item.1))
+                    .on_press((add_to_msg)(item.0.clone(), song_uuid.clone()))
+                    .style(|_, status| punge_button_style(status)),
             );
         }
     };
@@ -54,15 +57,19 @@ where
 {
     pub fn new(
         tree: &'a mut Tree,
+        menu: fn(
+            fn(String, String) -> Message,
+            Vec<(String, String)>,
+            String,
+        ) -> Element<'a, Message, Theme, Renderer>,
         add_to_msg: fn(String, String) -> Message,
         uuid_list: Vec<(String, String)>,
         song_uuid: String,
-    ) -> Self
-where {
+    ) -> Self {
         HoverMenu {
             tree,
             // state,
-            content: create_hover_menu(add_to_msg, uuid_list, song_uuid),
+            content: (menu)(add_to_msg, uuid_list, song_uuid),
         }
     }
 }

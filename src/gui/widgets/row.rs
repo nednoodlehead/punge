@@ -57,6 +57,11 @@ where
         String,
         usize,
     ) -> Element<'a, Message, Theme, Renderer>,
+    hover_menu: fn(
+        fn(String, String) -> Message,
+        Vec<(String, String)>,
+        String,
+    ) -> Element<'a, Message, Theme, Renderer>,
     delete_msg: fn(String) -> Message,
     quick_swap_msg: fn(String) -> Message,
     selection_msg: fn(usize, bool, String) -> Message, // should be like: Selection(bool, String), "is 'uniqueid' selected" type of message
@@ -121,6 +126,7 @@ where
         RowWidget {
             rowdata: rowdata.spacing(10).into(),
             row_overlay: crate::gui::persistent::create_whole_menu,
+            hover_menu: crate::gui::widgets::hover_menu::create_hover_menu,
             is_selected: false,
             delete_msg,
             quick_swap_msg,
@@ -179,7 +185,7 @@ where
                 self.song_uuid.clone(),
                 0,
             )),
-            Tree::new(create_hover_menu::<Message, Theme, Renderer>(
+            Tree::new((self.hover_menu)(
                 self.add_to_msg,
                 self.uuid_list.clone(),
                 String::from(""),
@@ -304,6 +310,7 @@ where
                     self.row_num,
                 )
                 .into(),
+                self.hover_menu.clone(),
                 st.cursor_pos,
                 self.row_num,
                 self.add_to_msg.clone(),
