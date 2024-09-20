@@ -70,10 +70,10 @@ pub fn begin() -> iced::Result {
                 platform_specific: iced::window::settings::PlatformSpecific::default(),
                 exit_on_close_request: false,
             },
-            default_font: iced::Font::with_name("Punge!!"),
-            default_text_size: iced::Pixels(16.0),
-            antialiasing: false,
-            fonts: vec![std::borrow::Cow::Borrowed(iced_aw::BOOTSTRAP_FONT_BYTES)], // thanks source code?
+            ..Default::default() // default_font: iced::Font::with_name("Punge!!"),
+                                 // default_text_size: iced::Pixels(16.0),
+                                 // antialiasing: false,
+                                 // fonts: vec![std::borrow::Cow::Borrowed(iced_aw::BOOTSTRAP_FONT_BYTES)], // thanks source code?
         })
         .subscription(App::subscription)
         .theme(App::theme)
