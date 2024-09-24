@@ -181,22 +181,32 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
             let jpg_filename = format!("{}.mp4", split_str[4]);
             let mp4_filename = format!("{}.jpg", split_str[4]);
             // determine which version we have
-            let author_file = if std::path::Path::new(&mp4_filename).exists() {
-                mp4_filename
+            if std::path::Path::new(&mp4_filename).exists() {
+                let src_file = format!("./-{}/{}", split_str[4], mp4_filename);
+                let dst_file = format!("{}/{}", download_dir, mp4_filename);
+                std::fs::copy(src_file, dst_file).unwrap();
+            } else if std::path::Path::new(&jpg_filename).exists() {
+                let src_file = format!("./-{}/{}", split_str[4], jpg_filename);
+                let dst_file = format!("{}/{}", download_dir, jpg_filename);
+                std::fs::copy(src_file, dst_file).unwrap();
             } else {
-                jpg_filename
+                // this is the instance where there are multiple posts, and the posts are named: <id>_<number>
+                // i know this can be improved. i dont really like this type of programming :(
+                let dir_iter = std::fs::read_dir(format!("{}/", &download_dir)).unwrap();
+                for (count, path) in dir_iter.enumerate() {
+                    // mildly annoying that each std::fs thing has its own type. why not consolodate it or something...
+                    let name = path.unwrap().file_name().into_string().unwrap();
+                    if name.ends_with(".jpg") || name.ends_with(".mp4") {
+                        println!("{}", format!("./{}/{}_{}", split_str[4], count, name));
+                        std::fs::copy(
+                            format!("./{}/{}_{}", split_str[4], count, name),
+                            format!("{}/{}_{}", &download_dir, count, name),
+                        )
+                        .unwrap();
+                    }
+                }
             };
-            let src_file = format!("./-{}/{}", split_str[4], author_file);
-            let dst_file = format!("{}/{}", download_dir, author_file);
             // put it in the correct location
-            debug!(
-                "moving {} ({}) to {} ({})",
-                &src_file,
-                std::path::Path::new(&src_file).exists(),
-                &dst_file,
-                std::path::Path::new(&dst_file).exists()
-            );
-            std::fs::copy(src_file, dst_file).unwrap();
             // remove the old directory
             std::fs::remove_dir_all(format!("./-{}", split_str[4])).unwrap();
 
