@@ -8,7 +8,7 @@ pub struct Cache {
     pub song_id: String,
     pub volume: f32,
     pub shuffle: bool,
-    pub playlist: String,
+    pub playlist_id: String, // this is the uniqueid. stop making it the playlist name
     pub length: u32,
 }
 

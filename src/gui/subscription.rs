@@ -343,6 +343,20 @@ impl App {
                                 debug!("getting all from {}", &name);
                                 music_obj.list = fetch::get_all_from_playlist(&name).unwrap();
                             }
+                            // this *should* stay consistent... (talkin bout icon in gui vs actual shuffle status)
+                            if music_obj.shuffle {
+                                music_obj.list = match config.load().shuffle_type {
+                                    ShuffleType::Regular => {
+                                        crate::player::sort::regular_shuffle(music_obj.list)
+                                    }
+                                    ShuffleType::WeightBias => {
+                                        crate::player::sort::shuffle_weight_bias(music_obj.list)
+                                    }
+                                    ShuffleType::Cluster => {
+                                        crate::player::sort::cluster_shuffle(music_obj.list)
+                                    }
+                                };
+                            }
                             music_obj.playlist = name;
                         }
                     },
@@ -403,7 +417,6 @@ impl App {
                                         }
                                         PungeCommand::SkipForwards => {
                                             music_obj.sink.stop(); // why was this not here before and how did it even work !?
-                                            let old_id = music_obj.current_object.uniqueid.clone();
                                             music_obj.count = change_count(
                                                 true,
                                                 music_obj.count,
@@ -589,6 +602,25 @@ impl App {
                                                 info!("getting all from {}", &name);
                                                 music_obj.list =
                                                     fetch::get_all_from_playlist(&name).unwrap();
+                                            }
+                                            if music_obj.shuffle {
+                                                music_obj.list = match config.load().shuffle_type {
+                                                    ShuffleType::Regular => {
+                                                        crate::player::sort::regular_shuffle(
+                                                            music_obj.list,
+                                                        )
+                                                    }
+                                                    ShuffleType::WeightBias => {
+                                                        crate::player::sort::shuffle_weight_bias(
+                                                            music_obj.list,
+                                                        )
+                                                    }
+                                                    ShuffleType::Cluster => {
+                                                        crate::player::sort::cluster_shuffle(
+                                                            music_obj.list,
+                                                        )
+                                                    }
+                                                };
                                             }
                                             music_obj.playlist = name;
                                             info!("length below: {}", music_obj.list.len())

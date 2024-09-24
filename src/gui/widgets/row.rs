@@ -147,7 +147,6 @@ where
     // 3. the hover-button. so we can check if the cursor is above it, we show the submenu
     // 4. the sub-menu. for same reasons ^^
     fn children(&self) -> Vec<Tree> {
-        let t: Element<Message, Theme, Renderer> = button(text("Add to...")).into();
         vec![
             Tree::new(&self.rowdata),
             Tree::new((&self.row_overlay)(
@@ -172,7 +171,7 @@ where
 
     fn size(&self) -> Size<Length> {
         Size {
-            width: Length::Fixed(100.0),
+            width: Length::Fixed(40.0),
             height: Length::Fixed(35.0),
         }
     }
@@ -215,7 +214,8 @@ where
         viewport: &iced::Rectangle,
     ) {
         // varying cell colors
-        let cell_color = if self.is_selected {
+        let st: &RowState = tree.state.downcast_ref();
+        let cell_color = if st.is_selected {
             Color {
                 r: 0.2,
                 g: 0.2,
@@ -263,9 +263,9 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: layout::Layout<'_>,
-        renderer: &Renderer,
-        translation: Vector,
+        _layout: layout::Layout<'_>,
+        _renderer: &Renderer,
+        _translation: Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
         let st: &RowState = tree.state.downcast_ref();
         if !st.show_bar {
@@ -304,8 +304,8 @@ where
         event: iced::Event,
         layout: layout::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn iced::advanced::Clipboard,
+        renderer: &Renderer,
+        clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
         viewport: &iced::Rectangle,
     ) -> iced::advanced::graphics::core::event::Status {
@@ -330,6 +330,30 @@ where
             }
 
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+                // check if the cursor is over the button of the row
+                if cursor.is_over(
+                    layout
+                        .children()
+                        .next()
+                        .unwrap()
+                        .children()
+                        .next()
+                        .unwrap()
+                        .bounds(),
+                ) {
+                    // return the result of clicking the button (Status captured or status ignored)
+                    return self.rowdata.as_widget_mut().on_event(
+                        &mut state.children[0],
+                        event,
+                        layout,
+                        cursor,
+                        renderer,
+                        clipboard,
+                        shell,
+                        &layout.bounds(),
+                    );
+                }
+
                 // for selecting rows and such
                 if cursor.is_over(layout.bounds()) {
                     let st: &mut RowState = state.state.downcast_mut();
@@ -340,17 +364,24 @@ where
                         // action is done, do whatever to the contents of the list, then set the values all to false.
                         // but this stupid shell.publish stuff makes no sense..
 
-                        // shell.publish((self.selection_msg)(self.row_num, false));
+                        shell.publish((self.selection_msg)(
+                            self.row_num,
+                            false,
+                            self.song_uuid.clone(),
+                        ));
                     } else {
                         st.is_selected = true;
-                        // shell.publish((self.selection_msg)(self.row_num, true));
+                        shell.publish((self.selection_msg)(
+                            self.row_num,
+                            true,
+                            self.song_uuid.clone(),
+                        ));
                     }
                     iced::event::Status::Captured
                 } else {
                     iced::event::Status::Ignored
                 }
             }
-
             Event::Mouse(mouse::Event::CursorMoved { position }) => {
                 // it aint perfect by any means, but it works fairly well. we are going to leave it in!!
                 let tmp_cursor = cursor.position();
@@ -371,7 +402,16 @@ where
                     }
                 }
             }
-            _ => iced::event::Status::Ignored,
+            _ => self.rowdata.as_widget_mut().on_event(
+                &mut state.children[0],
+                event,
+                layout,
+                cursor,
+                renderer,
+                clipboard,
+                shell,
+                &layout.bounds(),
+            ),
         }
     }
 }

@@ -465,7 +465,7 @@ impl App {
                         song_id: lcl.song_id.clone(),
                         volume: lcl.volume,
                         shuffle: lcl.shuffle,
-                        playlist: lcl.playlist.clone(),
+                        playlist_id: lcl.playlist.clone(),
                         length: 190,
                     };
                     player_cache::dump_cache(cache); // dumps user cache
@@ -510,6 +510,7 @@ impl App {
                 }
                 // if the viewing playlist is different than the most recent
                 if self.current_song.load().playlist != self.viewing_playlist {
+                    println!("diff playlist!!");
                     // change playlist, hopefully no data race occurs... if it does,
                     // we can change it to play the song, then change the playlist in the background..
                     self.sender
@@ -557,6 +558,15 @@ impl App {
                 // TODO
                 crate::db::insert::add_to_playlist(&playlist_id, &song_id, local_songcount)
                     .unwrap();
+                // adding to playlist should update the current playlist IF and only IF the playlist in question is being played rn
+                // otherwise it will update as normal when it is switched to
+                if self.current_song.load().playlist == playlist_id {
+                    self.sender
+                        .as_ref()
+                        .unwrap()
+                        .send(PungeCommand::ChangePlaylist(playlist_id.to_string()))
+                        .unwrap();
+                };
                 Command::none()
             }
             ProgramCommands::DeleteSong(uuid) => {
@@ -960,16 +970,17 @@ impl App {
                 Command::none()
             }
             ProgramCommands::QuickSwapTitleAuthor(uuid_to_swap) => {
-                if self.song_edit_page.multi_select {
+                if !self.selected_songs.is_empty() {
                     for id in self.selected_songs.iter() {
-                        info!("swapping multiple uuids: {}", &id.1);
+                        info!("quick swapping multiple uuids: {}", &id.1);
                         quick_swap_title_author(&id.1).unwrap();
                     }
                 } else {
-                    info!("swapping a single uuid");
+                    info!("quick swapping a single uuid");
                     quick_swap_title_author(&uuid_to_swap).unwrap();
                 }
                 self.refresh_playlist();
+                self.selected_songs.clear();
                 Command::none()
             }
             ProgramCommands::PushScrubber(duration) => {
@@ -1058,10 +1069,10 @@ impl App {
                 Command::none()
             }
             ProgramCommands::SelectSong(row_num, is_selected, uuid) => {
-                println!("{} is selected: {}", row_num, is_selected);
                 if is_selected {
                     self.selected_songs.push((Some(row_num), uuid));
                 } else {
+                    // order does not matter.
                     self.selected_songs.swap_remove(
                         self.selected_songs
                             .iter()
@@ -1069,7 +1080,6 @@ impl App {
                             .unwrap(),
                     );
                 }
-                println!("{:#?}", &self.selected_songs);
                 Command::none()
             }
 

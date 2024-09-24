@@ -73,7 +73,7 @@ impl MusicPlayer {
         // list should inherite from cache at some point. not worried now tho
         MusicPlayer {
             list,
-            playlist: cache.playlist,
+            playlist: cache.playlist_id,
             sink,
             count,
             shuffle: cache.shuffle,
