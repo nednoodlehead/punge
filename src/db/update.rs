@@ -38,31 +38,38 @@ pub fn quick_swap_title_author(uniqueid: &str) -> Result<(), DatabaseErrors> {
     Ok(())
 }
 
-pub fn delete_from_uuid(uniqueid: String) -> Result<(), DatabaseErrors> {
-    let conn = Connection::open("main.db")?;
-    conn.execute("DELETE FROM main WHERE uniqueid = ?", params![uniqueid])?;
-    conn.execute(
-        "UPDATE metadata SET songcount = songcount - 1 WHERE playlist_id = main",
+pub fn delete_from_uuid(uniqueid: &str) -> Result<(), DatabaseErrors> {
+    let mut conn = Connection::open("main.db")?;
+    // just realized that we need to decrement every single entry in main (> it's count) so the count stays accurate
+    // also if anything fails, it will f up the db a bit
+    let trans = conn.transaction()?;
+    trans.execute("UPDATE main SET user_order = user_order -1 WHERE user_order > (SELECT user_order from main WHERE uniqueid = ?)", params![uniqueid])?;
+    trans.execute("DELETE FROM main WHERE uniqueid = ?", params![uniqueid])?;
+    trans.execute(
+        "UPDATE metadata SET songcount = songcount - 1 WHERE playlist_id = 'main'",
         params![],
     )?;
+    trans.commit()?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
 
 pub fn delete_from_playlist(uniqueid: String, playlistid: String) -> Result<(), DatabaseErrors> {
-    let conn = Connection::open("main.db")?;
-    conn.execute(
+    let mut conn = Connection::open("main.db")?;
+    let trans = conn.transaction()?;
+    trans.execute(
         "DELETE FROM playlist_relations WHERE playlist_id = ? AND song_id = ?",
         params![&playlistid, &uniqueid],
     )?;
-    conn.execute(
+    trans.execute(
         "UPDATE metadata SET songcount = songcount -1 WHERE playlist_id = ?",
         params![&playlistid],
     )?;
-    conn.execute(
+    trans.execute(
         "UPDATE metadata SET totaltime = totaltime - (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?",
         params![uniqueid, playlistid],
     )?;
+    trans.commit()?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
@@ -81,20 +88,15 @@ pub fn update_auth_album(
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
-pub fn update_title_auth(uniqueid: &str) -> Result<(), DatabaseErrors> {
-    let conn = Connection::open("main.db")?;
-    conn.execute(
-        "UPDATE main SET author = title, title = author WHERE uniqueid = ?",
-        params![uniqueid],
-    )?;
-    conn.close().map_err(|(_, err)| err)?;
-    Ok(())
-}
 
 pub fn delete_playlist(uniqueid: &str) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
     conn.execute(
         "DELETE FROM metadata WHERE playlist_id = ?",
+        params![uniqueid],
+    )?;
+    conn.execute(
+        "DELETE FROM playlist_relations WHERE playlist_id = ?",
         params![uniqueid],
     )?;
     conn.close().map_err(|(_, err)| err)?;

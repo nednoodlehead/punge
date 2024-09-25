@@ -25,7 +25,7 @@ pub fn create_playlist(new_playlist: UserPlaylist) -> Result<(), DatabaseErrors>
     // check if that table already exists
     info!("inserting, playlist does not exist");
     conn.execute(
-        "INSERT INTO metadata (title, description, thumbnail, datecreated,\
+        "INSERT INTO metadata (title, description, thumbnail, datecreated,
         songcount, totaltime, isautogen, order_of_playlist, playlist_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
         params![
             new_playlist.title,
@@ -66,18 +66,25 @@ pub fn _add_to_playlist_bulk(
     Ok(())
 }
 
-pub fn add_to_playlist(
-    playlist_uuid: &str,
-    uniqueid: &str,
-    order_num: usize,
-) -> Result<(), DatabaseErrors> {
+pub fn add_to_playlist(playlist_uuid: &str, uniqueid: &str) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
+    let mut count_stmt = conn
+        .prepare("SELECT COUNT(*) FROM playlist_relations WHERE playlist_id = ?")
+        .unwrap();
+    let count = count_stmt.query_row([playlist_uuid], |row| row.get::<_, i16>(0))?;
+    // drop it bcs it was holding conn
+    drop(count_stmt);
     conn.execute(
-            "INSERT INTO playlist_relations (playlist_id, song_id, user_playlist_order) VALUES (?1, ?2, ?3)",
-            params![&playlist_uuid, uniqueid, order_num + 1],
-        )?;
+        "
+        INSERT INTO playlist_relations (playlist_id, song_id, user_playlist_order) VALUES (?1, ?2, ?3);
+        ",
+        params![&playlist_uuid, &uniqueid, count],
+    )
+    .unwrap();
+    conn.execute("
+        UPDATE metadata SET songcount = songcount + 1, totaltime = totaltime + (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?
+        ", params![uniqueid, playlist_uuid]).unwrap();
     // also maybe in the future we have a "dateupdated" field or something that we also update here with a chrono::Local::now()
-    conn.execute("UPDATE metadata SET songcount = songcount + 1, totaltime = totaltime + (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?", params![uniqueid, playlist_uuid])?;
     conn.close().map_err(|(_, err)| err)?;
     info!("added to playlist successfully!");
     Ok(())
@@ -90,7 +97,8 @@ pub fn add_to_playlist_silent(playlist_uuid: &str, uniqueid: &str, count: usize)
     // oh, also `count`'s number is completely handled by duplicate_playlist
     let conn = Connection::open("main.db").unwrap();
     conn.execute(
-            "INSERT INTO playlist_relations (playlist_id, song_id, user_playlist_order) VALUES (?1, ?2, ?3)",
+            "
+        INSERT INTO playlist_relations (playlist_id, song_id, user_playlist_order) VALUES (?1, ?2, ?3)",
             params![&playlist_uuid, uniqueid, count],
         ).unwrap();
     conn.close().map_err(|(_, err)| err).unwrap();
