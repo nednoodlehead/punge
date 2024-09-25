@@ -137,6 +137,7 @@ impl App {
                     Ok(cmd) => match cmd {
                         PungeCommand::PlayOrPause => {
                             if music_obj.sink.empty() {
+                                debug!("sink is empty, we will pull new file");
                                 let song = interface::read_file_from_beginning(
                                     &music_obj.list[music_obj.count].savelocationmp3,
                                 );
@@ -261,7 +262,14 @@ impl App {
                         }
                         PungeCommand::SkipToSeconds(val) => {
                             // TODO WHY DOES IT PLAY HERE ?!?!
-                            info!("Skipping to seconds (while paused)");
+                            info!("Skipping to seconds {} (while paused)", val);
+                            music_obj.sink.clear();
+                            if !music_obj.to_play {
+                                // still have zero clue on why #42 occurs. this fixes it. But it would be much nicer if it
+                                // was avoidable a different way. I want all the performance i can from this stinky thread
+                                info!("stopping here (nside skipto [paused])");
+                                music_obj.sink.stop();
+                            };
                             music_obj.sink.append(read_file_from_beginning(
                                 &music_obj.list[music_obj.count].savelocationmp3,
                             ));
@@ -270,11 +278,6 @@ impl App {
                                 .try_seek(std::time::Duration::from_secs(val as u64))
                                 .unwrap();
                             // no play, since we are paused
-                            if !music_obj.to_play {
-                                // still have zero clue on why #42 occurs. this fixes it. But it would be much nicer if it
-                                // was avoidable a different way. I want all the performance i can from this stinky thread
-                                music_obj.sink.stop();
-                            };
                             sender
                                 .send(ProgramCommands::NewData(MusicData {
                                     title: music_obj.current_object.title.clone(),
