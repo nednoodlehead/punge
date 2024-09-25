@@ -13,9 +13,10 @@ pub enum PungeCommand {
     SkipToSeconds(u32), // intends to play current song from this time (bcs only active song can be target of this operation)
     SkipForwards,
     SkipBackwards,
-    ToggleShuffle,          // will either shuffle or unshuffle the playlist
+    ToggleShuffle,            // will either shuffle or unshuffle the playlist
     GoToAlbum, // not implemented yet. will be used as change the surrounding playlist to the album the song is from
     ChangePlaylist(String), // change the current playlist to the one specified here
+    PlayFromPlaylist(String), // used to play from a given playlist, at random.
 }
 
 #[derive(Debug, Clone)]

@@ -25,12 +25,10 @@ where
     row_overlay: fn(
         fn(String) -> Message,
         fn(String) -> Message,
-        fn(String, String) -> Message,
         fn(String) -> Message,
         fn(String, usize) -> Message,
         fn(String, usize) -> Message,
         fn(Option<String>) -> Message,
-        Vec<(String, String)>,
         String,
         usize,
     ) -> Element<'a, Message, Theme, Renderer>,
@@ -49,7 +47,6 @@ where
     edit_song_msg: fn(Option<String>) -> Message,
     uuid_list: Vec<(String, String)>,
     row_num: usize,
-    is_selected: bool,
     show_menu: bool,
     cursor_pos: Point,
     song_uuid: String,
@@ -104,7 +101,6 @@ where
             rowdata: rowdata.spacing(10).into(),
             row_overlay: crate::gui::persistent::create_whole_menu,
             hover_menu: crate::gui::widgets::hover_menu::create_hover_menu,
-            is_selected: false,
             delete_msg,
             quick_swap_msg,
             selection_msg,
@@ -152,12 +148,10 @@ where
             Tree::new((&self.row_overlay)(
                 self.delete_msg,
                 self.quick_swap_msg,
-                self.add_to_msg,
                 self.play_msg,
                 self.move_song_up_msg,
                 self.move_song_down_msg,
                 self.edit_song_msg,
-                self.uuid_list.clone(),
                 self.song_uuid.clone(),
                 0,
             )),
@@ -208,7 +202,7 @@ where
         tree: &iced::advanced::widget::Tree,
         renderer: &mut Renderer,
         theme: &Theme,
-        style: &renderer::Style,
+        _style: &renderer::Style,
         layout: layout::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
         viewport: &iced::Rectangle,
@@ -277,12 +271,10 @@ where
                 (self.row_overlay)(
                     self.delete_msg.clone(),
                     self.quick_swap_msg.clone(),
-                    self.add_to_msg.clone(),
                     self.play_msg,
                     self.move_song_up_msg,
                     self.move_song_down_msg,
                     self.edit_song_msg,
-                    self.uuid_list.clone(),
                     self.song_uuid.clone(),
                     self.row_num,
                 )
@@ -388,8 +380,7 @@ where
                 let st: &mut RowState = state.state.downcast_mut();
                 match tmp_cursor {
                     None => return iced::event::Status::Ignored,
-                    Some(tmp) => {
-                        let overlayed = tmp.y - viewport.y + 30.0;
+                    Some(_) => {
                         let mut new_layout = layout.bounds();
                         new_layout.y = new_layout.y - viewport.y + 30.0;
                         let m = iced::advanced::mouse::Cursor::Available(position);

@@ -102,6 +102,7 @@ impl App {
     pub fn music_loop(&self, config: Arc<ArcSwap<Config>>) -> Subscription<ProgramCommands> {
         iced::subscription::channel(0, 32, |mut sender| async move {
             // sender to give to the gui, and the receiver is used here to listen for clicking of buttons
+            // TODO inherit last known playlist here
             let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
             // maybe here  we need to get index of last song that was on?
             // send the data to the program
@@ -137,7 +138,7 @@ impl App {
                         PungeCommand::PlayOrPause => {
                             if music_obj.sink.empty() {
                                 let song = interface::read_file_from_beginning(
-                                    music_obj.list[music_obj.count].savelocationmp3.clone(),
+                                    &music_obj.list[music_obj.count].savelocationmp3,
                                 );
                                 music_obj.sink.append(song);
                             }
@@ -169,7 +170,7 @@ impl App {
                             music_obj.current_object = music_obj.list[music_obj.count].clone();
 
                             music_obj.sink.append(read_file_from_beginning(
-                                music_obj.list[music_obj.count].savelocationmp3.clone(),
+                                &music_obj.list[music_obj.count].savelocationmp3,
                             ));
                             music_obj.to_play = true;
                             music_obj.sink.play();
@@ -197,7 +198,7 @@ impl App {
                                 change_count(false, music_obj.count, music_obj.list.len());
                             music_obj.current_object = music_obj.list[music_obj.count].clone();
                             music_obj.sink.append(read_file_from_beginning(
-                                music_obj.list[music_obj.count].savelocationmp3.clone(),
+                                &music_obj.list[music_obj.count].savelocationmp3,
                             ));
                             music_obj.to_play = true;
                             music_obj.sink.play();
@@ -233,7 +234,7 @@ impl App {
                             music_obj.count = index;
                             music_obj.current_object = music_obj.list[music_obj.count].clone();
                             music_obj.sink.append(read_file_from_beginning(
-                                music_obj.list[music_obj.count].savelocationmp3.clone(),
+                                &music_obj.list[music_obj.count].savelocationmp3,
                             ));
                             music_obj.to_play = true;
                             music_obj.sink.play();
@@ -262,7 +263,7 @@ impl App {
                             // TODO WHY DOES IT PLAY HERE ?!?!
                             info!("Skipping to seconds (while paused)");
                             music_obj.sink.append(read_file_from_beginning(
-                                music_obj.list[music_obj.count].savelocationmp3.clone(),
+                                &music_obj.list[music_obj.count].savelocationmp3,
                             ));
                             music_obj
                                 .sink
@@ -359,6 +360,60 @@ impl App {
                             }
                             music_obj.playlist = name;
                         }
+                        PungeCommand::PlayFromPlaylist(uuid) => {
+                            // we also assume that there actually is a song in the playlist. fn update checks it for us
+                            // pretty much copy ChangeSong
+                            // first, we change the playlist, a complete copy of changeplaylist lol
+                            if uuid == "main" {
+                                music_obj.list = fetch::get_all_main().unwrap();
+                            } else {
+                                debug!("getting all from {}", &uuid);
+                                music_obj.list = fetch::get_all_from_playlist(&uuid).unwrap();
+                            }
+                            // this *should* stay consistent... (talkin bout icon in gui vs actual shuffle status)
+                            if music_obj.shuffle {
+                                music_obj.list = match config.load().shuffle_type {
+                                    ShuffleType::Regular => {
+                                        crate::player::sort::regular_shuffle(music_obj.list)
+                                    }
+                                    ShuffleType::WeightBias => {
+                                        crate::player::sort::shuffle_weight_bias(music_obj.list)
+                                    }
+                                    ShuffleType::Cluster => {
+                                        crate::player::sort::cluster_shuffle(music_obj.list)
+                                    }
+                                };
+                            }
+                            music_obj.playlist = uuid;
+                            // generate the random song..
+                            let ran_num = rand::thread_rng().gen_range(0..music_obj.list.len());
+                            // it should be stopped already ... ?
+                            music_obj.sink.stop();
+                            music_obj.count = ran_num;
+                            music_obj.current_object = music_obj.list[music_obj.count].clone();
+                            music_obj.sink.append(read_file_from_beginning(
+                                &music_obj.list[music_obj.count].savelocationmp3,
+                            ));
+                            music_obj.to_play = true;
+                            music_obj.sink.play();
+                            sender
+                                .send(ProgramCommands::NewData(MusicData {
+                                    title: music_obj.current_object.title.clone(),
+                                    author: music_obj.current_object.author.clone(),
+                                    album: music_obj.current_object.album.clone(),
+                                    thumbnail: music_obj.current_object.savelocationjpg.clone(),
+                                    song_id: music_obj.current_object.uniqueid.clone(),
+                                    volume: music_obj.sink.volume(),
+                                    is_playing: true,
+                                    shuffle: music_obj.shuffle,
+                                    playlist: music_obj.playlist.clone(),
+                                    threshold: music_obj.current_object.threshold,
+                                    context: Context::Seeked,
+                                    length: music_obj.current_object.length,
+                                }))
+                                .await
+                                .unwrap();
+                        }
                     },
                     _ => {
                         // what gets hit when nothing happens
@@ -378,7 +433,7 @@ impl App {
                         }
                         if music_obj.sink.empty() {
                             music_obj.sink.append(read_file_from_beginning(
-                                music_obj.list[music_obj.count].savelocationmp3.clone(),
+                                &music_obj.list[music_obj.count].savelocationmp3,
                             ));
                         }
                         music_obj.sink.play();
@@ -425,9 +480,7 @@ impl App {
                                             music_obj.current_object =
                                                 music_obj.list[music_obj.count].clone();
                                             music_obj.sink.append(read_file_from_beginning(
-                                                music_obj.list[music_obj.count]
-                                                    .savelocationmp3
-                                                    .clone(),
+                                                &music_obj.list[music_obj.count].savelocationmp3,
                                             ));
                                             music_obj.to_play = true;
                                             music_obj.sink.play();
@@ -471,9 +524,7 @@ impl App {
                                                 music_obj.sink.clear()
                                             }
                                             music_obj.sink.append(read_file_from_beginning(
-                                                music_obj.list[music_obj.count]
-                                                    .savelocationmp3
-                                                    .clone(),
+                                                &music_obj.list[music_obj.count].savelocationmp3,
                                             ));
                                             music_obj.to_play = true;
                                             music_obj.sink.play();
@@ -507,9 +558,7 @@ impl App {
                                         PungeCommand::SkipToSeconds(val) => {
                                             music_obj.sink.stop();
                                             music_obj.sink.append(read_file_from_beginning(
-                                                music_obj.list[music_obj.count]
-                                                    .savelocationmp3
-                                                    .clone(),
+                                                &music_obj.list[music_obj.count].savelocationmp3,
                                             ));
                                             music_obj
                                                 .sink
@@ -647,9 +696,75 @@ impl App {
                                                 music_obj.sink.clear()
                                             }
                                             music_obj.sink.append(read_file_from_beginning(
-                                                music_obj.list[music_obj.count]
-                                                    .savelocationmp3
-                                                    .clone(),
+                                                &music_obj.list[music_obj.count].savelocationmp3,
+                                            ));
+                                            music_obj.to_play = true;
+                                            music_obj.sink.play();
+                                            sender
+                                                .send(ProgramCommands::NewData(MusicData {
+                                                    title: music_obj.current_object.title.clone(),
+                                                    author: music_obj.current_object.author.clone(),
+                                                    album: music_obj.current_object.album.clone(),
+                                                    thumbnail: music_obj
+                                                        .current_object
+                                                        .savelocationjpg
+                                                        .clone(),
+                                                    song_id: music_obj
+                                                        .current_object
+                                                        .uniqueid
+                                                        .clone(),
+                                                    volume: music_obj.sink.volume(),
+                                                    is_playing: true,
+                                                    shuffle: music_obj.shuffle,
+                                                    playlist: music_obj.playlist.clone(),
+                                                    threshold: music_obj.current_object.threshold,
+                                                    context: Context::Seeked,
+                                                    length: music_obj.current_object.length,
+                                                }))
+                                                .await
+                                                .unwrap();
+                                        }
+
+                                        PungeCommand::PlayFromPlaylist(uuid) => {
+                                            // pretty much copy ChangeSong
+                                            // first, we change the playlist, a complete copy of changeplaylist lol
+                                            if uuid == "main" {
+                                                music_obj.list = fetch::get_all_main().unwrap();
+                                            } else {
+                                                debug!("getting all from {}", &uuid);
+                                                music_obj.list =
+                                                    fetch::get_all_from_playlist(&uuid).unwrap();
+                                            }
+                                            // this *should* stay consistent... (talkin bout icon in gui vs actual shuffle status)
+                                            if music_obj.shuffle {
+                                                music_obj.list = match config.load().shuffle_type {
+                                                    ShuffleType::Regular => {
+                                                        crate::player::sort::regular_shuffle(
+                                                            music_obj.list,
+                                                        )
+                                                    }
+                                                    ShuffleType::WeightBias => {
+                                                        crate::player::sort::shuffle_weight_bias(
+                                                            music_obj.list,
+                                                        )
+                                                    }
+                                                    ShuffleType::Cluster => {
+                                                        crate::player::sort::cluster_shuffle(
+                                                            music_obj.list,
+                                                        )
+                                                    }
+                                                };
+                                            }
+                                            music_obj.playlist = uuid;
+                                            // generate the random song..
+                                            let ran_num = rand::thread_rng()
+                                                .gen_range(0..music_obj.list.len());
+                                            music_obj.sink.stop();
+                                            music_obj.count = ran_num;
+                                            music_obj.current_object =
+                                                music_obj.list[music_obj.count].clone();
+                                            music_obj.sink.append(read_file_from_beginning(
+                                                &music_obj.list[music_obj.count].savelocationmp3,
                                             ));
                                             music_obj.to_play = true;
                                             music_obj.sink.play();

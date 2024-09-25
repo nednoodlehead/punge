@@ -5,7 +5,7 @@ use rand;
 use rand::seq::SliceRandom;
 use rodio::{Decoder, OutputStream, Sink};
 use std::fs::File;
-use std::io::{BufReader};
+use std::io::BufReader;
 use chrono::Local;
 
 pub struct MusicPlayer {
@@ -15,7 +15,8 @@ pub struct MusicPlayer {
     pub count: usize,
     pub shuffle: bool,
     pub to_play: bool,
-    pub stream: rodio::OutputStream,
+    // we still need to hold it (im pretty sure), we just dont read it.
+    pub _stream: rodio::OutputStream,
     pub current_object: PungeMusicObject, // represents the playing song. used in shuffle to get back to it
 }
 // ngl i aint know too much, but im pretty sure this could cause problems, but it makes the program work, so...
@@ -34,7 +35,7 @@ impl MusicPlayer {
     pub fn new(mut list: Vec<PungeMusicObject>) -> MusicPlayer {
         // Music player and the song that will be used to update the gui
         let cache: Cache = fetch_cache();
-        let (stream, stream_handle) = OutputStream::try_default().unwrap();
+        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&stream_handle).unwrap();
         sink.set_volume(cache.volume);
         if cache.shuffle {
@@ -78,13 +79,13 @@ impl MusicPlayer {
             count,
             shuffle: cache.shuffle,
             to_play: false,
-            stream,
+            _stream,
             current_object,
         }
     }
 }
 
-pub fn read_file_from_beginning(file: String) -> Decoder<BufReader<File>> {
+pub fn read_file_from_beginning(file: &str) -> Decoder<BufReader<File>> {
     // we should overhaul this at some point to be a method associated with the app. when there is a file that doesn't exist,
     // we can send it to some related "missing" vector. this can be written to json when program closes? or when found?
     let reader = BufReader::new(File::open(file).unwrap());

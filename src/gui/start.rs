@@ -440,7 +440,7 @@ impl App {
                             warn!("ignoring potential delte action, link is too short");
                         } else {
                             match crate::db::update::delete_from_uuid(
-                                link[link.len() - 11..].to_string(), // last 11 chars of the url, aka uniqueid
+                                &link[link.len() - 11..], // last 11 chars of the url, aka uniqueid
                             ) {
                                 Ok(_t) => {
                                     info!("Deleted successfully: {}", &link);
@@ -510,7 +510,6 @@ impl App {
                 }
                 // if the viewing playlist is different than the most recent
                 if self.current_song.load().playlist != self.viewing_playlist {
-                    println!("diff playlist!!");
                     // change playlist, hopefully no data race occurs... if it does,
                     // we can change it to play the song, then change the playlist in the background..
                     self.sender
@@ -545,19 +544,13 @@ impl App {
                 Command::none()
             }
             ProgramCommands::AddToPlaylist(playlist_id, song_id) => {
-                let local_songcount = self.user_playlists[self
+                crate::db::insert::add_to_playlist(&playlist_id, &song_id).unwrap();
+                let pos = self
                     .user_playlists
                     .iter()
-                    .position(|play| &play.uniqueid == &playlist_id)
-                    .unwrap()]
-                .songcount;
-                info!(
-                    "we will add: {:?} to {} @ poisition: {}",
-                    &self.selected_songs, &playlist_id, local_songcount
-                );
-                // TODO
-                crate::db::insert::add_to_playlist(&playlist_id, &song_id, local_songcount)
+                    .position(|item| item.uniqueid == playlist_id)
                     .unwrap();
+                self.user_playlists[pos].songcount += 1;
                 // adding to playlist should update the current playlist IF and only IF the playlist in question is being played rn
                 // otherwise it will update as normal when it is switched to
                 if self.current_song.load().playlist == playlist_id {
@@ -573,7 +566,7 @@ impl App {
                 // should ask user if they are sure ?
                 // TODO rewrite for the new interface
                 if self.viewing_playlist == "main" {
-                    match delete_record_and_file(uuid.clone()) {
+                    match delete_record_and_file(&uuid) {
                         Ok(t) => {
                             info!("Success removing {:?} from main", t);
                         }
@@ -918,6 +911,10 @@ impl App {
                 crate::db::update::delete_playlist(&uuid).unwrap();
                 self.user_playlists = get_all_playlists().unwrap();
                 self.current_view = Page::Main;
+                self.playlist_page.user_title.clear();
+                self.playlist_page.user_description.clear();
+                self.playlist_page.user_thumbnail.clear();
+                self.playlist_page.user_id = None;
                 Command::none()
             }
 
@@ -1079,6 +1076,25 @@ impl App {
                             .position(|item| item.1 == uuid)
                             .unwrap(),
                     );
+                }
+                Command::none()
+            }
+            ProgramCommands::PlayFromPlaylist(uuid) => {
+                if self.user_playlists[self
+                    .user_playlists
+                    .iter()
+                    .position(|item| item.uniqueid == uuid)
+                    .unwrap()]
+                .songcount
+                    != 0
+                {
+                    self.sender
+                        .as_ref()
+                        .unwrap()
+                        .send(PungeCommand::PlayFromPlaylist(uuid))
+                        .unwrap();
+                } else {
+                    warn!("trying to play from empty playlist")
                 }
                 Command::none()
             }

@@ -18,8 +18,8 @@ where
 
     fn layout(
         &self,
-        tree: &mut iced::advanced::widget::Tree,
-        renderer: &Renderer,
+        _tree: &mut iced::advanced::widget::Tree,
+        _renderer: &Renderer,
         limits: &iced::advanced::layout::Limits,
     ) -> iced::advanced::layout::Node {
         let limits = limits.width(self.width).height(self.height);
@@ -28,13 +28,13 @@ where
 
     fn draw(
         &self,
-        tree: &iced::advanced::widget::Tree,
+        _tree: &iced::advanced::widget::Tree,
         renderer: &mut Renderer,
-        theme: &Theme,
-        style: &iced::advanced::renderer::Style,
+        _theme: &Theme,
+        _style: &iced::advanced::renderer::Style,
         layout: iced::advanced::Layout<'_>,
-        cursor: iced::advanced::mouse::Cursor,
-        viewport: &iced::Rectangle,
+        _cursor: iced::advanced::mouse::Cursor,
+        _viewport: &iced::Rectangle,
     ) {
         renderer.fill_quad(
             renderer::Quad {

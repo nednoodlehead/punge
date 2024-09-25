@@ -15,12 +15,10 @@ use itertools::Itertools;
 pub fn create_whole_menu<'a, Message, Theme, Renderer>(
     delete_msg: fn(String) -> Message,
     quick_swap: fn(String) -> Message,
-    add_to_msg: fn(String, String) -> Message,
     play_msg: fn(String) -> Message,
     move_song_up_msg: fn(String, usize) -> Message,
     move_song_down_msg: fn(String, usize) -> Message,
     edit_song_msg: fn(Option<String>) -> Message,
-    uuid_list: Vec<(String, String)>,
     song_uuid: String,
     row_num: usize,
 ) -> Element<'a, Message, Theme, Renderer>

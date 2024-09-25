@@ -144,7 +144,9 @@ async fn download_youtube(
     );
     let full_output = format!("{}{} - {}{}", path, &title, vid.get_video_id(), mp3_4);
     let new_path = std::path::Path::new(&full_output);
+    debug!("gonna download video to: {:?}", &new_path);
     vid.download(new_path)?;
+    debug!("Video download did not throw an error");
     Ok(format!("{} downloaded successfully!", title))
 }
 
@@ -170,6 +172,7 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
         .spawn()
         .unwrap()
         .wait_with_output();
+    debug!("Started insta download");
     // this needs to block?
     // we also need to check for multiple downloads. They can be a collection of jpgs / mp4
     // we can either check the number of files in the directory (should be n * 4) or do a collection of match checks
@@ -177,6 +180,7 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
     // should probably do some testing for this...
     match process {
         Ok(_) => {
+            debug!("insta download returned ok");
             // so the filename to move can either be `.jpg` or `.mp4`
             let jpg_filename = format!("{}.mp4", split_str[4]);
             let mp4_filename = format!("{}.jpg", split_str[4]);
@@ -198,6 +202,10 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
                     let name = path.unwrap().file_name().into_string().unwrap();
                     if name.ends_with(".jpg") || name.ends_with(".mp4") {
                         println!("{}", format!("./{}/{}_{}", split_str[4], count, name));
+                        debug!(
+                            "insta download iter loop: {}. operating on {:?}",
+                            count, &name
+                        );
                         std::fs::copy(
                             format!("./{}/{}_{}", split_str[4], count, name),
                             format!("{}/{}_{}", &download_dir, count, name),

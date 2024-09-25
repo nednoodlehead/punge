@@ -52,7 +52,7 @@ impl SongEditPage {
                         uniqueid: self.uniqueid.clone(),
                     }
                 ))
-                .style(|t, status| punge_button_style(status)),
+                .style(|_t, status| punge_button_style(status)),
             button(text("Discard"))
                 .on_press(ProgramCommands::ChangePage(Page::Main))
                 .style(|_t, status| punge_button_style(status))
