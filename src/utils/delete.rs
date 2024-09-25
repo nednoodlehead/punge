@@ -4,7 +4,7 @@ use crate::types::AppError;
 use std::fs;
 use std::path::Path;
 
-pub fn delete_record_and_file(uniqueid: String) -> Result<(), AppError> {
+pub fn delete_record_and_file(uniqueid: &str) -> Result<(), AppError> {
     // get the filepath from the database
     let obj = get_obj_from_uuid(&uniqueid)?;
     let to_delete = Path::new(&obj.savelocationmp3);
