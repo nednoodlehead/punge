@@ -105,7 +105,6 @@ pub fn delete_playlist(uniqueid: &str) -> Result<(), DatabaseErrors> {
 
 // for these we have to also check to see if it CAN go down one more
 pub fn move_playlist_up_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
-    // TODO!!!
     let mut conn = Connection::open("main.db")?;
     // added a scope so the borrow is dropped :D
     let mut prep = conn
@@ -133,7 +132,6 @@ pub fn move_playlist_up_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
 }
 
 pub fn move_playlist_down_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
-    // TODO!!!
     let count = 0;
     let mut conn = Connection::open("main.db")?;
 

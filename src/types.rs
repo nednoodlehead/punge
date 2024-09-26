@@ -182,7 +182,7 @@ pub struct MusicData {
 }
 
 impl MusicData {
-    pub fn default() -> Self {
+    pub fn default(playlist: String) -> Self {
         MusicData {
             title: "".to_string(),
             author: "".to_string(),
@@ -192,7 +192,7 @@ impl MusicData {
             volume: 0.0,
             is_playing: false,
             shuffle: false,
-            playlist: "main".to_string(),
+            playlist,
             threshold: 0,
             context: Context::Default,
             length: 0,

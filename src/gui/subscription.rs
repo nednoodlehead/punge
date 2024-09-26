@@ -99,11 +99,20 @@ impl App {
         // nvmd i got it back
     }
 
-    pub fn music_loop(&self, config: Arc<ArcSwap<Config>>) -> Subscription<ProgramCommands> {
+    pub fn music_loop(
+        &self,
+        config: Arc<ArcSwap<Config>>,
+        playlist_id: String,
+    ) -> Subscription<ProgramCommands> {
         iced::subscription::channel(0, 32, |mut sender| async move {
             // sender to give to the gui, and the receiver is used here to listen for clicking of buttons
             // TODO inherit last known playlist here
-            let items: Vec<PungeMusicObject> = fetch::get_all_main().unwrap();
+            debug!("playlist id passed: {}", &playlist_id);
+            let items: Vec<PungeMusicObject> = if playlist_id == "main" {
+                fetch::get_all_main().unwrap()
+            } else {
+                fetch::get_all_from_playlist(&playlist_id).unwrap()
+            };
             // maybe here  we need to get index of last song that was on?
             // send the data to the program
             let mut music_obj = interface::MusicPlayer::new(items);

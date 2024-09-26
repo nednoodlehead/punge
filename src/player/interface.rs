@@ -47,7 +47,6 @@ impl MusicPlayer {
             .iter()
             .position(|r| r.clone().uniqueid == cache.song_id)
             .unwrap_or(0);
-        // when the user has nothing downloaded, this panics TODO
         let current_object = if list.is_empty() {
             PungeMusicObject {
                 title: "No songs loaded".to_string(),

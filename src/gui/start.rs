@@ -142,7 +142,9 @@ impl Default for App {
         };
         App {
             is_paused: true,
-            current_song: Arc::new(ArcSwap::from_pointee(MusicData::default())),
+            current_song: Arc::new(ArcSwap::from_pointee(MusicData::default(
+                player_cache.playlist_id.clone(),
+            ))),
             sender: None,
             volume: (player_cache.volume * 80.0) as u8, // 80 is out magic number from sink volume -> slider
             shuffle: player_cache.shuffle,
@@ -160,20 +162,33 @@ impl Default for App {
             manager,
             config: Arc::new(ArcSwap::from_pointee(config_cache)),
             search: "".to_string(),
-            viewing_playlist: "main".to_string(),
+            viewing_playlist: player_cache.playlist_id.clone(),
             selected_songs: vec![],
             user_playlists: get_all_playlists().unwrap(), // im addicted to unwraping
             // maybe do most recent playlist next? from cache?
-            table_content: get_all_main()
-                .unwrap()
-                .into_iter()
-                .map(|item| crate::gui::widgets::row::RowData {
-                    title: item.title.clone(),
-                    author: item.author.clone(),
-                    album: item.album.clone(),
-                    uniqueid: item.uniqueid.clone(),
-                })
-                .collect(),
+            table_content: if player_cache.playlist_id == "main" {
+                get_all_main()
+                    .unwrap()
+                    .into_iter()
+                    .map(|item| crate::gui::widgets::row::RowData {
+                        title: item.title.clone(),
+                        author: item.author.clone(),
+                        album: item.album.clone(),
+                        uniqueid: item.uniqueid.clone(),
+                    })
+                    .collect()
+            } else {
+                get_all_from_playlist(&player_cache.playlist_id)
+                    .unwrap()
+                    .into_iter()
+                    .map(|item| crate::gui::widgets::row::RowData {
+                        title: item.title.clone(),
+                        author: item.author.clone(),
+                        album: item.album.clone(),
+                        uniqueid: item.uniqueid.clone(),
+                    })
+                    .collect()
+            },
         }
     }
 }
@@ -564,7 +579,6 @@ impl App {
             }
             ProgramCommands::DeleteSong(uuid) => {
                 // should ask user if they are sure ?
-                // TODO rewrite for the new interface
                 if self.viewing_playlist == "main" {
                     match delete_record_and_file(&uuid) {
                         Ok(t) => {
@@ -1206,7 +1220,10 @@ impl App {
 
     fn subscription(&self) -> Subscription<ProgramCommands> {
         iced::subscription::Subscription::batch(vec![
-            self.music_loop(self.config.clone()),
+            self.music_loop(
+                self.config.clone(),
+                self.current_song.load().playlist.clone(),
+            ),
             self.hotkey_loop(self.config.clone()),
             self.database_subscription(self.current_song.clone()),
             self.close_app_sub(),
