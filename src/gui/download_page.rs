@@ -33,9 +33,16 @@ impl DownloadPage {
                 row![
                     column![
                         row![
-                            text_input("Search YouTube!", &self.search_text).on_input(|txt| {
-                                ProgramCommands::UpdateWidgetText(TextType::YouTubeSearchInput, txt)
-                            }),
+                            text_input("Search YouTube!", &self.search_text)
+                                .on_input(|txt| {
+                                    ProgramCommands::UpdateWidgetText(
+                                        TextType::YouTubeSearchInput,
+                                        txt,
+                                    )
+                                })
+                                .on_submit(ProgramCommands::SearchYouTube(
+                                    self.search_text.clone()
+                                )),
                             button(text("Search!"))
                                 .style(|_t, status| punge_button_style(status))
                                 .on_press(ProgramCommands::SearchYouTube(self.search_text.clone()))
@@ -58,9 +65,14 @@ impl DownloadPage {
                     .spacing(15.0),
                     column![
                         row![
-                            text_input("Enter YouTube link here: ", &self.text).on_input(|txt| {
-                                ProgramCommands::UpdateWidgetText(TextType::DownloadLinkInput, txt)
-                            }),
+                            text_input("Enter YouTube link here: ", &self.text)
+                                .on_input(|txt| {
+                                    ProgramCommands::UpdateWidgetText(
+                                        TextType::DownloadLinkInput,
+                                        txt,
+                                    )
+                                })
+                                .on_submit(ProgramCommands::Download(self.text.clone())),
                             button(text("Download!"))
                                 .style(|_t, status| punge_button_style(status))
                                 .on_press(ProgramCommands::Download(self.text.clone()))
@@ -97,9 +109,16 @@ impl DownloadPage {
                             column![row![
                                 Image::new(&results.thumbnail).width(80).height(45), // 16:9
                                 column![
-                                    text(results.title.clone()),
+                                    text(if results.title.len() > 30 {
+                                        &results.title[0..30]
+                                    } else {
+                                        &results.title
+                                    }),
                                     text(results.author.clone()),
-                                    text(duration.clone())
+                                    text(format!(
+                                        "{} views",
+                                        crate::utils::num::format_views(results.views)
+                                    ))
                                 ]
                                 .width(Length::Fixed(320.0)),
                                 horizontal_space(),
@@ -107,7 +126,7 @@ impl DownloadPage {
                                     button(text("Download!"))
                                         .style(|_t, status| punge_button_style(status))
                                         .on_press(ProgramCommands::Download(results.link.clone())),
-                                    text("Stream!")
+                                    text(duration.clone())
                                 ],
                             ]]
                             .padding(10.0)
@@ -115,19 +134,17 @@ impl DownloadPage {
                         None => {
                             // these are playlists
                             column![row![
+                                Image::new(&results.thumbnail).width(80).height(45),
                                 column![
                                     text(results.title.clone()),
                                     text(results.author.clone()),
                                     text(results.videos.clone().unwrap())
                                 ]
-                                .width(Length::Fixed(400.0)),
+                                .width(Length::Fixed(320.0)),
                                 horizontal_space(),
-                                column![
-                                    button(text("Download!"))
-                                        .style(|_t, status| punge_button_style(status))
-                                        .on_press(ProgramCommands::Download(results.link.clone())),
-                                    text("Stream!")
-                                ],
+                                column![button(text("Download!"))
+                                    .style(|_t, status| punge_button_style(status))
+                                    .on_press(ProgramCommands::Download(results.link.clone())),],
                             ]]
                             .padding(10.0)
                         }

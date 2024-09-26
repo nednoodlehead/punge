@@ -97,7 +97,7 @@ pub struct App {
     manager: GlobalHotKeyManager, // our interface for messing with global keybinds
     pub config: Arc<ArcSwap<Config>>, // also contains hotkeys :D
     pub search: String,
-    viewing_playlist: String, // could derive from cache soon... just the uniqueid rn
+    viewing_playlist: String,                     // just the uniqueid rn
     selected_songs: Vec<(Option<usize>, String)>, // songs that the user will edit. if is_some, unselect the rows in the table
     pub user_playlists: Vec<UserPlaylist>,
     table_content: iced::widget::list::Content<crate::gui::widgets::row::RowData>, // pls list widget for 0.14...
@@ -411,6 +411,8 @@ impl App {
                 // should *in theory* get rid of the images in memory so there is no problem deleteing them from the
                 // content_to_text() call (remove_all_in_temp_dir)
                 self.download_page.youtube_content = vec![];
+                // clear the text so the user knows something is happening
+                self.download_page.search_text = "".to_string();
                 Command::perform(
                     crate::yt::search::content_to_text(
                         str,
@@ -1112,8 +1114,6 @@ impl App {
                 }
                 Command::none()
             }
-
-            _ => Command::none(),
         }
     }
 

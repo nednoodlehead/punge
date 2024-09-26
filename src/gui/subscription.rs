@@ -106,7 +106,6 @@ impl App {
     ) -> Subscription<ProgramCommands> {
         iced::subscription::channel(0, 32, |mut sender| async move {
             // sender to give to the gui, and the receiver is used here to listen for clicking of buttons
-            // TODO inherit last known playlist here
             debug!("playlist id passed: {}", &playlist_id);
             let items: Vec<PungeMusicObject> = if playlist_id == "main" {
                 fetch::get_all_main().unwrap()
@@ -270,7 +269,6 @@ impl App {
                             warn!("Unimplemented action")
                         }
                         PungeCommand::SkipToSeconds(val) => {
-                            // TODO WHY DOES IT PLAY HERE ?!?!
                             info!("Skipping to seconds {} (while paused)", val);
                             music_obj.sink.clear();
                             if !music_obj.to_play {

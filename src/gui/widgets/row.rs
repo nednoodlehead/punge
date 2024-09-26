@@ -86,7 +86,8 @@ where
             .width(30)
             .clip(true)
             .padding(0)
-            .style(|_t, status| punge_button_style(status))];
+            .style(|_t, status| punge_button_style(status))]
+        .align_items(iced::Alignment::Center);
         for disp_text in [title, author, album] {
             if disp_text.len() < 30 {
                 rowdata = rowdata.push(text(disp_text).width(350));
