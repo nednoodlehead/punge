@@ -74,7 +74,7 @@ pub enum ProgramCommands {
     UpdateEditor(iced::widget::text_editor::Action), // updating the idle string editor in gui::settings
     // messages from the right-click menu on the table
     // playsong from above
-    DeleteSong(String), // TODO do this interface.. probably want some type of confirmation.. also the playlist is pulled from self.active_playlist or whatever its called
+    DeleteSong(String), // do this interface.. probably want some type of confirmation.. also the playlist is pulled from self.active_playlist or whatever its called
     SelectSong(usize, bool, String), // row, is_selected, uuid of song
 }
 
