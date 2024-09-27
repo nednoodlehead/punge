@@ -198,12 +198,12 @@ impl App {
     pub fn render_buttons_side(&self, ignore: Page) -> Element<'_, ProgramCommands> {
         let mut all_playlists_but_main = self.user_playlists.clone();
         // user should always have the 'main' playlist
-
-        all_playlists_but_main.remove(0);
+        // also just realized that this fixed a bug where if [0] != main, it will remove a user playlist...
+        all_playlists_but_main.remove("main");
         let playlist_buttons: Vec<Element<ProgramCommands>> = self
             .user_playlists
             .iter()
-            .map(|playlist| {
+            .map(|(playlistid, playlist)| {
                 crate::gui::widgets::playlist_button::PlaylistButton::new(
                     button(text(&playlist.title))
                         .style(|_t, status| playlist_text_style(status))
@@ -211,10 +211,10 @@ impl App {
                     ProgramCommands::ChangeViewingPlaylist(playlist.uniqueid.clone()),
                     create_playlist_button_menu,
                     ProgramCommands::OpenPlaylistEditPage(playlist.clone()),
-                    ProgramCommands::MovePlaylistUp(playlist.uniqueid.clone()),
-                    ProgramCommands::MovePlaylistDown(playlist.uniqueid.clone()),
-                    ProgramCommands::DuplicatePlaylist(playlist.uniqueid.clone()),
-                    ProgramCommands::PlayFromPlaylist(playlist.uniqueid.clone()),
+                    ProgramCommands::MovePlaylistUp(playlistid.clone()),
+                    ProgramCommands::MovePlaylistDown(playlistid.clone()),
+                    ProgramCommands::DuplicatePlaylist(playlistid.clone()),
+                    ProgramCommands::PlayFromPlaylist(playlistid.clone()),
                 )
                 .into()
             })

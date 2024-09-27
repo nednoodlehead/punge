@@ -20,10 +20,15 @@ use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::subscription::Subscription;
 use iced::widget::{column, container, image, row, scrollable, text};
 use iced::{Command, Element, Length, Settings, Theme};
+use itertools::Itertools;
 use log::{debug, error, info, warn};
+use once_cell::sync::Lazy;
 use simplelog::{CombinedLogger, TermLogger, WriteLogger};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::mpsc as async_sender; // does it need to be in scope?
+static SCROLLABLE_ID: Lazy<iced::widget::scrollable::Id> =
+    Lazy::new(iced::widget::scrollable::Id::unique);
 
 pub fn begin() -> iced::Result {
     // initialze logger
@@ -97,9 +102,10 @@ pub struct App {
     manager: GlobalHotKeyManager, // our interface for messing with global keybinds
     pub config: Arc<ArcSwap<Config>>, // also contains hotkeys :D
     pub search: String,
-    viewing_playlist: String,                     // just the uniqueid rn
+    viewing_playlist: String, // just the uniqueid rn
+    current_table_offset: iced::widget::scrollable::AbsoluteOffset,
     selected_songs: Vec<(Option<usize>, String)>, // songs that the user will edit. if is_some, unselect the rows in the table
-    pub user_playlists: Vec<UserPlaylist>,
+    pub user_playlists: HashMap<String, UserPlaylist>,
     table_content: iced::widget::list::Content<crate::gui::widgets::row::RowData>, // pls list widget for 0.14...
 }
 
@@ -140,6 +146,7 @@ impl Default for App {
                 }
             }
         };
+        let playlists = get_all_playlists().unwrap();
         App {
             is_paused: true,
             current_song: Arc::new(ArcSwap::from_pointee(MusicData::default(
@@ -163,8 +170,13 @@ impl Default for App {
             config: Arc::new(ArcSwap::from_pointee(config_cache)),
             search: "".to_string(),
             viewing_playlist: player_cache.playlist_id.clone(),
+            // the active playlist's scrollable offset...
+            current_table_offset: playlists
+                .get(&player_cache.playlist_id)
+                .expect("Could not find id in list of playlists")
+                .scrollable_offset,
             selected_songs: vec![],
-            user_playlists: get_all_playlists().unwrap(), // im addicted to unwraping
+            user_playlists: playlists, // im addicted to unwraping
             // maybe do most recent playlist next? from cache?
             table_content: if player_cache.playlist_id == "main" {
                 get_all_main()
@@ -203,7 +215,11 @@ impl App {
             ProgramCommands::UpdateSender(sender) => {
                 info!("Sender sent!");
                 self.sender = sender;
-                Command::none()
+                println!("tryna scroll to: {:?}", &self.current_table_offset);
+                iced::widget::scrollable::scroll_to(
+                    SCROLLABLE_ID.clone(),
+                    self.current_table_offset,
+                )
             }
             ProgramCommands::NewData(data) => {
                 self.total_time = data.length;
@@ -278,6 +294,10 @@ impl App {
                 Command::none()
             }
             ProgramCommands::ShuffleToggle => {
+                println!(
+                    "main offset: {}",
+                    &self.user_playlists.get("main").unwrap().scrollable_offset.y
+                );
                 self.shuffle = !self.shuffle;
                 self.sender
                     .as_mut()
@@ -320,7 +340,11 @@ impl App {
             }
             ProgramCommands::ChangePage(page) => {
                 self.current_view = page;
-                Command::none()
+                iced::widget::scrollable::scroll_to(
+                    SCROLLABLE_ID.clone(),
+                    self.current_table_offset,
+                )
+                // Command::none()
             }
             ProgramCommands::Download(link) => {
                 // we need to find the current length for main
@@ -343,7 +367,11 @@ impl App {
                         .download_feedback
                         .push(format!("Download started on {}", &link));
                     Command::perform(
-                        download_interface(link.clone(), None, self.user_playlists[0].songcount),
+                        download_interface(
+                            link.clone(),
+                            None,
+                            self.user_playlists["main"].songcount,
+                        ),
                         |yt_data| ProgramCommands::AddToDownloadFeedback(link, yt_data),
                     )
                 };
@@ -366,7 +394,7 @@ impl App {
                 // then, after the downloads have completed, we either update the entry with the data
                 // or remove the entry afterwards if it fails
                 let mut count = 0;
-                let default_count = self.user_playlists[0].songcount;
+                let default_count = self.user_playlists["main"].songcount;
                 for song in playlist.videos.clone() {
                     let full_url = format!("https://youtube.com/watch?v={}", &song.url);
                     self.download_page
@@ -547,34 +575,39 @@ impl App {
             }
             ProgramCommands::ChangeViewingPlaylist(playlist) => {
                 // we will change the current view to the playlist view, and pass in the playlist to fill the content
+                // we are actually just going to change the offset in self.user_playlists
+                self.user_playlists
+                    .get_mut(&self.viewing_playlist)
+                    .unwrap()
+                    .scrollable_offset = self.current_table_offset;
+                println!(
+                    "Setting offset for: {} \n@:{}",
+                    &self.viewing_playlist, self.current_table_offset.y
+                );
+                crate::db::update::update_offset(
+                    &self.viewing_playlist,
+                    self.current_table_offset.y,
+                )
+                .unwrap();
+                // crate::db::update::update_offset(&playlist, self.current_table_offset.y).unwrap();
                 self.current_view = Page::Main;
                 self.viewing_playlist = playlist.clone();
                 self.selected_songs.clear(); // clear them! (so we dont select some, switch playlist and edit unintentionally)
                                              // main should be treated just like a regular playlist !?
+                                             // refresh playlist will set the offset.
                 self.refresh_playlist();
-                // debug!( i currently have 154 errors in console, im fixin things one at a time
-                //     "rows? {} | {:?} name: {}",
-                //     self.rows.len(),
-                //     self.rows,
-                //     &playlist
-                // );
                 Command::none()
             }
             ProgramCommands::AddToPlaylist(playlist_id, song_id) => {
                 crate::db::insert::add_to_playlist(&playlist_id, &song_id).unwrap();
-                let pos = self
-                    .user_playlists
-                    .iter()
-                    .position(|item| item.uniqueid == playlist_id)
-                    .unwrap();
-                self.user_playlists[pos].songcount += 1;
+                self.user_playlists.get_mut(&playlist_id).unwrap().songcount += 1;
                 // adding to playlist should update the current playlist IF and only IF the playlist in question is being played rn
                 // otherwise it will update as normal when it is switched to
                 if self.current_song.load().playlist == playlist_id {
                     self.sender
                         .as_ref()
                         .unwrap()
-                        .send(PungeCommand::ChangePlaylist(playlist_id.to_string()))
+                        .send(PungeCommand::ChangePlaylist(playlist_id.clone()))
                         .unwrap();
                 };
                 Command::none()
@@ -1042,7 +1075,8 @@ impl App {
                 Command::none()
             }
             ProgramCommands::MovePlaylistUp(uniqueid) => {
-                if self.user_playlists[0].uniqueid != uniqueid {
+                // TODO we actually need to update the self.user_playlists when stuff happens
+                if self.user_playlists[&uniqueid].userorder == 0 {
                     crate::db::update::move_playlist_up_one(&uniqueid).unwrap();
                     self.user_playlists = get_all_playlists().unwrap();
                 } else {
@@ -1051,7 +1085,7 @@ impl App {
                 Command::none()
             }
             ProgramCommands::MovePlaylistDown(uniqueid) => {
-                if self.user_playlists[self.user_playlists.len() - 1].uniqueid != uniqueid {
+                if self.user_playlists[&uniqueid].userorder != self.user_playlists.len() as u16 {
                     crate::db::update::move_playlist_down_one(&uniqueid).unwrap();
                     self.user_playlists = get_all_playlists().unwrap();
                 } else {
@@ -1096,14 +1130,7 @@ impl App {
                 Command::none()
             }
             ProgramCommands::PlayFromPlaylist(uuid) => {
-                if self.user_playlists[self
-                    .user_playlists
-                    .iter()
-                    .position(|item| item.uniqueid == uuid)
-                    .unwrap()]
-                .songcount
-                    != 0
-                {
+                if self.user_playlists[&uuid].songcount != 0 {
                     self.sender
                         .as_ref()
                         .unwrap()
@@ -1112,6 +1139,18 @@ impl App {
                 } else {
                     warn!("trying to play from empty playlist")
                 }
+                Command::none()
+            }
+            ProgramCommands::OnScroll(offset) => {
+                // we can have a 'temporary' type variable, that holds the current playlist's offset. on app close, we write to db
+                // on a playlist switch, we write it into self.user_playlists
+                // self.viewing_playlist
+                self.current_table_offset = offset.absolute_offset();
+                println!(
+                    "Setting the offset: {} for \n{}\n",
+                    &offset.absolute_offset().y,
+                    self.viewing_playlist
+                );
                 Command::none()
             }
         }
@@ -1134,23 +1173,26 @@ impl App {
                 ProgramCommands::OpenSongEditPage,
                 self.user_playlists
                     .iter()
-                    .map(|playl| (playl.uniqueid.clone(), playl.title.clone()))
+                    .map(|playl| (playl.0.clone(), playl.1.title.clone()))
                     .collect(),
                 item.uniqueid.clone(),
             )
             .into()
         }))
+        .id(SCROLLABLE_ID.clone())
+        .on_scroll(ProgramCommands::OnScroll)
         .width(1000);
 
-        let mut all_playlists_but_main = self.user_playlists.clone();
+        // need 2 convert HashMap<String, UserPlaylist> -> Vec<UserPlaylist> for the table
+        let mut all_playlists_but_main = self
+            .user_playlists
+            .clone()
+            .into_iter()
+            .map(|items| items.1)
+            .collect_vec();
         all_playlists_but_main.remove(0);
         // user should always have the 'main' playlist
-        let active_playlist = self.user_playlists[self
-            .user_playlists
-            .iter()
-            .position(|x| x.uniqueid == self.viewing_playlist)
-            .unwrap_or(0)]
-        .clone();
+        let active_playlist = self.user_playlists[&self.viewing_playlist].clone();
 
         let table_cont = container(table).height(Length::Fill).padding(5);
         let table_cont_wrapper = column![
@@ -1235,7 +1277,7 @@ impl App {
 
 impl App {
     fn refresh_playlist(&mut self) {
-        // are we able to replace .enumerate() with item.count? <-- when it is consistent!!
+        // to avoid unnecessary calls to the db, we need to store the offset in self.user_playlists
         if self.viewing_playlist.to_lowercase() == "main" {
             let new = get_all_main().unwrap();
             self.table_content = new
@@ -1260,6 +1302,8 @@ impl App {
                 })
                 .collect();
         }
+        // get the offset...
+        self.current_table_offset = self.user_playlists[&self.viewing_playlist].scrollable_offset;
         // if we are listening to main, the playlist refreshes because of a download, update the main playlist in place
     }
 }
