@@ -251,6 +251,7 @@ pub fn duplicate_playlist(playlistid: &str) -> Result<(), DatabaseErrors> {
                 totaltime: row.get(5)?,
                 isautogen: row.get(6)?,
                 userorder: row.get(7)?,
+                scrollable_offset: iced::widget::scrollable::AbsoluteOffset::default(), // doesnt matter..
                 uniqueid: new_uuid.to_string(),
             })
         })
@@ -273,6 +274,16 @@ pub fn duplicate_playlist(playlistid: &str) -> Result<(), DatabaseErrors> {
     for (count, string) in tmp.iter().enumerate() {
         crate::db::insert::add_to_playlist_silent(&new_uuid.to_string(), &string, count)
     }
-
+    Ok(())
+}
+// must be called at some point to update the offset. probably after swapping playlists? Might be sucky performance? Or alternatively on exit.
+pub fn update_offset(playlistid: &str, offset: f32) -> Result<(), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    info!("writing offset to uuid: {}", playlistid);
+    conn.execute(
+        "UPDATE metadata SET table_offset = ? WHERE playlist_id =?",
+        params![offset, playlistid],
+    )?;
+    conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }

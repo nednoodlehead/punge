@@ -36,6 +36,7 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
             totaltime TEXT,
             isautogen BOOL,
             order_of_playlist SMALLINT,
+            table_offset FLOAT,
             playlist_id TEXT
             )",
         params![],

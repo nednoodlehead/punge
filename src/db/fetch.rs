@@ -1,6 +1,6 @@
 use crate::types::{DatabaseErrors, PungeMusicObject};
-
 use rusqlite::{params, Connection};
+use std::collections::HashMap;
 
 pub fn get_all_from_playlist(playlist_uuid: &str) -> Result<Vec<PungeMusicObject>, DatabaseErrors> {
     // gets all songs from given table
@@ -108,10 +108,10 @@ pub fn get_num_of_playlists() -> u16 {
 
 use crate::types::UserPlaylist;
 
-pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
+pub fn get_all_playlists() -> Result<HashMap<String, UserPlaylist>, DatabaseErrors> {
     // we assume that the user has a 'main' playlist
     let conn = Connection::open("main.db")?;
-    let mut stmt = conn.prepare("SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, order_of_playlist, playlist_id
+    let mut stmt = conn.prepare("SELECT title, description, thumbnail, datecreated, songcount, totaltime, isautogen, order_of_playlist, table_offset, playlist_id
         FROM metadata ORDER BY order_of_playlist")?;
     let playlist_obj_iter = stmt.query_map([], |row| {
         Ok(UserPlaylist {
@@ -123,16 +123,21 @@ pub fn get_all_playlists() -> Result<Vec<UserPlaylist>, DatabaseErrors> {
             totaltime: row.get(5)?,
             isautogen: row.get(6)?,
             userorder: row.get(7)?,
-            uniqueid: row.get(8)?,
+            scrollable_offset: iced::widget::scrollable::AbsoluteOffset {
+                x: 0.0,
+                y: row.get(8)?,
+            },
+            uniqueid: row.get(9)?,
         })
     })?;
-    let mut ret_vec = Vec::new();
+    let mut ret_map = HashMap::new();
     for item in playlist_obj_iter {
-        ret_vec.push(item?)
+        let x = item?;
+        _ = ret_map.insert(x.uniqueid.clone(), x);
     }
     drop(stmt);
     conn.close().map_err(|(_, err)| err)?;
-    Ok(ret_vec)
+    Ok(ret_map)
 }
 
 pub fn get_obj_from_uuid(uniqueid: &str) -> Result<PungeMusicObject, DatabaseErrors> {
