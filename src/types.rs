@@ -47,6 +47,7 @@ pub struct UserPlaylist {
     pub totaltime: String, // updated each time a song is added or removed. in seconds
     pub isautogen: bool,
     pub userorder: u16,
+    pub scrollable_offset: iced::widget::scrollable::AbsoluteOffset, // keeps track of where the scrollable position is. we apply it to the primary scrollable
     pub uniqueid: String,
 }
 
@@ -83,8 +84,9 @@ impl UserPlaylist {
             songcount: 0,
             totaltime: "0".to_string(),
             isautogen,
-            // what is the current number of playlists..?
+            // what is the current number of playlists..?, since this is the newest one..
             userorder: crate::db::fetch::get_num_of_playlists(),
+            scrollable_offset: iced::widget::scrollable::AbsoluteOffset::default(),
             uniqueid: Uuid::new_v4().to_string(),
         }
     }
