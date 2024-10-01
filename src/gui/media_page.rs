@@ -9,6 +9,7 @@ use iced::widget::{
 use iced::{Alignment, Element};
 use itertools::Itertools;
 use log::debug;
+use log::info;
 use rusty_ytdl::blocking::Video;
 use rusty_ytdl::{self, VideoOptions};
 
@@ -103,8 +104,9 @@ pub async fn download_content(
     if link.contains("youtube") {
         download_youtube(link.clone(), download_path, mp3_4).await?;
     } else if link.contains("instagram") {
-        // always download mp4...
-        download_insta(link.clone(), download_path).await?;
+        // mp3 will download jpgs, mp4 selected will download videos
+        // maybe this could be more clear...?
+        download_insta(link.clone(), download_path, &mp3_4).await?;
     } else {
         return Err(AppError::InvalidUrlError(
             "Link does not contain 'instagram' or 'youtube'".to_string(),
@@ -150,7 +152,11 @@ async fn download_youtube(
     Ok(format!("{} downloaded successfully!", title))
 }
 
-async fn download_insta(link: String, download_dir: String) -> Result<String, AppError> {
+async fn download_insta(
+    link: String,
+    download_dir: String,
+    mp3_4: &str,
+) -> Result<String, AppError> {
     // we could use the pypi instaloader from cmd to do this ?
     // also, by default, (sort of dumb) it sets the date of the download to the date it was
     // uploaded to insta, so we can rename it near the end to change that..
@@ -180,52 +186,50 @@ async fn download_insta(link: String, download_dir: String) -> Result<String, Ap
     // should probably do some testing for this...
     match process {
         Ok(_) => {
-            debug!("insta download returned ok");
-            // so the filename to move can either be `.jpg` or `.mp4`
-            let jpg_filename = format!("{}.mp4", split_str[4]);
-            let mp4_filename = format!("{}.jpg", split_str[4]);
-            // determine which version we have
-            if std::path::Path::new(&mp4_filename).exists() {
-                let src_file = format!("./-{}/{}", split_str[4], mp4_filename);
-                let dst_file = format!("{}/{}", download_dir, mp4_filename);
-                std::fs::copy(src_file, dst_file).unwrap();
-            } else if std::path::Path::new(&jpg_filename).exists() {
-                let src_file = format!("./-{}/{}", split_str[4], jpg_filename);
-                let dst_file = format!("{}/{}", download_dir, jpg_filename);
-                std::fs::copy(src_file, dst_file).unwrap();
-            } else {
-                // this is the instance where there are multiple posts, and the posts are named: <id>_<number>
-                // i know this can be improved. i dont really like this type of programming :(
-                let dir_iter = std::fs::read_dir(format!("{}/", &download_dir)).unwrap();
-                for (count, path) in dir_iter.enumerate() {
-                    // mildly annoying that each std::fs thing has its own type. why not consolodate it or something...
-                    let name = path.unwrap().file_name().into_string().unwrap();
-                    if name.ends_with(".jpg") || name.ends_with(".mp4") {
-                        println!("{}", format!("./{}/{}_{}", split_str[4], count, name));
-                        debug!(
-                            "insta download iter loop: {}. operating on {:?}",
-                            count, &name
-                        );
-                        std::fs::copy(
-                            format!("./{}/{}_{}", split_str[4], count, name),
-                            format!("{}/{}_{}", &download_dir, count, name),
-                        )
-                        .unwrap();
+            info!("download seemed to work fine");
+            let dir_iter = std::fs::read_dir(format!("{}/", &download_dir)).unwrap();
+            match mp3_4 {
+                ".mp3" => {
+                    debug!(".mp3 detected in the user choice");
+                    for path in dir_iter {
+                        let name = path.unwrap().file_name().into_string().unwrap();
+                        debug!("looking for: {}", &name);
+                        // i guess for the insance of multiple slides,
+                        if name.ends_with(".jpg") {
+                            let src_file = format!("./-{}/{}", split_str[4], &name);
+                            let dst_file = format!("{}/{}", &download_dir, &name);
+                            debug!("moving {} to {}", &src_file, &dst_file);
+                            std::fs::copy(src_file, dst_file).unwrap();
+                        }
                     }
+                    debug!("removing directory!!: ./-{}", split_str[4]);
+                    std::fs::remove_dir_all(format!("./-{}", split_str[4])).unwrap();
+                    return Ok(format!("{} downloaded!!", split_str[4]));
                 }
-            };
-            // put it in the correct location
-            // remove the old directory
-            std::fs::remove_dir_all(format!("./-{}", split_str[4])).unwrap();
-
-            // std::fs::File::set_times(, )
-            // 2. move the mp4 to the correct directory
-            // yadda
-            Ok(link)
+                ".mp4" => {
+                    debug!(".mp4 detected in the user choice");
+                    for path in dir_iter {
+                        let name = path.unwrap().file_name().into_string().unwrap();
+                        // i guess for the insance of multiple slides,
+                        if name.ends_with(".jpg") {
+                            let src_file = format!("./-{}/{}", split_str[4], &name);
+                            let dst_file = format!("{}/{}", &download_dir, &name);
+                            debug!("moving {} to {}", &src_file, &dst_file);
+                            std::fs::copy(src_file, dst_file).unwrap();
+                        }
+                    }
+                    debug!("removing directory!!: ./-{}", split_str[4]);
+                    std::fs::remove_dir_all(format!("./-{}", split_str[4])).unwrap();
+                    return Ok(format!("{} downloaded!!", split_str[4]));
+                }
+                _ => return Err(AppError::FileError("How did we get here?".to_string())),
+            }
         }
-        Err(e) => Err(AppError::FileError(format!(
-            "instaloader error: {:?}. is it on your path!?",
-            e
-        ))),
+        Err(e) => {
+            return Err(AppError::FileError(format!(
+                "instaloader error: {:?}, is it on your path?",
+                e
+            )))
+        }
     }
 }
