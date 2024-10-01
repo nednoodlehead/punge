@@ -31,3 +31,4 @@ iced_core = "0.12.3"  # for the stylin in gui\style\*
 log = "0.4.21"  # stinky crate conflict
 discord-rich-presence = "0.2.3" # this one is better than the others available
 simplelog = "0.12.2"
+once_cell = "1.19.0"
