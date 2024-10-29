@@ -1,6 +1,7 @@
 use crate::db::insert::add_to_main;
 use crate::types::{AppError, DatabaseErrors, PungeMusicObject, YouTubeData};
 use crate::utils::sep_video;
+use crate::yt::cmd;
 use itertools::Itertools;
 use log::{debug, error, info, warn};
 use regex::Regex;
@@ -257,7 +258,14 @@ async fn create_punge_obj(
         return Err(AppError::DatabaseError(DatabaseErrors::FileExistsError));
     }
     // keep in mind that this will add to db whether it fails or not. which is intended
-    download_to_punge(vid.clone(), mp3_dir, jpg_dir.clone(), mp3_name.clone()).await?;
+    // maybe we should have the id & link passed around a bit more.. properly?
+    download_to_punge(
+        mp3_name.clone(),
+        jpg_file.clone(),
+        &vid_id,
+        &vid.get_video_url(),
+    )
+    .await?;
     info!("The video has downloaded, it would've failed by now");
     Ok(PungeMusicObject {
         title,
@@ -291,81 +299,24 @@ pub fn clean_inputs_for_win_saving(to_check: String) -> String {
 }
 
 async fn download_to_punge(
-    vid: Video,
-    mp3_path: String,
-    jpg_path: String,
-    new_mp3_name: String,
+    final_mp3_name: String,
+    final_jpg_name: String,
+    id: &str,
+    url: &str,
 ) -> Result<(), AppError> {
-    // let old_name = format!("{}{}.webm", mp3_path.clone(), vid.video_details().video_id);
-    // first we downlaod it as '.mp4' then ffmpeg it over to mp3
-    let id = vid.get_basic_info().unwrap();
-    let potential_path = format!("./img/temp/{}", &id.video_details.video_id);
-    if std::path::Path::new(&potential_path).exists() {
-        // copy the file instead of downloading. we check the tmp directory to see if it is there
-        info!(
-            "We are copying from our temp storage: {}. this was searched?",
-            &jpg_path
-        );
-        std::fs::copy(potential_path, jpg_path).unwrap();
-    } else {
-        crate::utils::image::get_raw_thumbnail_from_link(&id.video_details.video_id, &jpg_path)
-            .unwrap();
-    };
-    let mp4_name = format!(
-        "{}{}.mp4",
-        mp3_path.clone(),
-        id.video_details.video_id.clone()
-    ); // can sometimes be .webm??
-    let mp3_name = format!(
-        "{}{}.mp3",
-        mp3_path.clone(),
-        id.video_details.video_id.clone()
-    );
-    let path_download = std::path::Path::new(mp4_name.as_str());
-    debug!("mp3 name: {}  mp4_name: {}", &mp3_name, &mp4_name);
     // we assume that the inputs are sanitized by "clean_input_for_win_saving"
     // the unwrap can fail sometimes. so we loop 5 times, sleeping for 3 seconds inbetween so it will try again
     info!("startin download!");
     let before = std::time::Instant::now();
-    match vid.download(path_download) {
+    match cmd::cmd_download(url, &final_mp3_name, &final_jpg_name, id) {
         Ok(_t) => {
             info!("Download finsihed in: {:.2?}", before.elapsed());
-            // convert the old file to (webm) to mp3 and rename
-            let x = std::process::Command::new("ffmpeg.exe")
-                .args([
-                    "-i",
-                    mp4_name.as_str(),
-                    "-vn",
-                    "-c:a",
-                    "libmp3lame",
-                    "-b:a",
-                    "192k",
-                    new_mp3_name.as_str(),
-                ])
-                .output();
-            match x {
-                Ok(_t) => {
-                    info!("File converted successfully, removing now...");
-                    match std::fs::remove_file(mp4_name.clone()) {
-                        Ok(_t) => {
-                            Ok(()) // if the ffmpeg operation goes well and he file is removed
-                        }
-                        Err(e) => {
-                            error!("File failed to be removed {}", &mp4_name);
-                            Err(AppError::FileError(format!("{:?}", e))) // if the ffmpeg operation works, and the file is not removed
-                        }
-                    }
-                }
-                Err(e) => {
-                    error!("Ffmpeg failed: {:?}", &e);
-                    Err(AppError::FfmpegError(e.to_string())) // if the ffmpeg operation fails
-                }
-            }
+            Ok(())
         }
         Err(e) => {
             error!("Download failed! {:?}", &e);
 
-            Err(AppError::YoutubeError(format!("Error downloading {}", e)))
+            Err(AppError::YoutubeError(format!("Error downloading {:?}", e)))
         }
     }
 }

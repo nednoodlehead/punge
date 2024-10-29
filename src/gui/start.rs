@@ -468,6 +468,7 @@ impl App {
                     Ok(t) => {
                         // if we are listening to main, update the playlist with the song we just added
                         if self.current_song.load().playlist == "main" {
+                            info!("we are listening to main, refresh...");
                             self.sender
                                 .as_mut()
                                 .unwrap()
@@ -1094,11 +1095,19 @@ impl App {
                 Command::none()
             }
             ProgramCommands::MoveSongUp(uuid, position) => {
-                if position != 0 {
-                    move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
-                    self.refresh_playlist();
-                } else {
-                    warn!("MoveSongUp called on song in position 0!")
+                // for sufficient 'bulk' support, we must check that
+                // no song is at the top (so we dont go into negative numbers)
+                // also, we need to know how many songs are selected. so the song that is 'above' (numerically, it is one below the last selected)
+                // knows what number it should become.
+                // so if 1 & 2 are selected to move up, we should inform #0 that there are 2 selected total, and when (1, 2) -> (0, 1). #0 -> #2
+                if self.selected_songs.is_empty() {
+                    info!("we are moving up, and we have nothing selected");
+                    if position != 0 {
+                        move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+                        self.refresh_playlist();
+                    } else {
+                        warn!("MoveSongUp called on song in position 0!")
+                    }
                 }
                 Command::none()
             }
@@ -1277,6 +1286,7 @@ impl App {
 
 impl App {
     fn refresh_playlist(&mut self) {
+        info!("refreshing playlists...");
         // to avoid unnecessary calls to the db, we need to store the offset in self.user_playlists
         if self.viewing_playlist.to_lowercase() == "main" {
             let new = get_all_main().unwrap();
