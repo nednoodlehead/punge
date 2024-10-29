@@ -26,7 +26,7 @@ pub fn create_playlist(new_playlist: UserPlaylist) -> Result<(), DatabaseErrors>
     info!("inserting, playlist does not exist");
     conn.execute(
         "INSERT INTO metadata (title, description, thumbnail, datecreated,
-        songcount, totaltime, isautogen, order_of_playlist, playlist_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        songcount, totaltime, isautogen, table_offset, order_of_playlist, playlist_id) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
         params![
             new_playlist.title,
             new_playlist.description,
@@ -35,6 +35,7 @@ pub fn create_playlist(new_playlist: UserPlaylist) -> Result<(), DatabaseErrors>
             new_playlist.songcount,
             new_playlist.totaltime,
             new_playlist.isautogen,
+            0.0,
             new_playlist.userorder,
             new_playlist.uniqueid
         ],
