@@ -469,6 +469,7 @@ impl App {
                         // if we are listening to main, update the playlist with the song we just added
                         if self.current_song.load().playlist == "main" {
                             info!("we are listening to main, refresh...");
+                            self.refresh_playlist();
                             self.sender
                                 .as_mut()
                                 .unwrap()
