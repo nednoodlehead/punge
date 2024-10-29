@@ -22,6 +22,8 @@ New Punge brings on multiple improvements:
 
 3. git on path (only technically needed to follow the instructions, you can still download .zip from github)
 
+4. `yt-dlp.exe` on path (find the exe [here](https://github.com/yt-dlp/yt-dlp/releases) for windows. For linux, most package managers will have it available (sudo apt install yt-dlp)
+
 # Build Instructions
 
 Ubuntu specific:
