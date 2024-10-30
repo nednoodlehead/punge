@@ -108,6 +108,7 @@ where
     ) -> iced::advanced::graphics::core::event::Status {
         match event {
             Event::Mouse(mouse::Event::CursorMoved { position }) => {
+                let st: &mut RowState = self.tree.state.downcast_mut();
                 // need to get the bottom button...
                 // this makes me upset
                 // this is compete garbage and I know it. i wish iced had more docs on this stuff. all of the iced_aw
@@ -115,36 +116,78 @@ where
                 // should it not be: parent widget is aware of all children, and all children reference the tree?
                 // the tree is comprised of the widgets (and sub widgets)
                 // .expand is our padding here btw
-                let lc = layout.children().next().unwrap().bounds().expand(10.0);
-                let top_left_corner = lc.y;
-                let y_spot = top_left_corner + lc.height - 40.0;
-                let x_spot = lc.width + lc.x - 10.0;
-                let st: &mut RowState = self.tree.state.downcast_mut();
-                let mut top_of_btn = lc.position();
-                top_of_btn.y = top_of_btn.y + lc.height - 40.0;
-                // aprox size of the button at the bottom
-                let add_to_area = iced::Rectangle::new(top_of_btn, Size::new(80.0, 37.0));
-                let mut overlay_y = 0.0;
-                for _ in self.uuid_list.iter() {
-                    // size of the menu.. depends on existing buttons
-                    overlay_y += 42.5
+                // no invert is normal!
+                if !st.invert_bar {
+                    let lc = layout.children().next().unwrap().bounds().expand(10.0);
+                    let top_left_corner = lc.y;
+                    let y_spot = top_left_corner + lc.height - 40.0;
+                    let x_spot = lc.width + lc.x - 10.0;
+                    let mut top_of_btn = lc.position();
+                    top_of_btn.y = top_of_btn.y + lc.height - 40.0;
+                    // aprox size of the button at the bottom
+                    let add_to_area = iced::Rectangle::new(top_of_btn, Size::new(80.0, 37.0));
+                    let mut overlay_y = 0.0;
+                    for _ in self.uuid_list.iter() {
+                        // size of the menu.. depends on existing buttons
+                        overlay_y += 42.5
+                    }
+                    let mut top_overlay = top_of_btn.clone();
+                    top_overlay.x += 79.0;
+                    let overlay_area =
+                        iced::Rectangle::new(top_overlay, Size::new(150.0, overlay_y));
+                    if add_to_area.contains(position) || overlay_area.contains(position) {
+                        // we should show the sub menu
+                        st.sub_menu_spot = Point::new(x_spot, y_spot);
+                        st.show_sub_menu = true;
+                    } else if !lc.contains(position) {
+                        // we are outside of the menus, stop showing them
+                        st.show_bar = false;
+                        st.show_sub_menu = false;
+                    } else {
+                        // we are inside the menus, but not over the overlay area / bottom button, show just the menu!
+                        st.show_sub_menu = false;
+                    }
+                    return iced::event::Status::Captured;
                 }
-                let mut top_overlay = top_of_btn.clone();
-                top_overlay.x += 79.0;
-                let overlay_area = iced::Rectangle::new(top_overlay, Size::new(150.0, overlay_y));
-                if add_to_area.contains(position) || overlay_area.contains(position) {
-                    // we should show the sub menu
-                    st.sub_menu_spot = Point::new(x_spot, y_spot);
-                    st.show_sub_menu = true;
-                } else if !lc.contains(position) {
-                    // we are outside of the menus, stop showing them
-                    st.show_bar = false;
-                    st.show_sub_menu = false;
-                } else {
-                    // we are inside the menus, but not over the overlay area / bottom button, show just the menu!
-                    st.show_sub_menu = false;
+                // the bar is inverted because of where the cursor is in the viewport. so we invert it...
+                else {
+                    println!("cursor is: {:?}", position);
+                    let lc = layout.children().next().unwrap().bounds().expand(10.0);
+                    let top_left_corner = lc.y;
+                    let open_hover_area = iced::Rectangle::new(
+                        iced::Point::new(lc.x, top_left_corner),
+                        Size::new(120.0, 37.0),
+                    );
+                    let mut overlay_y = 0.0;
+                    for _ in self.uuid_list.iter() {
+                        overlay_y += 42.5
+                    }
+                    let hover_menu_x = lc.x + 79.0;
+
+                    let overlay_area = iced::Rectangle::new(
+                        Point::new(hover_menu_x + 30.0, top_left_corner),
+                        Size::new(150.0, overlay_y),
+                    );
+
+                    if open_hover_area.contains(position) || overlay_area.contains(position) {
+                        println!(
+                            "in this.. {} {} {:?} {:?}",
+                            open_hover_area.contains(position),
+                            overlay_area.contains(position),
+                            open_hover_area,
+                            lc.y,
+                        );
+                        st.sub_menu_spot = Point::new(lc.x + 120.0, top_left_corner + 10.0); // ???
+                        st.show_sub_menu = true;
+                    } else if !lc.contains(position) {
+                        st.show_bar = false;
+                        st.show_sub_menu = false;
+                    } else {
+                        st.show_sub_menu = false;
+                    }
+
+                    return iced::event::Status::Captured;
                 }
-                return iced::event::Status::Captured;
             }
             _ => self.overlay.as_widget_mut().on_event(
                 &mut self.tree.children[1],

@@ -21,6 +21,7 @@ pub fn create_whole_menu<'a, Message, Theme, Renderer>(
     edit_song_msg: fn(Option<String>) -> Message,
     song_uuid: String,
     row_num: usize,
+    inverted: bool,
 ) -> Element<'a, Message, Theme, Renderer>
 where
     <Theme as iced::widget::button::Catalog>::Class<'a>:
@@ -29,36 +30,69 @@ where
     Theme: 'a + button::Catalog + iced::widget::text::Catalog + iced::widget::button::Catalog,
     Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
-    let col = column![
-        button(text("Play!"))
-            .on_press((play_msg)(song_uuid.clone()))
-            .style(|_t, status| punge_button_style(status))
-            .width(110),
-        button(text("Edit"))
-            .on_press((edit_song_msg)(Some(song_uuid.clone())))
-            .style(|_t, status| punge_button_style(status))
-            .width(110),
-        button(text("Quickswap"))
-            .on_press((quick_swap)(song_uuid.clone()))
-            .style(|_t, status| punge_button_style(status))
-            .width(110),
-        button(text("Move up"))
-            .on_press((move_song_up_msg)(song_uuid.clone(), row_num))
-            .style(|_t, status| punge_button_style(status))
-            .width(110),
-        button(text("Move down"))
-            .on_press((move_song_down_msg)(song_uuid.clone(), row_num))
-            .style(|_t, status| punge_button_style(status))
-            .width(110),
-        button(text("Delete!"))
-            .on_press((delete_msg)(song_uuid.clone()))
-            .style(|_t, status| punge_button_style(status))
-            .width(110),
-        button(text("Add to..."))
-            .style(|_t, status| punge_button_style(status))
-            .width(110)
-    ];
-    col.into()
+    if !inverted {
+        let col = column![
+            button(text("Play!"))
+                .on_press((play_msg)(song_uuid.clone()))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Edit"))
+                .on_press((edit_song_msg)(Some(song_uuid.clone())))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Quickswap"))
+                .on_press((quick_swap)(song_uuid.clone()))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Move up"))
+                .on_press((move_song_up_msg)(song_uuid.clone(), row_num))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Move down"))
+                .on_press((move_song_down_msg)(song_uuid.clone(), row_num))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Delete!"))
+                .on_press((delete_msg)(song_uuid.clone()))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Add to..."))
+                .style(|_t, status| punge_button_style(status))
+                .width(110)
+        ];
+        col.into()
+    } else {
+        let col = column![
+            button(text("Add to..."))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Delete!"))
+                .on_press((delete_msg)(song_uuid.clone()))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Move down"))
+                .on_press((move_song_down_msg)(song_uuid.clone(), row_num))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Move up"))
+                .on_press((move_song_up_msg)(song_uuid.clone(), row_num))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Quickswap"))
+                .on_press((quick_swap)(song_uuid.clone()))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Edit"))
+                .on_press((edit_song_msg)(Some(song_uuid.clone())))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+            button(text("Play!"))
+                .on_press((play_msg)(song_uuid.clone()))
+                .style(|_t, status| punge_button_style(status))
+                .width(110),
+        ];
+        col.into()
+    }
 }
 
 pub fn create_playlist_button_menu<'a, Message, Theme, Renderer>(

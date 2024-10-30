@@ -31,6 +31,7 @@ where
         fn(Option<String>) -> Message,
         String,
         usize,
+        bool,
     ) -> Element<'a, Message, Theme, Renderer>,
     hover_menu: fn(
         fn(String, String) -> Message,
@@ -80,7 +81,7 @@ where
         >,
     {
         // remove 'main'
-        uuid_list.remove(0);
+        uuid_list.remove(uuid_list.iter().position(|r| r.0 == "main").unwrap());
         let mut rowdata = row![button(text(row_num.to_string()))
             .on_press((play_msg)(song_uuid.clone()))
             .width(30)
@@ -144,6 +145,8 @@ where
     // 3. the hover-button. so we can check if the cursor is above it, we show the submenu
     // 4. the sub-menu. for same reasons ^^
     fn children(&self) -> Vec<Tree> {
+        let state = self.state();
+        let st: &RowState = state.downcast_ref();
         vec![
             Tree::new(&self.rowdata),
             Tree::new((&self.row_overlay)(
@@ -155,6 +158,7 @@ where
                 self.edit_song_msg,
                 self.song_uuid.clone(),
                 0,
+                st.invert_bar,
             )),
             Tree::new((self.hover_menu)(
                 self.add_to_msg,
@@ -178,6 +182,7 @@ where
             show_sub_menu: false,
             sub_menu_spot: Point::default(),
             is_selected: false,
+            invert_bar: false,
         })
     }
 
@@ -278,6 +283,7 @@ where
                     self.edit_song_msg,
                     self.song_uuid.clone(),
                     self.row_num,
+                    st.invert_bar,
                 )
                 .into(),
                 self.hover_menu.clone(),
@@ -315,6 +321,13 @@ where
                     let actual_y_coord = (def_cursor.y - viewport.y) + 100.0; // 30 = approv def. length of button
                     def_cursor.y = actual_y_coord;
                     st.cursor_pos = def_cursor;
+                    println!("cursor here: {:?}", def_cursor);
+                    if def_cursor.y > 250.0 {
+                        st.invert_bar = true;
+                        st.cursor_pos.y -= 190.0;
+                    } else {
+                        st.invert_bar = false;
+                    }
                     iced::event::Status::Captured
                 } else {
                     st.show_bar = false;
@@ -415,4 +428,6 @@ pub struct RowState {
     pub show_sub_menu: bool,
     pub sub_menu_spot: Point,
     pub is_selected: bool,
+    // invert bar is if the cursor is on the lower half of the viewport, we will invert it, so it can all display
+    pub invert_bar: bool,
 }
