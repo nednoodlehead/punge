@@ -82,7 +82,7 @@ where
     {
         // remove 'main'
         uuid_list.remove(uuid_list.iter().position(|r| r.0 == "main").unwrap());
-        let mut rowdata = row![button(text(row_num.to_string()))
+        let mut rowdata = row![button(text((row_num + 1).to_string()))
             .on_press((play_msg)(song_uuid.clone()))
             .width(30)
             .clip(true)

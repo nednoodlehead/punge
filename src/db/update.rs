@@ -1,5 +1,5 @@
 use crate::types::{DatabaseErrors, UserPlaylist};
-use log::info;
+use log::{debug, info};
 use rusqlite::{params, Connection};
 
 pub fn update_playlist(
@@ -179,8 +179,10 @@ pub fn move_song_up_one(
         let trans = conn.transaction()?;
         let one_below = position - 1;
         // sets the selected one correctly. moves the target's number up (0 -> 1)
+        debug!("moving {} -> {}", position, one_below);
         trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND user_playlist_order = ?", params![position, &playlist_uuid, one_below])?;
         // should set the other
+        debug!("and now setting id: {} -> {}", &song_uuid, one_below);
         trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND song_id = ?", params![one_below, playlist_uuid, song_uuid])?;
         trans.commit()?;
     } else {
@@ -210,8 +212,10 @@ pub fn move_song_down_one(
     if playlist_uuid != "main" {
         let one_above = position + 1;
         let trans = conn.transaction()?;
+        debug!("moving on playlist: {} -> {}", position, one_above);
         trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND user_playlist_order = ?", params![position, &playlist_uuid, one_above])?;
         // should set the other
+        debug!("and now setting id: {} -> {}", &song_uuid, one_above);
         trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND song_id = ?", params![one_above, playlist_uuid, song_uuid])?;
         trans.commit()?;
     } else {
@@ -285,5 +289,82 @@ pub fn update_offset(playlistid: &str, offset: f32) -> Result<(), DatabaseErrors
         params![offset, playlistid],
     )?;
     conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}
+
+struct Validate {
+    title: String,
+    songcount: usize,
+    totaltime: String,
+    playlist_id: String,
+}
+
+pub fn validate_playlist_data() -> Result<(), DatabaseErrors> {
+    // first we fetch the values, and log them. afterwards, we log the new values, so the user can check and see if something changed
+    let conn = Connection::open("main.db")?;
+    let mut stmt = conn.prepare("SELECT title, songcount, totaltime, playlist_id FROM metadata")?;
+    let iter_ent = stmt.query_map(params![], |row| {
+        Ok(Validate {
+            title: row.get(0)?,
+            songcount: row.get(1)?,
+            totaltime: row.get(2)?,
+            playlist_id: row.get(3)?,
+        })
+    })?;
+    for entry in iter_ent {
+        let it = entry.unwrap();
+        info!(
+            "checking before the updates {}: {} {}",
+            it.title, it.songcount, it.totaltime
+        );
+        if it.title != "Main" {
+            let mut stmt2 = conn.prepare("SELECT COUNT(title) FROM metadata WHERE title = ?")?;
+            let count: i64 = stmt2.query_row([&it.title], |row| row.get(0))?;
+            conn.execute(
+                "UPDATE metadata SET songcount =? WHERE playlist_id = ?",
+                params![count, &it.playlist_id],
+            )?;
+            info!(
+                "count of {} was {} and is now {}",
+                &it.title, it.songcount, count
+            );
+            let mut stmt3 =
+                conn.prepare("SELECT length FROM main JOIN playlist_relations ON uniqueid = song_id WHERE playlist_id = ?")?;
+            let song_total =
+                stmt3.query_map(params![it.playlist_id], |row| Ok(row.get::<_, u16>(0)?))?;
+            let mut complete_song_total = 0;
+            let mut sub_count = 0;
+            for song in song_total {
+                complete_song_total += song.unwrap();
+                sub_count += 1;
+            }
+            info!(
+                "total song length of {} is {} ({} total len)",
+                it.title, complete_song_total, sub_count
+            );
+            conn.execute(
+                "UPDATE metadata SET (songcount, totaltime) = (?, ?) WHERE playlist_id = ?",
+                params![sub_count, complete_song_total, it.playlist_id],
+            )?;
+        } else {
+            // this is just for main
+            let mut main_stmt = conn.prepare("SELECT length FROM main")?;
+            let items = main_stmt.query_map(params![], |row| Ok(row.get::<usize, i64>(0)?))?;
+            let mut total_time = 0;
+            let mut count = 0;
+            for x in items.into_iter() {
+                total_time += x.unwrap();
+                count += 1;
+            }
+            info!(
+                "main appears to have len of: {} and total of {}",
+                count, total_time
+            );
+            conn.execute(
+                "UPDATE metadata SET (songcount, totaltime) = (?, ?) WHERE playlist_id = \"main\"",
+                params![count, total_time],
+            )?;
+        };
+    }
     Ok(())
 }

@@ -320,9 +320,11 @@ impl SettingPage {
                         .height(75)
                 ]
                 .padding(10),
-                row![button(text("Save!"))
+                row![button(text("Save user settings!"))
                     .on_press(ProgramCommands::SaveConfig)
                     .style(|_t, status| punge_button_style(status))],
+                row![button(text("Validate songcount & time"))
+                    .on_press(ProgramCommands::ValidatePlaylistData)],
             ]
             .spacing(10.0),
         ))

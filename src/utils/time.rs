@@ -43,3 +43,22 @@ pub fn time_to_sec(time: &str) -> u32 {
     }
     val
 }
+
+pub fn total_time_conv(og: &str) -> String {
+    let int: usize = og.parse().unwrap();
+    let hours = int / 3600; // how many hours are in our seconds
+    let no_hrs = int - (hours * 3600); // need to remove the hours...
+    let minutes = no_hrs / 60;
+    let seconds = no_hrs % 60;
+    let hour_str = if hours == 0 {
+        String::new()
+    } else {
+        format!("{:02} hours ", hours)
+    };
+    let min_str = if hours > 0 && minutes < 10 {
+        format!("{:02} minutes ", minutes)
+    } else {
+        format!("{} minutes ", minutes)
+    };
+    format!("{}{}{:02} seconds", hour_str, min_str, seconds)
+}

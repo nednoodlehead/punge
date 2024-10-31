@@ -876,17 +876,15 @@ impl App {
             loop {
                 // every 5 seconds, update the song. maybe this will be changed at some point to include the
                 if !obj.load().is_playing {
-                    client
-                        .set_activity(
-                            activity::Activity::new()
-                                .state(
-                                    config.load().idle_strings[rand::thread_rng()
-                                        .gen_range(0..config.load().idle_strings.len())]
-                                    .as_str(),
-                                )
-                                .assets(punge_img.clone()),
-                        )
-                        .unwrap();
+                    let _ = client.set_activity(
+                        activity::Activity::new()
+                            .state(
+                                config.load().idle_strings[rand::thread_rng()
+                                    .gen_range(0..config.load().idle_strings.len())]
+                                .as_str(),
+                            )
+                            .assets(punge_img.clone()),
+                    );
                     loop {
                         // loop so the idle message doesn't change repeatedly...
                         if obj.load().is_playing {
@@ -898,14 +896,12 @@ impl App {
                 } else {
                     let tmp = obj.load();
                     let (title, artist) = (tmp.title.clone(), tmp.author.clone());
-                    client
-                        .set_activity(
-                            activity::Activity::new()
-                                .state(title.as_str())
-                                .details(artist.as_str())
-                                .assets(punge_img.clone()),
-                        )
-                        .unwrap();
+                    let _ = client.set_activity(
+                        activity::Activity::new()
+                            .state(title.as_str())
+                            .details(artist.as_str())
+                            .assets(punge_img.clone()),
+                    );
                 }
                 async_std::task::sleep(std::time::Duration::from_secs(5)).await;
             }

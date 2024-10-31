@@ -77,6 +77,7 @@ pub enum ProgramCommands {
     DeleteSong(String), // do this interface.. probably want some type of confirmation.. also the playlist is pulled from self.active_playlist or whatever its called
     SelectSong(usize, bool, String), // row, is_selected, uuid of song
     OnScroll(iced::widget::scrollable::Viewport),
+    ValidatePlaylistData, // button to click in settings that re-checks the values of each playlists and sets them to their correct value
 }
 
 #[derive(Debug, Copy, Clone)]

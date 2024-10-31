@@ -215,7 +215,6 @@ impl App {
             ProgramCommands::UpdateSender(sender) => {
                 info!("Sender sent!");
                 self.sender = sender;
-                println!("tryna scroll to: {:?}", &self.current_table_offset);
                 iced::widget::scrollable::scroll_to(
                     SCROLLABLE_ID.clone(),
                     self.current_table_offset,
@@ -294,10 +293,6 @@ impl App {
                 Command::none()
             }
             ProgramCommands::ShuffleToggle => {
-                println!(
-                    "main offset: {}",
-                    &self.user_playlists.get("main").unwrap().scrollable_offset.y
-                );
                 self.shuffle = !self.shuffle;
                 self.sender
                     .as_mut()
@@ -582,10 +577,6 @@ impl App {
                     .get_mut(&self.viewing_playlist)
                     .unwrap()
                     .scrollable_offset = self.current_table_offset;
-                println!(
-                    "Setting offset for: {} \n@:{}",
-                    &self.viewing_playlist, self.current_table_offset.y
-                );
                 crate::db::update::update_offset(
                     &self.viewing_playlist,
                     self.current_table_offset.y,
@@ -601,8 +592,20 @@ impl App {
                 Command::none()
             }
             ProgramCommands::AddToPlaylist(playlist_id, song_id) => {
-                crate::db::insert::add_to_playlist(&playlist_id, &song_id).unwrap();
-                self.user_playlists.get_mut(&playlist_id).unwrap().songcount += 1;
+                println!("contents of the list.. {:?}", self.selected_songs);
+                if self.selected_songs.is_empty() {
+                    crate::db::insert::add_to_playlist(&playlist_id, &song_id).unwrap();
+                    self.user_playlists.get_mut(&playlist_id).unwrap().songcount += 1;
+                } else {
+                    for (row_num, id) in self.selected_songs.iter() {
+                        info!("adding {} to {}", &id, &playlist_id);
+                        crate::db::insert::add_to_playlist(&playlist_id, &id).unwrap();
+                        self.user_playlists.get_mut(&playlist_id).unwrap().songcount += 1;
+                    }
+                    // if we had a way to directly turn off the blue parts, that would be handy!
+                    self.refresh_playlist();
+                    self.selected_songs.clear();
+                }
                 // adding to playlist should update the current playlist IF and only IF the playlist in question is being played rn
                 // otherwise it will update as normal when it is switched to
                 if self.current_song.load().playlist == playlist_id {
@@ -1156,11 +1159,15 @@ impl App {
                 // on a playlist switch, we write it into self.user_playlists
                 // self.viewing_playlist
                 self.current_table_offset = offset.absolute_offset();
-                println!(
-                    "Setting the offset: {} for \n{}\n",
-                    &offset.absolute_offset().y,
-                    self.viewing_playlist
-                );
+                Command::none()
+            }
+            ProgramCommands::ValidatePlaylistData => {
+                match crate::db::update::validate_playlist_data() {
+                    Ok(_) => {
+                        info!("The validation has completed!!")
+                    }
+                    Err(e) => warn!("Db validation error: {:?}", e),
+                }
                 Command::none()
             }
         }
@@ -1217,7 +1224,12 @@ impl App {
             .padding(5)
             .align_items(iced::Alignment::End)
             .spacing(25),
-            table_cont
+            table_cont,
+            text(format!(
+                "{} Songs ({})",
+                active_playlist.songcount,
+                crate::utils::time::total_time_conv(&active_playlist.totaltime)
+            )),
         ];
 
         let main_page_2 = container(column![

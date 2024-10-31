@@ -151,7 +151,6 @@ where
                 }
                 // the bar is inverted because of where the cursor is in the viewport. so we invert it...
                 else {
-                    println!("cursor is: {:?}", position);
                     let lc = layout.children().next().unwrap().bounds().expand(10.0);
                     let top_left_corner = lc.y;
                     let open_hover_area = iced::Rectangle::new(
@@ -170,13 +169,6 @@ where
                     );
 
                     if open_hover_area.contains(position) || overlay_area.contains(position) {
-                        println!(
-                            "in this.. {} {} {:?} {:?}",
-                            open_hover_area.contains(position),
-                            overlay_area.contains(position),
-                            open_hover_area,
-                            lc.y,
-                        );
                         st.sub_menu_spot = Point::new(lc.x + 120.0, top_left_corner + 10.0); // ???
                         st.show_sub_menu = true;
                     } else if !lc.contains(position) {
