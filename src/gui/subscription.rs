@@ -871,7 +871,12 @@ impl App {
                 Ok(_) => {
                     info!("Discord client connected successfully")
                 }
-                Err(e) => warn!("Discord client not connected: {:?}", e),
+                Err(e) => {
+                    warn!("Discord client not connected: {:?}\nWe will continue to retry in the background...", e);
+                    while client.connect().is_err() {
+                        std::thread::sleep(std::time::Duration::from_secs(9))
+                    }
+                }
             }
             loop {
                 // every 5 seconds, update the song. maybe this will be changed at some point to include the
