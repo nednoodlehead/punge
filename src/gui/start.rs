@@ -603,8 +603,6 @@ impl App {
                         self.user_playlists.get_mut(&playlist_id).unwrap().songcount += 1;
                     }
                     // if we had a way to directly turn off the blue parts, that would be handy!
-                    self.refresh_playlist();
-                    self.selected_songs.clear();
                 }
                 // adding to playlist should update the current playlist IF and only IF the playlist in question is being played rn
                 // otherwise it will update as normal when it is switched to
@@ -615,6 +613,8 @@ impl App {
                         .send(PungeCommand::ChangePlaylist(playlist_id.clone()))
                         .unwrap();
                 };
+                self.refresh_playlist();
+                self.selected_songs.clear();
                 Command::none()
             }
             ProgramCommands::DeleteSong(uuid) => {
@@ -643,7 +643,7 @@ impl App {
                     }
                 } else {
                     if self.selected_songs.is_empty() {
-                        match delete_from_playlist(uuid.clone(), self.viewing_playlist.clone()) {
+                        match delete_from_playlist(&uuid, &self.viewing_playlist) {
                             Ok(t) => {
                                 info!("Success removing {:?} from playlist", t)
                             }
@@ -653,10 +653,7 @@ impl App {
                         }
                     } else {
                         for (_, songid) in self.selected_songs.iter() {
-                            match delete_from_playlist(
-                                songid.clone(),
-                                self.viewing_playlist.clone(),
-                            ) {
+                            match delete_from_playlist(&songid, &self.viewing_playlist) {
                                 Ok(t) => {
                                     info!("Success removing {:?} from playlist", &songid)
                                 }
@@ -668,6 +665,7 @@ impl App {
                     }
                 }
                 self.refresh_playlist();
+                self.selected_songs.clear();
                 Command::none()
             }
             ProgramCommands::CreateBackup => {

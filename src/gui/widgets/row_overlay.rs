@@ -107,6 +107,10 @@ where
         shell: &mut iced::advanced::Shell<'_, Message>,
     ) -> iced::advanced::graphics::core::event::Status {
         match event {
+            // ALSO: we are fixing #82 by refreshing the playlist (self.refresh_playlist() ) every time we create a message from that menu
+            // so addtoplaylist, Delete, Quickswap, move up & down
+            // it is sort of a hackjob, and to the 3 people worldwide reading this, if you want to, you are very welcome to make the menu
+            // close in a different manner. I'm not sure how else to do it...
             Event::Mouse(mouse::Event::CursorMoved { position }) => {
                 let st: &mut RowState = self.tree.state.downcast_mut();
                 // need to get the bottom button...

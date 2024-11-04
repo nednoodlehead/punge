@@ -54,16 +54,16 @@ pub fn delete_from_uuid(uniqueid: &str) -> Result<(), DatabaseErrors> {
     Ok(())
 }
 
-pub fn delete_from_playlist(uniqueid: String, playlistid: String) -> Result<(), DatabaseErrors> {
+pub fn delete_from_playlist(uniqueid: &str, playlistid: &str) -> Result<(), DatabaseErrors> {
     let mut conn = Connection::open("main.db")?;
     let trans = conn.transaction()?;
     trans.execute(
         "DELETE FROM playlist_relations WHERE playlist_id = ? AND song_id = ?",
-        params![&playlistid, &uniqueid],
+        params![playlistid, uniqueid],
     )?;
     trans.execute(
         "UPDATE metadata SET songcount = songcount -1 WHERE playlist_id = ?",
-        params![&playlistid],
+        params![playlistid],
     )?;
     trans.execute(
         "UPDATE metadata SET totaltime = totaltime - (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?",
