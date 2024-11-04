@@ -82,6 +82,7 @@ where
     {
         // remove 'main'
         uuid_list.remove(uuid_list.iter().position(|r| r.0 == "main").unwrap());
+        //
         let mut rowdata = row![button(text((row_num + 1).to_string()))
             .on_press((play_msg)(song_uuid.clone()))
             .width(30)
@@ -321,7 +322,6 @@ where
                     let actual_y_coord = (def_cursor.y - viewport.y) + 100.0; // 30 = approv def. length of button
                     def_cursor.y = actual_y_coord;
                     st.cursor_pos = def_cursor;
-                    println!("cursor here: {:?}", def_cursor);
                     if def_cursor.y > 250.0 {
                         st.invert_bar = true;
                         st.cursor_pos.y -= 190.0;

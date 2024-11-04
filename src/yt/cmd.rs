@@ -7,7 +7,7 @@
 // and yt-dlp.exe has like 1000 issues created within 10 seconds if the api changes
 use crate::types::AppError;
 use log::{debug, info, warn};
-use std::process::{Command, Stdio};
+use std::process::Command;
 
 pub fn cmd_download(
     link: &str,
@@ -63,6 +63,7 @@ pub fn cmd_download(
                     debug!("copying {} to {}", &old_jpg, &jpg_full_path);
                     // std::fs::File::create(&old_jpg).unwrap();
                     std::fs::copy(&old_jpg, jpg_full_path).unwrap();
+                    // cant fail if the one above doesn't
                     std::fs::remove_file(old_jpg).unwrap();
                     return Ok("Download and convert appears to be successful".to_string());
                 }

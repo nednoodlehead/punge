@@ -620,21 +620,50 @@ impl App {
             ProgramCommands::DeleteSong(uuid) => {
                 // should ask user if they are sure ?
                 if self.viewing_playlist == "main" {
-                    match delete_record_and_file(&uuid) {
-                        Ok(t) => {
-                            info!("Success removing {:?} from main", t);
+                    if self.selected_songs.is_empty() {
+                        match delete_record_and_file(&uuid) {
+                            Ok(t) => {
+                                info!("Success removing {:?} from main", t);
+                            }
+                            Err(e) => {
+                                error!("Could not remove from main: {:?}", e);
+                            }
                         }
-                        Err(e) => {
-                            error!("Could not remove from main: {:?}", e);
+                    } else {
+                        for (count, songid) in self.selected_songs.iter() {
+                            match delete_record_and_file(&songid) {
+                                Ok(t) => {
+                                    info!("Success removing {:?} from main (bulk)", t);
+                                }
+                                Err(e) => {
+                                    error!("Could not remove from main: {:?} (bulk)", e);
+                                }
+                            }
                         }
                     }
                 } else {
-                    match delete_from_playlist(uuid.clone(), self.viewing_playlist.clone()) {
-                        Ok(t) => {
-                            info!("Success removing {:?} from playlist", t)
+                    if self.selected_songs.is_empty() {
+                        match delete_from_playlist(uuid.clone(), self.viewing_playlist.clone()) {
+                            Ok(t) => {
+                                info!("Success removing {:?} from playlist", t)
+                            }
+                            Err(e) => {
+                                error!("Could not remove from playlist! {:?}", e)
+                            }
                         }
-                        Err(e) => {
-                            error!("Could not remove from playlist! {:?}", e)
+                    } else {
+                        for (_, songid) in self.selected_songs.iter() {
+                            match delete_from_playlist(
+                                songid.clone(),
+                                self.viewing_playlist.clone(),
+                            ) {
+                                Ok(t) => {
+                                    info!("Success removing {:?} from playlist", &songid)
+                                }
+                                Err(e) => {
+                                    error!("Could not remove from playlist! {:?}", &songid)
+                                }
+                            }
                         }
                     }
                 }

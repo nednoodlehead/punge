@@ -8,8 +8,7 @@ use iced::widget::{
 };
 use iced::{Alignment, Element};
 use itertools::Itertools;
-use log::debug;
-use log::info;
+use log::{debug, info, warn};
 use rusty_ytdl::blocking::Video;
 use rusty_ytdl::{self, VideoOptions};
 
@@ -199,7 +198,15 @@ async fn download_insta(
                             let src_file = format!("./-{}/{}", split_str[4], &name);
                             let dst_file = format!("{}/{}", &download_dir, &name);
                             debug!("moving {} to {}", &src_file, &dst_file);
-                            std::fs::copy(src_file, dst_file).unwrap();
+                            match std::fs::copy(src_file, dst_file) {
+                                Ok(_) => info!("the jpg copied fine"),
+                                Err(e) => {
+                                    warn!("failure copying jpg to destination, abortintg: {:?}", e);
+                                    return Err(AppError::FileError(
+                                        "Failure moving jpg to destiation".to_string(),
+                                    ));
+                                }
+                            }
                         }
                     }
                     debug!("removing directory!!: ./-{}", split_str[4]);
@@ -215,11 +222,31 @@ async fn download_insta(
                             let src_file = format!("./-{}/{}", split_str[4], &name);
                             let dst_file = format!("{}/{}", &download_dir, &name);
                             debug!("moving {} to {}", &src_file, &dst_file);
-                            std::fs::copy(src_file, dst_file).unwrap();
+                            match std::fs::copy(&src_file, &dst_file) {
+                                Ok(_) => {
+                                    info!(
+                                        "file copied successfully {} -> {}",
+                                        &src_file, &dst_file
+                                    );
+                                }
+                                Err(e) => {
+                                    info!("File could not be copied. Likely was not able to be downloaded. {:?}", e);
+                                    return Err(AppError::FileError("The file could not be moved from it's temporary location. view logs for more info".to_string()));
+                                }
+                            };
                         }
                     }
                     debug!("removing directory!!: ./-{}", split_str[4]);
-                    std::fs::remove_dir_all(format!("./-{}", split_str[4])).unwrap();
+                    match std::fs::remove_dir_all(format!("./-{}", split_str[4])) {
+                        Ok(_) => info!("directly removed successfully"),
+                        Err(e) => {
+                            info!("directory coudld not be removed: {:?}", e);
+                            return Err(AppError::FileError(format!(
+                                "The directory could not be removed ({}) {:?} ",
+                                split_str[4], e,
+                            )));
+                        }
+                    }
                     return Ok(format!("{} downloaded!!", split_str[4]));
                 }
                 _ => return Err(AppError::FileError("How did we get here?".to_string())),
