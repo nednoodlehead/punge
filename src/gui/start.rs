@@ -18,7 +18,7 @@ use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::subscription::Subscription;
-use iced::widget::{column, container, image, row, scrollable, text};
+use iced::widget::{column, container, horizontal_space, image, row, scrollable, text};
 use iced::{Command, Element, Length, Settings, Theme};
 use itertools::Itertools;
 use log::{debug, error, info, warn};
@@ -503,6 +503,11 @@ impl App {
             ProgramCommands::InAppEvent(t) => match t {
                 AppEvent::CloseRequested => {
                     let lcl = self.current_song.load();
+                    crate::db::update::update_offset(
+                        &self.viewing_playlist,
+                        self.current_table_offset.y,
+                    )
+                    .unwrap();
                     let cache = player_cache::Cache {
                         song_id: lcl.song_id.clone(),
                         volume: lcl.volume,
@@ -658,7 +663,10 @@ impl App {
                                     info!("Success removing {:?} from playlist", &songid)
                                 }
                                 Err(e) => {
-                                    error!("Could not remove from playlist! {:?}", &songid)
+                                    error!(
+                                        "Could not remove from playlist! {} reason: {:?}",
+                                        &songid, e
+                                    )
                                 }
                             }
                         }
@@ -1034,11 +1042,10 @@ impl App {
                 if self.song_edit_page.multi_select {
                     // if multiple songs are selected
                     for id in self.selected_songs.iter() {
-                        update_auth_album(row.author.clone(), row.album.clone(), id.1.to_string())
-                            .unwrap();
+                        update_auth_album(&row.author, &row.album, &id.1).unwrap();
                     }
                 } else {
-                    update_song(row.author, row.title, row.album, row.uniqueid).unwrap();
+                    update_song(&row.author, &row.title, &row.album, &row.uniqueid).unwrap();
                 }
                 // i dont think there is a way to
                 self.refresh_playlist();
@@ -1107,12 +1114,14 @@ impl App {
                 Command::none()
             }
             ProgramCommands::MovePlaylistUp(uniqueid) => {
-                // TODO we actually need to update the self.user_playlists when stuff happens
-                if self.user_playlists[&uniqueid].userorder == 0 {
-                    crate::db::update::move_playlist_up_one(&uniqueid).unwrap();
-                    self.user_playlists = get_all_playlists().unwrap();
-                } else {
-                    warn!("attempting to move first playlist up (error)")
+                // ok we are abandoning the idea of 'having two copies of the data' (on in memory, one in db), and are just
+                // going to call to the db when we want to complain
+                match crate::db::update::move_playlist_up_one(&uniqueid) {
+                    Ok(_) => {
+                        info!("playlist moved successfully");
+                        self.user_playlists = get_all_playlists().unwrap();
+                    }
+                    Err(e) => warn!("error moving playlist. {:?}", e),
                 }
                 Command::none()
             }
@@ -1134,7 +1143,7 @@ impl App {
                 if self.selected_songs.is_empty() {
                     info!("we are moving up, and we have nothing selected");
                     if position != 0 {
-                        move_song_up_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+                        move_song_up_one(&uuid, position, &self.viewing_playlist).unwrap();
                         self.refresh_playlist();
                     } else {
                         warn!("MoveSongUp called on song in position 0!")
@@ -1144,7 +1153,7 @@ impl App {
             }
             ProgramCommands::MoveSongDown(uuid, position) => {
                 if position.saturating_add(1) != self.table_content.len() {
-                    move_song_down_one(uuid, position, self.viewing_playlist.clone()).unwrap();
+                    move_song_down_one(&uuid, position, &self.viewing_playlist).unwrap();
                     self.refresh_playlist();
                 } else {
                     warn!("MoveSongDown called on lowest song")
@@ -1252,11 +1261,15 @@ impl App {
             .align_items(iced::Alignment::End)
             .spacing(25),
             table_cont,
-            text(format!(
-                "{} Songs ({})",
-                active_playlist.songcount,
-                crate::utils::time::total_time_conv(&active_playlist.totaltime)
-            )),
+            row![
+                text(format!(
+                    "{} Songs ({})",
+                    active_playlist.songcount,
+                    crate::utils::time::total_time_conv(&active_playlist.totaltime),
+                )),
+                horizontal_space(),
+                text(format!("{} selected", self.selected_songs.len()))
+            ]
         ];
 
         let main_page_2 = container(column![

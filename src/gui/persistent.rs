@@ -237,6 +237,7 @@ impl App {
         let playlist_buttons: Vec<Element<ProgramCommands>> = self
             .user_playlists
             .iter()
+            .sorted_by(|a, b| Ord::cmp(&a.1.userorder, &b.1.userorder))
             .map(|(playlistid, playlist)| {
                 crate::gui::widgets::playlist_button::PlaylistButton::new(
                     button(text(&playlist.title))

@@ -121,6 +121,8 @@ pub enum DatabaseErrors {
     DatabaseEntryExistsError, // used when the unique id is already present in the database
     #[error("Error inserting")]
     FromSqlError(String),
+    #[error("All other db errors")]
+    Other(String),
 }
 
 #[derive(Debug, Clone)]

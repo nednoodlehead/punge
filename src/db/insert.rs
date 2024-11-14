@@ -74,12 +74,14 @@ pub fn add_to_playlist(playlist_uuid: &str, uniqueid: &str) -> Result<(), Databa
         .unwrap();
     let count = count_stmt.query_row([playlist_uuid], |row| row.get::<_, i16>(0))?;
     // drop it bcs it was holding conn
+    println!("count be: {}", count);
     drop(count_stmt);
     conn.execute(
         "
         INSERT INTO playlist_relations (playlist_id, song_id, user_playlist_order) VALUES (?1, ?2, ?3);
         ",
-        params![&playlist_uuid, &uniqueid, count],
+        // we do +1 since there is one at 0, and this one we are adding is +1
+        params![&playlist_uuid, &uniqueid, count + 2],
     )
     .unwrap();
     conn.execute("

@@ -18,10 +18,10 @@ pub fn update_playlist(
 }
 
 pub fn update_song(
-    author: String,
-    title: String,
-    album: String,
-    unique: String,
+    author: &str,
+    title: &str,
+    album: &str,
+    unique: &str,
 ) -> Result<(), DatabaseErrors> {
     let conn: Connection = rusqlite::Connection::open("main.db")?;
     let statement: &str = "UPDATE main SET author = ?, title = ?, album = ? WHERE uniqueid = ?";
@@ -69,16 +69,13 @@ pub fn delete_from_playlist(uniqueid: &str, playlistid: &str) -> Result<(), Data
         "UPDATE metadata SET totaltime = totaltime - (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?",
         params![uniqueid, playlistid],
     )?;
+    trans.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order -1 WHERE playlist_id = ? AND user_playlist_order > (SELECT FROM main WHERE uniqueid = ?)", params![playlistid, uniqueid])?;
     trans.commit()?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
 
-pub fn update_auth_album(
-    author: String,
-    album: String,
-    uniqueid: String,
-) -> Result<(), DatabaseErrors> {
+pub fn update_auth_album(author: &str, album: &str, uniqueid: &str) -> Result<(), DatabaseErrors> {
     let conn = Connection::open("main.db")?;
     conn.execute(
         "UPDATE main SET author = ?, album = ? WHERE uniqueid = ?",
@@ -99,6 +96,16 @@ pub fn delete_playlist(uniqueid: &str) -> Result<(), DatabaseErrors> {
         "DELETE FROM playlist_relations WHERE playlist_id = ?",
         params![uniqueid],
     )?;
+    let mut prep = conn
+        .prepare("SELECT order_of_playlist FROM metadata WHERE playlist_id = ?")
+        .unwrap();
+    let count: usize = prep.query_row([uniqueid], |row| row.get(0)).unwrap();
+    conn.execute(
+        "UPDATE metadata SET order_of_playlist = order_of_playlist -1 if order_of_playlist > ?",
+        params![count],
+    )
+    .unwrap();
+    drop(prep);
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
 }
@@ -113,7 +120,9 @@ pub fn move_playlist_up_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
     let count: usize = prep.query_row([uniqueid], |row| row.get(0)).unwrap();
     if count == 0 {
         // cant go up any further...
-        return Ok(());
+        return Err(DatabaseErrors::Other(
+            "order of playlist is 0, aborting".to_string(),
+        ));
     }
     drop(prep);
     let tx = conn.transaction()?;
@@ -142,7 +151,9 @@ pub fn move_playlist_down_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
         stmt.query_row([], |row| row.get(0)).unwrap()
     };
     if count >= (max + 1) as u16 {
-        return Ok(());
+        return Err(DatabaseErrors::Other(
+            "tried to call move down on the lowest playlist".to_string(),
+        ));
     }
     let mut prep = conn
         .prepare("SELECT order_of_playlist FROM metadata WHERE playlist_id = ?")
@@ -168,9 +179,9 @@ pub fn move_playlist_down_one(uniqueid: &str) -> Result<(), DatabaseErrors> {
 pub fn move_song_up_one(
     // ok so it sort of just occured to me that we could skip the whole 'uuid' part and just have a single number
     // then make the var (one above or below depending on up or down song) then atomic swap them...
-    song_uuid: String,
+    song_uuid: &str,
     position: usize,
-    playlist_uuid: String,
+    playlist_uuid: &str,
 ) -> Result<(), DatabaseErrors> {
     // we must differenciate between a change on 'main' and playlist, since the sql is different
     let mut conn = Connection::open("main.db")?;
@@ -203,9 +214,9 @@ pub fn move_song_up_one(
 }
 // like i guess you could make these ^ & v one function? maybe something to refactor *one* day :)
 pub fn move_song_down_one(
-    song_uuid: String,
+    song_uuid: &str,
     position: usize,
-    playlist_uuid: String,
+    playlist_uuid: &str,
 ) -> Result<(), DatabaseErrors> {
     // we must differenciate between a change on 'main' and playlist, since the sql is different
     let mut conn = Connection::open("main.db")?;
