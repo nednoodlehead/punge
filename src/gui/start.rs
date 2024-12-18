@@ -104,7 +104,7 @@ pub struct App {
     pub search: String,
     viewing_playlist: String, // just the uniqueid rn
     current_table_offset: iced::widget::scrollable::AbsoluteOffset,
-    selected_songs: Vec<(Option<usize>, String)>, // songs that the user will edit. if is_some, unselect the rows in the table
+    selected_songs: Vec<(usize, String)>, // songs that the user will edit. if is_some, unselect the rows in the table
     pub user_playlists: HashMap<String, UserPlaylist>,
     table_content: iced::widget::list::Content<crate::gui::widgets::row::RowData>, // pls list widget for 0.14...
 }
@@ -1148,6 +1148,16 @@ impl App {
                     } else {
                         warn!("MoveSongUp called on song in position 0!")
                     }
+                } else {
+                    info!(
+                        "we are moving up, we have our selected songs. len={}",
+                        self.selected_songs.len()
+                    );
+                    // crate::db::update::bulk_move_up(&self.selected_songs, &uuid).unwrap();
+                    // so the idea of moving these normally falls short because the normal version assumes that there is just one 'unknown' song
+                    // to edit. so if we are moving song #8 up, song #7 is the unknown (which we find throughsql). but if we select #8 AND #15. Now,
+                    // there are two unknown songs to move ()#7 and #14). So we need to edit those..
+                    // i guess we can 'clump' up the songs then move them in batches
                 }
                 Command::none()
             }
@@ -1166,7 +1176,7 @@ impl App {
             }
             ProgramCommands::SelectSong(row_num, is_selected, uuid) => {
                 if is_selected {
-                    self.selected_songs.push((Some(row_num), uuid));
+                    self.selected_songs.push((row_num, uuid));
                 } else {
                     // order does not matter.
                     self.selected_songs.swap_remove(

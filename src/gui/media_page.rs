@@ -132,7 +132,7 @@ async fn download_youtube(
             ..Default::default()
         }
     };
-    let vid = Video::new_with_options(link, settings)?;
+    let vid = Video::new_with_options(&link, settings)?;
     // make the path end with a slash
     path = if !path.ends_with('\\') | !path.ends_with('/') {
         format!("{}/", path)
@@ -146,7 +146,7 @@ async fn download_youtube(
     let full_output = format!("{}{} - {}{}", path, &title, vid.get_video_id(), mp3_4);
     let new_path = std::path::Path::new(&full_output);
     debug!("gonna download video to: {:?}", &new_path);
-    vid.download(new_path)?;
+    crate::yt::cmd::cmd_download_media(&link, &full_output, &vid.get_video_id(), &mp3_4).unwrap();
     debug!("Video download did not throw an error");
     Ok(format!("{} downloaded successfully!", title))
 }
@@ -218,7 +218,7 @@ async fn download_insta(
                     for path in dir_iter {
                         let name = path.unwrap().file_name().into_string().unwrap();
                         // i guess for the insance of multiple slides,
-                        if name.ends_with(".jpg") {
+                        if name.ends_with(".mp4") {
                             let src_file = format!("./-{}/{}", split_str[4], &name);
                             let dst_file = format!("{}/{}", &download_dir, &name);
                             debug!("moving {} to {}", &src_file, &dst_file);

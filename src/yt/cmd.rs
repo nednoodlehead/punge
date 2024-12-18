@@ -88,3 +88,66 @@ pub fn cmd_download(
         }
     }
 }
+
+pub fn cmd_download_media(
+    link: &str,
+    desired_output: &str,
+    id: &str,
+    mp3_or_4: &str,
+) -> Result<(), AppError> {
+    let temp_path = format!("./{}.webm", id);
+    info!("downloading (media download tab) to {}", &temp_path);
+    let cmd = Command::new("yt-dlp.exe")
+        .args([link, "-o", &temp_path])
+        .output();
+    match cmd {
+        Ok(e) => {
+            info!(
+                "File downloaded successfully. we will convert it from webm -> {}",
+                mp3_or_4
+            );
+            let ffmpeg_args: &[&str] = if mp3_or_4 == ".mp4" {
+                &[
+                    "-i",
+                    &temp_path,
+                    "-c:v",
+                    "libx264",
+                    "-c:a",
+                    "aac",
+                    &desired_output,
+                ]
+            } else {
+                &[
+                    "-i",
+                    &temp_path,
+                    "-vn",
+                    "-c:a",
+                    "libmp3lame",
+                    "-b:a",
+                    "192K",
+                    &desired_output,
+                ]
+            };
+            match Command::new("ffmpeg.exe").args(ffmpeg_args).output() {
+                Ok(_) => {
+                    info!(
+                        "media file successfully converted... output: {}",
+                        &desired_output
+                    );
+                    // i don't think it is possible for this to fail if we have gotten this far...
+                    std::fs::remove_file(&temp_path).unwrap();
+                }
+                Err(e) => {
+                    warn!(
+                        "error converting file: {:?}\nthe file did download successfully though..",
+                        e
+                    )
+                }
+            }
+        }
+        Err(e) => {
+            warn!("yt-dlp.exe failed to download: {:?}\nPerhaps this can be solved by updating to the latest version?", e)
+        }
+    }
+    Ok(())
+}

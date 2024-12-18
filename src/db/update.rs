@@ -379,3 +379,26 @@ pub fn validate_playlist_data() -> Result<(), DatabaseErrors> {
     }
     Ok(())
 }
+
+// pub fn bulk_move_up(
+//     song_list: &Vec<(usize, String)>,
+//     playlist_uuid: &str,
+// ) -> Result<(), DatabaseErrors> {
+//     // as commented in the MoveSongUp part of `fn update`, we need to identify 'clumps' of songs, then operate on those clumps, and each
+//     // clump's unknown value
+//     // also, song_list is known to contain at least one song. this check is done in the MoveSongUp part
+//     // also now just realizing that the list can be in a weird order, not always like: 1, 2, 3, 4, 5. could be 1, 3, 2, 4, 5
+//     let _ = song_list.clone().sort_unstable_by(|a, b| a.0.cmp(&b.0));
+//     // ok, so now that it is sorted, we can iter, and create our clumps
+//     // usize = highest number in the clump
+//     let hasher: std::collections::HashMap<usize, (usize, &str)> = std::collections::HashMap::new();
+//     for (count, uuid) in song_list.iter() {
+//         if hasher.get(&(count + 1)).is_none() {
+//             hasher.insert(*count, vec![count, uuid])
+//         } else {
+//             let item = hasher.get_mut(&(count + 1)).unwrap();
+//         }
+//     }
+//     println!("clumped: {:?}", &clump_list);
+//     Ok(())
+// }
