@@ -185,8 +185,8 @@ async fn download_insta(
     // should probably do some testing for this...
     match process {
         Ok(_) => {
-            info!("download seemed to work fine");
-            let dir_iter = std::fs::read_dir(format!("{}/", &download_dir)).unwrap();
+            info!("download seemed to work fine. downloadir={}", &download_dir);
+            let dir_iter = std::fs::read_dir(format!("./-{}/", &split_str[4])).unwrap();
             match mp3_4 {
                 ".mp3" => {
                     debug!(".mp3 detected in the user choice");
