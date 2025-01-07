@@ -324,7 +324,11 @@ impl SettingPage {
                     .on_press(ProgramCommands::SaveConfig)
                     .style(|_t, status| punge_button_style(status))],
                 row![button(text("Validate songcount & time"))
-                    .on_press(ProgramCommands::ValidatePlaylistData)],
+                    .on_press(ProgramCommands::ValidatePlaylistData)
+                    .style(|_, status| punge_button_style(status))],
+                row![button(text("Validate song order for main"))
+                    .on_press(ProgramCommands::InitiateDatabaseFix)
+                    .style(|_, status| punge_button_style(status))]
             ]
             .spacing(10.0),
         ))

@@ -72,8 +72,10 @@ pub fn fix_song_count_gaps() -> Result<(), AppError> {
         fixed_list.push(cloned_item);
         what_num_should_be += 1;
     }
-    for x in fixed_list {
-        println!("{} - {} ({})", x.title, x.author, x.order);
-    }
+    // ok i realize now that these two functions are NOT optimal.
+    // it really doesn't matter. it is only for me, and i've done it
+    std::fs::remove_file("main.db").unwrap();
+    crate::db::create_db::create_table_defaults().unwrap();
+    crate::db::insert::add_to_main_bulk(fixed_list).unwrap();
     Ok(())
 }

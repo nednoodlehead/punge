@@ -53,7 +53,7 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
     conn.execute(
         // the main 'playlist' :)
         "INSERT INTO metadata (title, description, thumbnail, datecreated,
-        songcount, totaltime, isautogen, order_of_playlist, playlist_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        songcount, totaltime, isautogen, order_of_playlist, table_offset, playlist_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         params![
             String::from("Main"),
             String::from("All of your music"),
@@ -63,6 +63,7 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
             String::from("00:00:00"),
             false, // so technically it is 'auto gen', but not in the right sense
             0, // hey stupid. indexing starts a zero
+            0, // hey, erm we forgort about this
             "main"
         ],
     )?;
