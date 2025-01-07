@@ -1216,6 +1216,14 @@ impl App {
                 }
                 Command::none()
             }
+            ProgramCommands::InitiateDatabaseFix => {
+                info!("we are starting the database fix");
+                crate::db::utilities::validate_song_nums().unwrap();
+                info!("first one has completed. will remove gaps");
+                crate::db::utilities::fix_song_count_gaps().unwrap();
+                info!("second database fix has been completed. there is a backup in the root folder, double check...");
+                Command::none()
+            }
         }
     }
 

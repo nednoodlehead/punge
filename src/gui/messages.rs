@@ -78,6 +78,7 @@ pub enum ProgramCommands {
     SelectSong(usize, bool, String), // row, is_selected, uuid of song
     OnScroll(iced::widget::scrollable::Viewport),
     ValidatePlaylistData, // button to click in settings that re-checks the values of each playlists and sets them to their correct value
+    InitiateDatabaseFix,
 }
 
 #[derive(Debug, Copy, Clone)]

@@ -106,3 +106,24 @@ pub fn add_to_playlist_silent(playlist_uuid: &str, uniqueid: &str, count: usize)
         ).unwrap();
     conn.close().map_err(|(_, err)| err).unwrap();
 }
+
+// pretty much just utility
+pub fn add_to_main_bulk(punge_list: Vec<PungeMusicObject>) -> Result<(), DatabaseErrors> {
+    let conn = Connection::open("main.db")?;
+    for music_obj in punge_list {
+        conn.execute("INSERT INTO \"main\" (title, author, album, features, length, savelocationmp3,\
+                    savelocationjpg, datedownloaded, lastlistenedto, ischild, uniqueid, plays, weight, threshold, user_order)\
+                    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+                 params![music_obj.title, music_obj.author, music_obj.album, music_obj.features, music_obj.length, music_obj.savelocationmp3,
+                 music_obj.savelocationjpg, music_obj.datedownloaded, music_obj.lastlistenedto, music_obj.ischild, music_obj.uniqueid,
+                 music_obj.plays, music_obj.weight, music_obj.threshold, music_obj.order])?;
+        // untested... should work..?
+        conn.execute(
+        "UPDATE metadata SET songcount = songcount + 1, totaltime = totaltime + ? WHERE playlist_id = \"main\"",
+        params![music_obj.length],
+    )?;
+    }
+
+    conn.close().map_err(|(_, err)| err)?;
+    Ok(())
+}
