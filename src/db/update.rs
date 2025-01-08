@@ -57,6 +57,8 @@ pub fn delete_from_uuid(uniqueid: &str) -> Result<(), DatabaseErrors> {
 pub fn delete_from_playlist(uniqueid: &str, playlistid: &str) -> Result<(), DatabaseErrors> {
     let mut conn = Connection::open("main.db")?;
     let trans = conn.transaction()?;
+    info!("removing {} from {}", uniqueid, playlistid);
+    trans.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order -1 WHERE playlist_id = ? AND user_playlist_order > (SELECT user_playlist_order FROM playlist_relations WHERE song_id = ? AND playlist_id = ?)", params![playlistid, uniqueid, playlistid])?;
     trans.execute(
         "DELETE FROM playlist_relations WHERE playlist_id = ? AND song_id = ?",
         params![playlistid, uniqueid],
@@ -69,7 +71,6 @@ pub fn delete_from_playlist(uniqueid: &str, playlistid: &str) -> Result<(), Data
         "UPDATE metadata SET totaltime = totaltime - (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?",
         params![uniqueid, playlistid],
     )?;
-    trans.execute("UPDATE playlist_relations SET user_playlist_order = user_playlist_order -1 WHERE playlist_id = ? AND user_playlist_order > (SELECT FROM main WHERE uniqueid = ?)", params![playlistid, uniqueid])?;
     trans.commit()?;
     conn.close().map_err(|(_, err)| err)?;
     Ok(())
@@ -87,7 +88,12 @@ pub fn update_auth_album(author: &str, album: &str, uniqueid: &str) -> Result<()
 }
 
 pub fn delete_playlist(uniqueid: &str) -> Result<(), DatabaseErrors> {
+    info!("Deleting playlist. Id={}", uniqueid);
     let conn = Connection::open("main.db")?;
+    let mut prep = conn
+        .prepare("SELECT order_of_playlist FROM metadata WHERE playlist_id = ?")
+        .unwrap();
+    let count: usize = prep.query_row([uniqueid], |row| row.get(0)).unwrap();
     conn.execute(
         "DELETE FROM metadata WHERE playlist_id = ?",
         params![uniqueid],
@@ -96,12 +102,8 @@ pub fn delete_playlist(uniqueid: &str) -> Result<(), DatabaseErrors> {
         "DELETE FROM playlist_relations WHERE playlist_id = ?",
         params![uniqueid],
     )?;
-    let mut prep = conn
-        .prepare("SELECT order_of_playlist FROM metadata WHERE playlist_id = ?")
-        .unwrap();
-    let count: usize = prep.query_row([uniqueid], |row| row.get(0)).unwrap();
     conn.execute(
-        "UPDATE metadata SET order_of_playlist = order_of_playlist -1 if order_of_playlist > ?",
+        "UPDATE metadata SET order_of_playlist = order_of_playlist -1 WHERE order_of_playlist > ?",
         params![count],
     )
     .unwrap();
