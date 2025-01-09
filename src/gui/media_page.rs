@@ -196,6 +196,21 @@ async fn download_insta(
                         // i guess for the insance of multiple slides,
                         if name.ends_with(".jpg") {
                             let src_file = format!("./-{}/{}", split_str[4], &name);
+                            let f = std::fs::OpenOptions::new()
+                                .write(true)
+                                .open(&src_file)
+                                .unwrap();
+                            match f.set_modified(std::time::SystemTime::now()) {
+                                Err(e) => {
+                                    warn!(
+                                        "Unable to reset modified date for downloaded content ({}): {}",
+                                        e, &src_file
+                                    );
+                                }
+                                Ok(t) => {
+                                    info!("Reset modified date successfully for: {}", &src_file);
+                                }
+                            }
                             let dst_file = format!("{}/{}", &download_dir, &name);
                             debug!("moving {} to {}", &src_file, &dst_file);
                             match std::fs::copy(src_file, dst_file) {
@@ -220,6 +235,21 @@ async fn download_insta(
                         // i guess for the insance of multiple slides,
                         if name.ends_with(".mp4") {
                             let src_file = format!("./-{}/{}", split_str[4], &name);
+                            let f = std::fs::OpenOptions::new()
+                                .write(true)
+                                .open(&src_file)
+                                .unwrap();
+                            match f.set_modified(std::time::SystemTime::now()) {
+                                Err(e) => {
+                                    warn!(
+                                        "Unable to reset modified date for downloaded content ({}): {}",
+                                        e, &src_file
+                                    );
+                                }
+                                Ok(t) => {
+                                    info!("Reset modified date successfully for: {}", &src_file);
+                                }
+                            }
                             let dst_file = format!("{}/{}", &download_dir, &name);
                             debug!("moving {} to {}", &src_file, &dst_file);
                             match std::fs::copy(&src_file, &dst_file) {
