@@ -20,7 +20,7 @@ pub fn cmd_download(
     // -o "here.mp3" for output
     // --write-thumbnail
     // -x (converts to audio-only), maybe it is worth to do this ourselves, so we can have some logging output?
-    let temp_path = format!("./{}.webm", id); // i think it always gives you a webm...
+    let temp_path = format!("./{}.mp4", id); // i think it always gives you a webm...
     info!("downloading to {}", &temp_path);
     // also download the thumbnail!!
     let cmd = Command::new("yt-dlp.exe")
@@ -37,6 +37,10 @@ pub fn cmd_download(
         .output();
     match cmd {
         Ok(t) => {
+            info!(
+                "does file exist after download={:?}",
+                std::path::Path::new(&temp_path).exists()
+            );
             info!("download successful! {:?} time to convert the file..", &t);
             let ffmpeg_cmd = Command::new("ffmpeg.exe")
                 .args([
@@ -51,14 +55,26 @@ pub fn cmd_download(
                 ])
                 .output();
             match ffmpeg_cmd {
+                // TODO remove the redundasnt .webm stuff
                 Ok(t) => {
                     info!(
                         "File converted successfully {:?}!! now lives at: {}",
                         &t, &desired_output
                     );
                     info!("we are going to remove the old file ({})", &temp_path);
-                    std::fs::remove_file(&temp_path).unwrap();
-                    let old_jpg = format!("./{}.jpg", &id);
+
+                    let old_jpg = match std::fs::remove_file(&temp_path) {
+                        Ok(_) => {
+                            info!("we found the file and are moving on...");
+                            format!("./{}.jpg", &id)
+                        }
+                        Err(e) => {
+                            warn!("failed to find the file {:?}?\nerror:{:?}", &temp_path, e);
+                            std::fs::remove_file(format!("{}.mp4", &temp_path)).unwrap();
+                            // set this because sometimes it fails to find the jpg when for some stupid f-ing reason the file gets named {id}.webm
+                            format!("./{}.webm.jpg", &id)
+                        }
+                    };
                     // since the stupid thumbnail just downloads into the punge directory....
                     debug!("copying {} to {}", &old_jpg, &jpg_full_path);
                     // std::fs::File::create(&old_jpg).unwrap();
