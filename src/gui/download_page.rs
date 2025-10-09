@@ -110,9 +110,10 @@ impl DownloadPage {
                                 Image::new(&results.thumbnail).width(80).height(45), // 16:9
                                 column![
                                     text(if results.title.len() > 30 {
-                                        &results.title[0..30]
+                                        let w = results.title.chars().take(30).collect();
+                                        w
                                     } else {
-                                        &results.title
+                                        results.title.clone()
                                     }),
                                     text(results.author.clone()),
                                     text(format!(

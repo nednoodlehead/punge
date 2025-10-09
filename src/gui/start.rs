@@ -602,11 +602,17 @@ impl App {
                     crate::db::insert::add_to_playlist(&playlist_id, &song_id).unwrap();
                     self.user_playlists.get_mut(&playlist_id).unwrap().songcount += 1;
                 } else {
-                    for (row_num, id) in self.selected_songs.iter() {
-                        info!("adding {} to {}", &id, &playlist_id);
-                        crate::db::insert::add_to_playlist(&playlist_id, &id).unwrap();
-                        self.user_playlists.get_mut(&playlist_id).unwrap().songcount += 1;
-                    }
+                    // for (row_num, id) in self.selected_songs.iter() {
+                    //     info!("adding {} to {}", &id, &playlist_id);
+                    //     crate::db::insert::add_to_playlist(&playlist_id, &id).unwrap();
+                    //     self.user_playlists.get_mut(&playlist_id).unwrap().songcount += 1;
+                    let str_refs: Vec<&str> = self
+                        .selected_songs
+                        .iter()
+                        .map(|(_, s)| s.as_str())
+                        .collect();
+                    let _ = crate::db::insert::add_to_playlist_bulk(&playlist_id, str_refs);
+                    // }
                     // if we had a way to directly turn off the blue parts, that would be handy!
                 }
                 // adding to playlist should update the current playlist IF and only IF the playlist in question is being played rn

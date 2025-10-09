@@ -20,7 +20,7 @@ pub fn cmd_download(
     // -o "here.mp3" for output
     // --write-thumbnail
     // -x (converts to audio-only), maybe it is worth to do this ourselves, so we can have some logging output?
-    let temp_path = format!("./{}.mp4", id); // i think it always gives you a webm...
+    let temp_path = format!("./{}.webm", id); // i think it always gives you a webm...
     info!("downloading to {}", &temp_path);
     // also download the thumbnail!!
     let cmd = Command::new("yt-dlp.exe")

@@ -21,7 +21,7 @@ pub fn create_table_defaults() -> Result<(), DatabaseErrors> {
             plays SMALLINT,
             weight SMALLINT,
             threshold SMALLINT,
-            user_order INT
+            user_order INT UNIQUE -- user order does need to be unique
             )",
         // order of songs within 'main'
         params![],
