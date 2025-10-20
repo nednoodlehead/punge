@@ -189,24 +189,31 @@ pub fn move_song_up_one(
     let mut conn = Connection::open("main.db")?;
     if playlist_uuid != "main" {
         // set the new number's number to -1
-        let trans = conn.transaction()?;
+        // let trans = conn.transaction()?;
         let one_below = position - 1;
         // sets the selected one correctly. moves the target's number up (0 -> 1)
+        debug!("setting a temporary value for the swapping (move song up)");
+        conn.execute("update playlist_relations set user_playlist_order = -1 where playlist_id = ? AND user_playlist_order = ?", params![playlist_uuid, one_below])?;
         debug!("moving {} -> {}", position, one_below);
-        trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND user_playlist_order = ?", params![position, &playlist_uuid, one_below])?;
+        conn.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND user_playlist_order = ?", params![position, &playlist_uuid, one_below])?;
         // should set the other
         debug!("and now setting id: {} -> {}", &song_uuid, one_below);
-        trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND song_id = ?", params![one_below, playlist_uuid, song_uuid])?;
-        trans.commit()?;
+        conn.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND user_playlist_order = -1", params![one_below, playlist_uuid])?;
+        // conn.commit()?;
     } else {
+        // this affects MAIN
         let trans = conn.transaction()?;
         let one_below = position - 1;
+        trans.execute(
+            "update main set user_order = 2000000 where user_order = ?",
+            params![one_below],
+        )?;
         trans.execute(
             "UPDATE main SET user_order = ? WHERE user_order = ?",
             params![position, one_below],
         )?;
         trans.execute(
-            "UPDATE main SET user_order = ? WHERE uniqueid = ?",
+            "UPDATE main SET user_order = ? WHERE user_order = 2000000",
             params![one_below, song_uuid],
         )?;
         trans.commit()?;
@@ -225,6 +232,8 @@ pub fn move_song_down_one(
     if playlist_uuid != "main" {
         let one_above = position + 1;
         let trans = conn.transaction()?;
+        debug!("setting a temporary value for the swapping (move song down)");
+        trans.execute("update playlist_relations set user_playlist_order = 2000000 where playlist_id = ? AND user_playlist_order = ?", params![playlist_uuid, song_uuid])?;
         debug!("moving on playlist: {} -> {}", position, one_above);
         trans.execute("UPDATE playlist_relations SET user_playlist_order = ? WHERE playlist_id = ? AND user_playlist_order = ?", params![position, &playlist_uuid, one_above])?;
         // should set the other
@@ -237,12 +246,16 @@ pub fn move_song_down_one(
                                          // so the one we care about will go up in value, the other will go "down" (referring to visual, not numerical)
         let one_above = position + 1;
         trans.execute(
+            "update main set user_order = 2000000 where user_order = ?",
+            params![position],
+        )?;
+        trans.execute(
             "UPDATE main SET user_order = ? WHERE user_order = ?",
             params![position, one_above],
         )?;
         trans.execute(
-            "UPDATE main SET user_order = ? WHERE uniqueid = ?",
-            params![one_above, song_uuid],
+            "UPDATE main SET user_order = ? WHERE user_order = 2000000",
+            params![one_above],
         )?;
         trans.commit()?;
     }
