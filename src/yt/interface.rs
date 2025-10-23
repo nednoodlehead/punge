@@ -243,7 +243,7 @@ async fn create_punge_obj(
     // downloads the video, thumbnail
     // creates the punge obj for further processing if needed (like one song -> whole album)
     let author = clean_inputs_for_win_saving(clean_author(youtube_data.author));
-    let title = clean_inputs_for_win_saving(youtube_data.title);
+    let title = clean_inputs_for_win_saving(clean_title(youtube_data.title));
     let album = clean_inputs_for_win_saving(youtube_data.album);
     // i am also choosing to have the naming conventions for the jpg & mp3 files to be different, for a few reasons:
     // 1. if jpg becomes similar to the "author - title" variation, we do not know at the time of the jpg download
@@ -340,6 +340,28 @@ fn clean_author(author: String) -> String {
     } else {
         author
     }
+}
+
+fn clean_title(title: String) -> String {
+    // tries to clean the slop from the title. anything in brackets gets removed
+    let mut new_word = String::from("");
+    let mut inside_brackets: bool = false;
+    for letter in title.chars() {
+        if inside_brackets {
+            if ['}', ']', '}'].contains(&letter) {
+                inside_brackets = false;
+            }
+        }
+        if ['[', '{', '('].contains(&letter) {
+            inside_brackets = true;
+        } else {
+            if !inside_brackets {
+                new_word.push(letter);
+            }
+        }
+    }
+
+    return new_word.trim_end().to_owned();
 }
 
 fn description_timestamp_check(desc: &str) -> bool {
