@@ -1,5 +1,5 @@
 use crate::types::{DatabaseErrors, PungeMusicObject, UserPlaylist};
-use log::info;
+use log::{debug, info};
 use rusqlite::{params, Connection};
 
 pub fn add_to_main(music_obj: PungeMusicObject) -> Result<String, DatabaseErrors> {
@@ -140,8 +140,9 @@ pub fn add_to_playlist_bulk(playlist_uuid: &str, songs: Vec<&str>) -> Result<(),
     drop(count_stmt);
     for (inner_count, song_id) in songs.iter().enumerate() {
         let new_num = count + inner_count as i16;
+        println!("inserting {} into playlist", song_id);
         conn.execute(
-            "insert into playlist_relations, VALUES (?, ?, ?)",
+            "insert into playlist_relations VALUES (?1, ?2, ?3)",
             params![playlist_uuid, song_id, new_num],
         )?;
         // we do this here so if it fails, there is no lount mismatch
@@ -149,5 +150,7 @@ pub fn add_to_playlist_bulk(playlist_uuid: &str, songs: Vec<&str>) -> Result<(),
         UPDATE metadata SET songcount = songcount + 1, totaltime = totaltime + (SELECT length FROM main WHERE uniqueid = ?) WHERE playlist_id = ?
         ", params![song_id, playlist_uuid]).unwrap();
     }
+    conn.close().map_err(|(_, err)| err)?;
+
     Ok(())
 }

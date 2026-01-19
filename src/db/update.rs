@@ -43,6 +43,10 @@ pub fn delete_from_uuid(uniqueid: &str) -> Result<(), DatabaseErrors> {
     // just realized that we need to decrement every single entry in main (> it's count) so the count stays accurate
     // also if anything fails, it will f up the db a bit
     let trans = conn.transaction()?;
+    trans.execute(
+        "update main set user_order = 99999 where uniqueid = ?",
+        params![uniqueid],
+    )?;
     trans.execute("UPDATE main SET user_order = user_order -1 WHERE user_order > (SELECT user_order from main WHERE uniqueid = ?)", params![uniqueid])?;
     trans.execute("DELETE FROM main WHERE uniqueid = ?", params![uniqueid])?;
     trans.execute(
@@ -214,7 +218,7 @@ pub fn move_song_up_one(
         )?;
         trans.execute(
             "UPDATE main SET user_order = ? WHERE user_order = 2000000",
-            params![one_below, song_uuid],
+            params![one_below],
         )?;
         trans.commit()?;
     }
