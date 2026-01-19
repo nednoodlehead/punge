@@ -70,10 +70,11 @@ where
         let limits = Limits::new(Size::ZERO, bounds);
         let node = layout::Node::with_children(
             bounds,
-            vec![self
-                .overlay
-                .as_widget()
-                .layout(&mut self.tree.children[1], renderer, &limits)],
+            vec![self.overlay.as_widget_mut().layout(
+                &mut self.tree.children[1],
+                renderer,
+                &limits,
+            )],
         );
         node.move_to(self.position)
     }
@@ -97,15 +98,15 @@ where
             &layout.bounds(),
         );
     }
-    fn on_event(
+    fn update(
         &mut self,
-        event: Event,
+        event: &Event,
         layout: layout::Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
-    ) -> iced::advanced::graphics::core::event::Status {
+    ) {
         match event {
             // ALSO: we are fixing #82 by refreshing the playlist (self.refresh_playlist() ) every time we create a message from that menu
             // so addtoplaylist, Delete, Quickswap, move up & down
@@ -139,11 +140,11 @@ where
                     top_overlay.x += 79.0;
                     let overlay_area =
                         iced::Rectangle::new(top_overlay, Size::new(150.0, overlay_y));
-                    if add_to_area.contains(position) || overlay_area.contains(position) {
+                    if add_to_area.contains(*position) || overlay_area.contains(*position) {
                         // we should show the sub menu
                         st.sub_menu_spot = Point::new(x_spot, y_spot);
                         st.show_sub_menu = true;
-                    } else if !lc.contains(position) {
+                    } else if !lc.contains(*position) {
                         // we are outside of the menus, stop showing them
                         st.show_bar = false;
                         st.show_sub_menu = false;
@@ -151,7 +152,6 @@ where
                         // we are inside the menus, but not over the overlay area / bottom button, show just the menu!
                         st.show_sub_menu = false;
                     }
-                    return iced::event::Status::Captured;
                 }
                 // the bar is inverted because of where the cursor is in the viewport. so we invert it...
                 else {
@@ -172,20 +172,18 @@ where
                         Size::new(150.0, overlay_y),
                     );
 
-                    if open_hover_area.contains(position) || overlay_area.contains(position) {
+                    if open_hover_area.contains(*position) || overlay_area.contains(*position) {
                         st.sub_menu_spot = Point::new(lc.x + 120.0, top_left_corner + 10.0); // ???
                         st.show_sub_menu = true;
-                    } else if !lc.contains(position) {
+                    } else if !lc.contains(*position) {
                         st.show_bar = false;
                         st.show_sub_menu = false;
                     } else {
                         st.show_sub_menu = false;
                     }
-
-                    return iced::event::Status::Captured;
                 }
             }
-            _ => self.overlay.as_widget_mut().on_event(
+            _ => self.overlay.as_widget_mut().update(
                 &mut self.tree.children[1],
                 event,
                 layout.children().next().unwrap(),

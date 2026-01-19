@@ -23,6 +23,7 @@ pub fn just_text(status: Status) -> iced::widget::button::Style {
                 width: 1.0,
             },
             shadow: Shadow::default(),
+            snap: false,
         },
         Status::Hovered => {
             Style {
@@ -44,6 +45,7 @@ pub fn just_text(status: Status) -> iced::widget::button::Style {
                     width: 1.0,
                 },
                 shadow: Shadow::default(),
+                snap: false,
             }
         }
         _ => Style::default(),
@@ -85,6 +87,7 @@ pub fn menu_button_style(status: Status) -> Style {
                 offset: Vector { x: 3.0, y: 3.0 },
                 blur_radius: 1.0,
             },
+            snap: false,
         },
         Status::Active => Style {
             background: None,
@@ -114,6 +117,7 @@ pub fn menu_button_style(status: Status) -> Style {
                 offset: Vector { x: 3.0, y: 3.0 },
                 blur_radius: 1.0,
             },
+            snap: false,
         },
 
         Status::Disabled => Style {
@@ -160,6 +164,7 @@ pub fn _sub_menu_button_style(status: Status) -> Style {
                 offset: Vector { x: 3.0, y: 3.0 },
                 blur_radius: 1.0,
             },
+            snap: false,
         },
         Status::Hovered => {
             Style {
@@ -195,6 +200,7 @@ pub fn _sub_menu_button_style(status: Status) -> Style {
                     offset: Vector { x: 3.0, y: 3.0 },
                     blur_radius: 1.0,
                 },
+                snap: false,
             }
         }
         _ => Style::default(),
@@ -222,6 +228,7 @@ pub fn playlist_text_style(status: Status) -> Style {
                 width: 1.0,
             },
             shadow: Shadow::default(),
+            snap: false,
         },
 
         _ => Style::default(),
@@ -256,6 +263,7 @@ pub fn punge_button_style(status: Status) -> Style {
                 width: 1.0,
             },
             shadow: Shadow::default(),
+            snap: false,
         },
         Status::Disabled => Style {
             background: Some(Background::Color(Color {
@@ -281,6 +289,7 @@ pub fn punge_button_style(status: Status) -> Style {
                 width: 1.0,
             },
             shadow: Shadow::default(),
+            snap: false,
         },
         Status::Hovered => Style {
             background: Some(Background::Color(Color {
@@ -306,6 +315,7 @@ pub fn punge_button_style(status: Status) -> Style {
                 width: 1.0,
             },
             shadow: Shadow::default(),
+            snap: false,
         },
         Status::Pressed => Style {
             background: Some(Background::Color(Color {
@@ -331,6 +341,7 @@ pub fn punge_button_style(status: Status) -> Style {
                 width: 1.0,
             },
             shadow: Shadow::default(),
+            snap: false,
         },
     }
 }

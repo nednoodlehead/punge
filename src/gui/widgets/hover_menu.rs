@@ -82,10 +82,10 @@ where
 {
     fn layout(&mut self, renderer: &Renderer, bounds: Size) -> layout::Node {
         let limits = Limits::new(Size::ZERO, bounds);
-        let node = self
-            .content
-            .as_widget()
-            .layout(&mut self.tree.children[2], renderer, &limits);
+        let node =
+            self.content
+                .as_widget_mut()
+                .layout(&mut self.tree.children[2], renderer, &limits);
         let st: &RowState = self.tree.state.downcast_ref();
         node.move_to(st.sub_menu_spot)
     }
@@ -108,16 +108,16 @@ where
         );
     }
 
-    fn on_event(
+    fn update(
         &mut self,
-        event: Event,
+        event: &Event,
         layout: layout::Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
-    ) -> iced::advanced::graphics::core::event::Status {
-        self.content.as_widget_mut().on_event(
+    ) {
+        self.content.as_widget_mut().update(
             &mut self.tree.children[2],
             event,
             layout,
@@ -126,7 +126,7 @@ where
             clipboard,
             shell,
             &layout.bounds(),
-        )
+        );
     }
 }
 impl<'a, Message, Theme, Renderer> From<HoverMenu<'a, Message, Theme, Renderer>>

@@ -1,63 +1,61 @@
 use crate::db::fetch;
 use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
-use crate::gui::start::App;
 use crate::player::interface::read_file_from_beginning;
 use crate::player::interface::{self};
-use crate::types::{Config, MusicData, PungeMusicObject, ShuffleType};
+use crate::types::{
+    Config, ConfigLoopData, DiscordData, Moveable, MusicData, MusicLoopData, PungeMusicObject,
+    ShuffleType,
+};
 use arc_swap::ArcSwap;
 use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
 use global_hotkey::{GlobalHotKeyEvent, HotKeyState};
-use log::{debug, info, warn};
-
 use iced::futures::sink::SinkExt;
-use iced::subscription::Subscription;
+use iced::futures::{self, Stream};
+use iced::Subscription;
+use log::{debug, info, warn};
 use rand::{self, Rng};
 use std::sync::Arc;
-use tokio::{self}; // for benchmarking the skip function
 
-// makes idling a bit more interesting. Could pull these from json one day...
-impl App {
-    // difference between this database subscription is that no sender and receiver is needed, instead we check the status of self.current_obj every 20 seconds or so and do some calculations for inserting into db
-    // now the question you may have is, "ok, i see how this can work for weight, but how for plays?", because the weight can be adjusted maybe += 1 for each 20 seconds its listened
-    // well, to answer the question of "how do we calculate plays", is we can divide the video up by the increment value, and if it reaches that value, add +1 play
-    // also, in the other download function , we divide the len by 25 to see how many times it fits,  we will have the db check every 15 seconds,
-    pub fn database_subscription(
-        &self,
-        obj: Arc<ArcSwap<MusicData>>,
-    ) -> Subscription<ProgramCommands> {
-        iced::subscription::channel(11, 32, |mut _sender| async move {
+pub fn database_subscription<'a>(obj: &'a Moveable) -> impl Stream<Item = ProgramCommands> {
+    let cl = obj.clone();
+    iced::stream::channel(100, |mut _sender| {
+        async move {
             async_std::task::sleep(std::time::Duration::from_secs(4)).await; // give the id time to init properly, no real rush to have the subscription start right away anyways...
-            let mut id = obj.load().song_id.clone(); // hopfully initialized in time
+            let mut id = cl.data.load().song_id.clone(); // hopfully initialized in time
             let mut cycle = 0;
             loop {
-                if !obj.load().is_playing {
+                if !cl.data.load().is_playing {
                     loop {
                         async_std::task::sleep(std::time::Duration::from_secs(1)).await;
-                        if obj.load().is_playing {
+                        if cl.data.load().is_playing {
                             break;
                         }
                     }
                 }
                 async_std::task::sleep(std::time::Duration::from_secs(10)).await;
-                if id == obj.load().song_id {
+                if id == cl.data.load().song_id {
                     cycle += 1;
-                    crate::db::metadata::add_one_weight(obj.load().song_id.clone()).unwrap();
-                    if cycle == obj.load().threshold {
+                    crate::db::metadata::add_one_weight(cl.data.load().song_id.clone()).unwrap();
+                    if cycle == cl.data.load().threshold {
                         // so doing it this way gets rid of the need to hold onto the last id, since midway through (~2/3rd way) +1 play will occur
-                        crate::db::metadata::add_one_play(obj.load().song_id.clone()).unwrap();
+                        crate::db::metadata::add_one_play(cl.data.load().song_id.clone()).unwrap();
                     }
                 } else {
                     //song has changed, was the threshold met?
-                    id = obj.load().song_id.clone();
+                    id = cl.data.load().song_id.clone();
                     cycle = 0;
                 }
             }
-        })
-    }
+        }
+    })
+}
 
-    pub fn hotkey_loop(&self, config: Arc<ArcSwap<Config>>) -> Subscription<ProgramCommands> {
-        iced::subscription::channel(5, 32, |mut sender| async move {
+pub fn hotkey_loop<'a>(old_config: &'a ConfigLoopData) -> impl Stream<Item = ProgramCommands> {
+    let config = old_config.config.clone();
+    iced::stream::channel(
+        5,
+        |mut sender: iced::futures::channel::mpsc::Sender<ProgramCommands>| async move {
             // so can we have a hashmap, that can be updated, and the loop here will do a hashmap lookup
             // for those types and find the associated command, and send it?
             // so map {
@@ -90,21 +88,29 @@ impl App {
                 async_std::task::sleep(std::time::Duration::from_millis(50)).await;
                 // required for the stuff to work
             }
-        })
-    }
+        },
+    )
+}
 
-    pub fn close_app_sub(&self) -> Subscription<ProgramCommands> {
-        // bro they took my events_with
-        iced::event::listen_with(handle_app_events)
-        // nvmd i got it back
-    }
+pub fn close_app_sub() -> Subscription<ProgramCommands> {
+    // bro they took my events_with
+    iced::event::listen_with(handle_app_events)
+    // nvmd i got it back
+}
 
-    pub fn music_loop(
-        &self,
-        config: Arc<ArcSwap<Config>>,
-        playlist_id: String,
-    ) -> Subscription<ProgramCommands> {
-        iced::subscription::channel(0, 32, |mut sender| async move {
+// difference between this database subscription is that no sender and receiver is needed, instead we check the status of self.current_obj every 20 seconds or so and do some calculations for inserting into db
+// now the question you may have is, "ok, i see how this can work for weight, but how for plays?", because the weight can be adjusted maybe += 1 for each 20 seconds its listened
+// well, to answer the question of "how do we calculate plays", is we can divide the video up by the increment value, and if it reaches that value, add +1 play
+// also, in the other download function , we divide the len by 25 to see how many times it fits,  we will have the db check every 15 seconds,
+
+pub fn music_loop<'a>(
+    data: &'a MusicLoopData,
+) -> impl iced::futures::Stream<Item = ProgramCommands> {
+    let playlist_id = data.playlist_name.clone();
+    let config = data.config.clone();
+    iced::stream::channel(
+        32,
+        |mut sender: iced::futures::channel::mpsc::Sender<ProgramCommands>| async move {
             // sender to give to the gui, and the receiver is used here to listen for clicking of buttons
             debug!("playlist id passed: {}", &playlist_id);
             let items: Vec<PungeMusicObject> = if playlist_id == "main" {
@@ -856,68 +862,72 @@ impl App {
                 }
                 async_std::task::sleep(std::time::Duration::from_millis(25)).await;
             }
-        })
-    }
+        },
+    )
+}
 
-    pub fn discord_loop(
-        &self,
-        obj: Arc<ArcSwap<MusicData>>,
-        config: Arc<ArcSwap<Config>>,
-    ) -> Subscription<ProgramCommands> {
-        iced::subscription::channel(13, 32, |mut _sender| async move {
-            let mut client = DiscordIpcClient::new("1219029975441608737").unwrap();
-            let punge_img = activity::Assets::new().large_image("punge_icon_for_discord-02");
-            match client.connect() {
-                Ok(_) => {
-                    info!("Discord client connected successfully")
-                }
-                Err(e) => {
-                    warn!("Discord client not connected: {:?}\nWe will continue to retry in the background...", e);
-                    while client.connect().is_err() {
-                        std::thread::sleep(std::time::Duration::from_secs(9))
-                    }
+pub fn discord_loop<'a>(
+    imp: &'a DiscordData,
+) -> impl iced::futures::Stream<Item = ProgramCommands> {
+    let obj: Arc<ArcSwap<MusicData>> = imp.data.clone();
+    let config: Arc<ArcSwap<Config>> = imp.config.clone();
+    iced::stream::channel(32, |mut _sender| async move {
+        let mut client = DiscordIpcClient::new("1219029975441608737").unwrap();
+        let punge_img = activity::Assets::new().large_image("punge_icon_for_discord-02");
+        match client.connect() {
+            Ok(_) => {
+                info!("Discord client connected successfully")
+            }
+            Err(e) => {
+                warn!("Discord client not connected: {:?}\nWe will continue to retry in the background...", e);
+                while client.connect().is_err() {
+                    std::thread::sleep(std::time::Duration::from_secs(9))
                 }
             }
-            loop {
-                // every 5 seconds, update the song. maybe this will be changed at some point to include the
-                if !obj.load().is_playing {
-                    let _ = client.set_activity(
-                        activity::Activity::new()
-                            .state(
-                                config.load().idle_strings[rand::thread_rng()
-                                    .gen_range(0..config.load().idle_strings.len())]
-                                .as_str(),
-                            )
-                            .assets(punge_img.clone()),
-                    );
-                    loop {
-                        // loop so the idle message doesn't change repeatedly...
-                        if obj.load().is_playing {
-                            break;
-                        } else {
-                            async_std::task::sleep(std::time::Duration::from_secs(1)).await;
-                        }
+        }
+        loop {
+            // every 5 seconds, update the song. maybe this will be changed at some point to include the
+            if !obj.load().is_playing {
+                let _ = client.set_activity(
+                    activity::Activity::new()
+                        .state(
+                            config.load().idle_strings
+                                [rand::thread_rng().gen_range(0..config.load().idle_strings.len())]
+                            .as_str(),
+                        )
+                        .assets(punge_img.clone()),
+                );
+                loop {
+                    // loop so the idle message doesn't change repeatedly...
+                    if obj.load().is_playing {
+                        break;
+                    } else {
+                        async_std::task::sleep(std::time::Duration::from_secs(1)).await;
                     }
-                } else {
-                    let tmp = obj.load();
-                    let (title, artist) = (tmp.title.clone(), tmp.author.clone());
-                    let _ = client.set_activity(
-                        activity::Activity::new()
-                            .state(title.as_str())
-                            .details(artist.as_str())
-                            .assets(punge_img.clone()),
-                    );
                 }
-                async_std::task::sleep(std::time::Duration::from_secs(5)).await;
+            } else {
+                let tmp = obj.load();
+                let (title, artist) = (tmp.title.clone(), tmp.author.clone());
+                let _ = client.set_activity(
+                    activity::Activity::new()
+                        .state(title.as_str())
+                        .details(artist.as_str())
+                        .assets(punge_img.clone()),
+                );
             }
-        })
-    }
+            async_std::task::sleep(std::time::Duration::from_secs(5)).await;
+        }
+    })
 }
 
 // handles app events, used for listening for the window close event (for now)
-fn handle_app_events(event: iced::Event, _status: iced::event::Status) -> Option<ProgramCommands> {
+fn handle_app_events(
+    event: iced::Event,
+    _status: iced::event::Status,
+    id: iced::window::Id,
+) -> Option<ProgramCommands> {
     match &event {
-        iced::Event::Window(_, iced::window::Event::CloseRequested) => {
+        iced::Event::Window(iced::window::Event::CloseRequested) => {
             Some(ProgramCommands::InAppEvent(AppEvent::CloseRequested))
         }
         _ => None,

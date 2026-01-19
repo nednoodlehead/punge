@@ -8,8 +8,8 @@ use crate::gui::style::button::{
 use crate::gui::style::container::bottom_bar_container;
 use crate::gui::style::scrubber::scrubber_style;
 use crate::gui::style::volume::volume_style;
-use iced::widget::{button, column, container, horizontal_space, row, slider, text, Column, Image};
-use iced::{Alignment, Element};
+use iced::widget::{button, column, container, row, slider, space, text, Column, Image};
+use iced::{Alignment, Element, Length};
 use itertools::Itertools;
 
 pub fn create_whole_menu<'a, Message, Theme, Renderer>(
@@ -157,11 +157,11 @@ impl App {
                     text(curr_song.album.clone()),
                 ]
                 .width(200.0),
-                horizontal_space(),
+                space().width(Length::Fill),
                 column![
                     // music buttons & srubbing bar
                     row![
-                        horizontal_space(),
+                        space().width(Length::Fill),
                         button(text("<----"))
                             .style(|_theme, status| just_text(status))
                             .on_press(ProgramCommands::SkipBackwards),
@@ -177,9 +177,9 @@ impl App {
                         button(text("---->"))
                             .on_press(ProgramCommands::SkipForwards)
                             .style(|_theme, status| just_text(status)),
-                        horizontal_space()
+                        space().width(Length::Fill)
                     ]
-                    .align_items(Alignment::Center)
+                    .align_y(Alignment::Center)
                     .spacing(50),
                     row![
                         text(crate::utils::time::sec_to_time(self.time_elapsed)),
@@ -198,7 +198,7 @@ impl App {
                     .spacing(25)
                 ]
                 .width(450),
-                horizontal_space(),
+                space().width(Length::Fill),
                 column![
                     // shuffle, vol & goto
                     row![
@@ -216,7 +216,7 @@ impl App {
                             .width(150)
                             .style(|_theme, status| volume_style(status))
                     ]
-                    .align_items(Alignment::Center)
+                    .align_y(Alignment::Center)
                     .spacing(15),
                     search_container
                 ]
@@ -224,7 +224,7 @@ impl App {
             ]
             .padding(15)
             // .spacing(400)
-            .align_items(Alignment::Center),
+            .align_y(Alignment::Center),
         )
         .style(|_status| bottom_bar_container())
         .into()

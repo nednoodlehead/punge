@@ -1,7 +1,7 @@
 use crate::gui::messages::{ProgramCommands, TextType};
 use crate::gui::style::button::punge_button_style;
-use iced::widget::{button, column, container, horizontal_space, row, text, text_input};
-use iced::Element;
+use iced::widget::{button, column, container, row, space, text, text_input};
+use iced::{Element, Length};
 
 // maybe have ability to update playlists from here?
 pub struct PlaylistPage {
@@ -54,7 +54,7 @@ impl PlaylistPage {
                             .on_press(ProgramCommands::ClearPlaylistPage)
                             .style(|_t, status| punge_button_style(status))
                     ],
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     button(text("Delete playlist (no undo)"))
                         .on_press(ProgramCommands::DeletePlaylist(
                             self.user_id.clone().unwrap()

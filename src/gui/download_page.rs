@@ -2,8 +2,7 @@ use crate::gui::messages::{CheckBoxType, ProgramCommands, TextType};
 use crate::gui::style::button::punge_button_style;
 use crate::types::YouTubeSearchResult;
 use iced::widget::{
-    button, checkbox, column, horizontal_space, row, scrollable, text, text_input, Column,
-    Container, Image,
+    button, checkbox, column, row, scrollable, space, text, text_input, Column, Container, Image,
 };
 use iced::{Element, Length};
 
@@ -49,17 +48,19 @@ impl DownloadPage {
                         ],
                         self.create_searcher_scrollable(),
                         row![
-                            checkbox("Include Videos", self.include_videos).on_toggle(|val| {
-                                ProgramCommands::CheckBoxEvent(CheckBoxType::IncludeVideos, val)
-                            }),
-                            checkbox("Include Playlists", self.include_playlists).on_toggle(
-                                |val| {
+                            checkbox(self.include_videos)
+                                .on_toggle(|val| {
+                                    ProgramCommands::CheckBoxEvent(CheckBoxType::IncludeVideos, val)
+                                })
+                                .label("Includes Videos"),
+                            checkbox(self.include_playlists)
+                                .on_toggle(|val| {
                                     ProgramCommands::CheckBoxEvent(
                                         CheckBoxType::IncludePlaylists,
                                         val,
                                     )
-                                }
-                            )
+                                })
+                                .label("Include Playlists")
                         ]
                     ]
                     .spacing(15.0),
@@ -122,7 +123,7 @@ impl DownloadPage {
                                     ))
                                 ]
                                 .width(Length::Fixed(320.0)),
-                                horizontal_space(),
+                                space().width(Length::Fill),
                                 column![
                                     button(text("Download!"))
                                         .style(|_t, status| punge_button_style(status))
@@ -142,7 +143,7 @@ impl DownloadPage {
                                     text(results.videos.clone().unwrap())
                                 ]
                                 .width(Length::Fixed(320.0)),
-                                horizontal_space(),
+                                space().width(Length::Fill),
                                 column![button(text("Download!"))
                                     .style(|_t, status| punge_button_style(status))
                                     .on_press(ProgramCommands::Download(results.link.clone())),],

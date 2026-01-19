@@ -22,6 +22,7 @@ pub fn _container_with_border() -> Style {
             offset: Vector { x: 1.0, y: 1.0 },
             blur_radius: 1.0,
         },
+        snap: false,
     }
 }
 
@@ -49,5 +50,6 @@ pub fn bottom_bar_container() -> Style {
             offset: Vector { x: 1.0, y: 1.0 },
             blur_radius: 1.0,
         },
+        snap: false,
     }
 }

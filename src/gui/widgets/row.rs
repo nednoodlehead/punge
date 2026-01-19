@@ -2,8 +2,8 @@ use crate::gui::widgets::row_overlay::OverlayButtons;
 use iced::advanced::mouse;
 use iced::advanced::{layout, renderer, widget::Tree, widget::Widget};
 use iced::widget::{button, row, text};
-use iced::Event;
 use iced::{Border, Color, Element, Length, Point, Size, Vector};
+use iced::{Event, Rectangle};
 
 use crate::gui::style::button::punge_button_style;
 // i dont think this is the best way to make this work. but passing in the Element from main.rs just caused issues
@@ -89,7 +89,7 @@ where
             .clip(true)
             .padding(0)
             .style(|_t, status| punge_button_style(status))]
-        .align_items(iced::Alignment::Center);
+        .align_y(iced::Alignment::Center);
         for disp_text in [title, author, album] {
             if disp_text.len() < 30 {
                 rowdata = rowdata.push(text(disp_text).width(350));
@@ -188,7 +188,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &iced::advanced::layout::Limits,
@@ -200,7 +200,7 @@ where
             },
             vec![self
                 .rowdata
-                .as_widget()
+                .as_widget_mut()
                 .layout(&mut tree.children[0], renderer, limits)],
         )
     }
@@ -266,6 +266,7 @@ where
         tree: &'b mut Tree,
         _layout: layout::Layout<'_>,
         _renderer: &Renderer,
+        _viewport: &Rectangle,
         _translation: Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
         let st: &RowState = tree.state.downcast_ref();
@@ -298,17 +299,17 @@ where
         )
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         state: &mut Tree,
-        event: iced::Event,
+        event: &iced::Event,
         layout: layout::Layout<'_>,
         cursor: iced::advanced::mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
         viewport: &iced::Rectangle,
-    ) -> iced::advanced::graphics::core::event::Status {
+    ) {
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
                 // println!("current viewport: {:?}", &viewport);
@@ -328,10 +329,8 @@ where
                     } else {
                         st.invert_bar = false;
                     }
-                    iced::event::Status::Captured
                 } else {
                     st.show_bar = false;
-                    iced::event::Status::Captured
                 }
             }
 
@@ -348,7 +347,7 @@ where
                         .bounds(),
                 ) {
                     // return the result of clicking the button (Status captured or status ignored)
-                    return self.rowdata.as_widget_mut().on_event(
+                    return self.rowdata.as_widget_mut().update(
                         &mut state.children[0],
                         event,
                         layout,
@@ -383,9 +382,9 @@ where
                             self.song_uuid.clone(),
                         ));
                     }
-                    iced::event::Status::Captured
+                    // iced::event::Status::Captured
                 } else {
-                    iced::event::Status::Ignored
+                    // iced::event::Status::Ignored
                 }
             }
             Event::Mouse(mouse::Event::CursorMoved { position }) => {
@@ -393,21 +392,22 @@ where
                 let tmp_cursor = cursor.position();
                 let st: &mut RowState = state.state.downcast_mut();
                 match tmp_cursor {
-                    None => return iced::event::Status::Ignored,
+                    None => return (), // ??
                     Some(_) => {
                         let mut new_layout = layout.bounds();
                         new_layout.y = new_layout.y - viewport.y + 30.0;
-                        let m = iced::advanced::mouse::Cursor::Available(position);
+                        let m = iced::advanced::mouse::Cursor::Available(*position);
                         if !m.is_over(new_layout) {
                             st.show_bar = false;
-                            iced::event::Status::Captured
+                            // iced::event::Status::Captured
                         } else {
-                            iced::event::Status::Ignored
+                            // iced::event::Status::Ignored
+                            return ();
                         }
                     }
                 }
             }
-            _ => self.rowdata.as_widget_mut().on_event(
+            _ => self.rowdata.as_widget_mut().update(
                 &mut state.children[0],
                 event,
                 layout,

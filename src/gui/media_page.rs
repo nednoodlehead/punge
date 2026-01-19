@@ -3,10 +3,9 @@ use crate::gui::style::button::punge_button_style;
 use crate::types::AppError;
 use crate::types::Config;
 use iced::widget::{
-    button, column, combo_box, horizontal_space, row, scrollable, text, text_input, Column,
-    Container,
+    button, column, combo_box, row, scrollable, space, text, text_input, Column, Container,
 };
-use iced::{Alignment, Element};
+use iced::{Alignment, Element, Length};
 use itertools::Itertools;
 use log::{debug, info, warn};
 use rusty_ytdl::blocking::Video;
@@ -32,30 +31,30 @@ impl MediaPage {
     pub fn view(&self) -> Element<'_, ProgramCommands> {
         let buttons_and_labels = column![
             row![
-                horizontal_space(),
+                space().width(Length::Fill),
                 text("Youtube / Instagram link").width(175.0),
                 text_input(&self.download_input, &self.download_input)
                     .on_input(|txt| {
                         ProgramCommands::UpdateWidgetText(TextType::Mp4DownloadInput, txt)
                     })
                     .width(500.0),
-                horizontal_space(),
+                space().width(Length::Fill),
             ]
             .padding(10.0)
-            .align_items(Alignment::Center),
+            .align_y(Alignment::Center),
             row![
-                horizontal_space(),
+                space().width(Length::Fill),
                 text("Path:").width(175.0),
                 text_input(&self.download_to_location, &self.download_to_location)
                     .on_input(|txt| {
                         ProgramCommands::UpdateWidgetText(TextType::Mp4PathInput, txt)
                     })
                     .width(500),
-                horizontal_space()
+                space().width(Length::Fill)
             ]
             .padding(10.0),
             row![
-                horizontal_space(),
+                space().width(Length::Fill),
                 combo_box(&self.mp3_and_4, "", Some(&self.download_type), |txt| {
                     ProgramCommands::UpdateCombobox(ComboBoxType::Mp3Or4, txt)
                 })
@@ -68,21 +67,21 @@ impl MediaPage {
                         self.download_type.clone(),
                     ))
                     .width(100.0),
-                horizontal_space()
+                space().width(Length::Fill)
             ]
             .padding(10.0)
         ];
         Container::new(
             column![
-                buttons_and_labels.align_items(Alignment::Center),
+                buttons_and_labels.align_x(Alignment::Center),
                 row![
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     scrollable(
                         self.download_feedback
                             .iter()
                             .fold(Column::new(), |item, str| { item.push(text(str)) })
                     ),
-                    horizontal_space()
+                    space().width(Length::Fill)
                 ]
                 .height(350), // empty space..
             ]

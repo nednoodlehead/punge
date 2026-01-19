@@ -3,8 +3,8 @@ use iced::advanced::layout::Limits;
 // and a right-click will show some playlist options (edit, move up, move down, duplicate, play)
 use iced::advanced::{layout, renderer, widget::Tree, widget::Widget};
 use iced::advanced::{mouse, Overlay};
-use iced::Event;
 use iced::{Element, Length, Point, Size, Vector};
+use iced::{Event, Rectangle};
 
 pub struct PlaylistButtonState {
     show_menu: bool,
@@ -109,14 +109,26 @@ where
     fn size(&self) -> Size<Length> {
         self.button.as_widget().size()
     }
+    fn diff(&self, tree: &mut Tree) {
+        tree.diff_children(&[
+            &self.button,
+            &(self.button_overlay)(
+                self.edit_message.clone(),
+                self.move_up_message.clone(),
+                self.move_down_message.clone(),
+                self.dupe_message.clone(),
+                self.play_message.clone(),
+            ),
+        ]);
+    }
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
     ) -> layout::Node {
         self.button
-            .as_widget()
+            .as_widget_mut()
             .layout(&mut tree.children[0], renderer, limits)
     }
     fn draw(
@@ -146,53 +158,44 @@ where
         })
     }
 
-    fn on_event(
+    fn update(
         &mut self,
         state: &mut Tree,
-        event: Event,
+        event: &Event,
         layout: layout::Layout<'_>,
         cursor: mouse::Cursor,
         _renderer: &Renderer,
         _clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
         _viewport: &iced::Rectangle,
-    ) -> iced::advanced::graphics::core::event::Status {
+    ) {
         let st = state.state.downcast_mut::<PlaylistButtonState>();
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
                 if cursor.is_over(layout.bounds()) {
                     st.show_menu = true;
                     st.cursor_pos = cursor.position().unwrap();
-                    iced::event::Status::Captured
-                } else {
-                    iced::event::Status::Ignored
                 }
             }
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 if cursor.is_over(layout.bounds()) {
                     shell.publish(self.view_message.clone());
-                    return iced::event::Status::Captured;
                 }
-                iced::event::Status::Ignored
             }
             Event::Mouse(mouse::Event::CursorMoved { position: _ }) => {
                 if st.show_menu {
                     let tmp = cursor.position();
                     match tmp {
-                        None => iced::event::Status::Ignored,
+                        None => (),
                         Some(_) => {
                             if !cursor.is_over(layout.children().next().unwrap().bounds()) {
                                 st.show_menu = false;
-                                return iced::event::Status::Captured;
                             }
-                            iced::event::Status::Ignored
                         }
                     }
-                } else {
-                    iced::event::Status::Ignored
                 }
             }
-            _ => iced::event::Status::Ignored,
+            _ => (),
         }
     }
 
@@ -201,12 +204,14 @@ where
         tree: &'b mut Tree,
         _layout: layout::Layout<'_>,
         _renderer: &Renderer,
+        _viewport: &Rectangle,
         _translation: Vector,
     ) -> Option<iced::advanced::overlay::Element<'b, Message, Theme, Renderer>> {
         let st: &mut PlaylistButtonState = tree.state.downcast_mut();
         if !st.show_menu {
             return None;
         }
+        println!("{:?}", &tree);
         Some(
             PlaylistButtonOverlay {
                 tree,
@@ -245,10 +250,11 @@ where
     fn layout(&mut self, renderer: &Renderer, bounds: Size) -> layout::Node {
         let st = self.tree.state.downcast_mut::<PlaylistButtonState>();
         let limits = Limits::new(Size::ZERO, bounds);
-        let node = self
-            .overlay
-            .as_widget()
-            .layout(&mut self.tree.children[1], renderer, &limits);
+        let node =
+            self.overlay
+                .as_widget_mut()
+                .layout(&mut self.tree.children[1], renderer, &limits);
+        println!("tyring to move to: {:?}", &st.cursor_pos);
         node.move_to(st.cursor_pos)
     }
     fn draw(
@@ -269,16 +275,16 @@ where
             &layout.bounds(),
         )
     }
-    fn on_event(
+    fn update(
         &mut self,
-        event: Event,
+        event: &Event,
         layout: layout::Layout<'_>,
         cursor: mouse::Cursor,
         renderer: &Renderer,
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
-    ) -> iced::advanced::graphics::core::event::Status {
-        self.overlay.as_widget_mut().on_event(
+    ) {
+        self.overlay.as_widget_mut().update(
             &mut self.tree.children[1],
             event,
             layout,
@@ -287,7 +293,7 @@ where
             clipboard,
             shell,
             &layout.bounds(),
-        )
+        );
     }
 }
 

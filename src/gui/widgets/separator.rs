@@ -17,7 +17,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut iced::advanced::widget::Tree,
         _renderer: &Renderer,
         limits: &iced::advanced::layout::Limits,
@@ -40,7 +40,15 @@ where
             renderer::Quad {
                 bounds: layout.bounds(),
                 border: Border {
-                    radius: [3.0; 4].into(),
+                    color: Color::BLACK,
+                    width: 1.0,
+                    radius: iced::border::Radius {
+                        top_left: 3.0,
+                        top_right: 3.0,
+                        bottom_right: 3.0,
+                        bottom_left: 3.0,
+                    },
+                    // radius: [3.0; 4].into(),
                     ..Default::default()
                 },
                 ..renderer::Quad::default()

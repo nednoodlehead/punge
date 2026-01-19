@@ -3,10 +3,9 @@ use crate::gui::style::button::punge_button_style;
 use crate::types::{Config, PungeKeyBind};
 use crate::utils::key::{self};
 use iced::widget::{
-    button, column, combo_box, horizontal_space, row, scrollable, text, text_editor, text_input,
-    Container,
+    button, column, combo_box, row, scrollable, space, text, text_editor, text_input, Container,
 };
-use iced::Element;
+use iced::{Element, Length};
 use std::hash::Hash;
 
 // all bind options: staticvolup, staticvoldown, forward, bckwards, play/pause, shuffle, gotoalbum
@@ -186,14 +185,14 @@ impl SettingPage {
         Container::new(scrollable(
             column![
                 row![
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     text("Download locations").size(20),
-                    horizontal_space()
+                    space().width(Length::Fill)
                 ]
                 .padding(10),
                 row![
                     text("Backup location directory"),
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     if std::path::Path::new(&self.backup_text).exists() {
                         // thumbs up
                         // text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
@@ -215,7 +214,7 @@ impl SettingPage {
                 .padding(10.0),
                 row![
                     text("Mp3 download location"),
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     if std::path::Path::new(&self.mp3_path_text).exists() {
                         // thumbs up
                         // text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
@@ -234,7 +233,7 @@ impl SettingPage {
                 .padding(10.0),
                 row![
                     text("Jpg download location"),
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     if std::path::Path::new(&self.jpg_path_text).exists() {
                         // thumbs up
                         // text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
@@ -253,7 +252,7 @@ impl SettingPage {
                 .padding(10.0),
                 row![
                     text("Default Media Download location"),
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     if std::path::Path::new(&self.media_path).exists() {
                         // thumbs up
                         // text("\u{F406}").font(iced_aw::BOOTSTRAP_FONT)
@@ -271,13 +270,13 @@ impl SettingPage {
                 ]
                 .padding(10.0),
                 row![
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     text("Bind amounts & Shuffle").size(20),
-                    horizontal_space()
+                    space().width(Length::Fill)
                 ],
                 row![
                     text("Static increment bind amount"),
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     text_input(&self.static_increment, &self.static_increment)
                         .on_input(|txt| {
                             ProgramCommands::UpdateWidgetText(TextType::StaticIncrement, txt)
@@ -287,7 +286,7 @@ impl SettingPage {
                 .padding(10.0),
                 row![
                     text("Static reduction bind amount"),
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     text_input(&self.static_reduction, &self.static_reduction)
                         .on_input(|txt| {
                             ProgramCommands::UpdateWidgetText(TextType::StaticReduction, txt)
@@ -297,7 +296,7 @@ impl SettingPage {
                 .padding(10.0),
                 row![
                     text("Shuffle type"),
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     combo_box(
                         &self.shuffle_types,
                         "Shuffle type!",
@@ -308,9 +307,9 @@ impl SettingPage {
                 ]
                 .padding(10),
                 row![
-                    horizontal_space(),
+                    space().width(Length::Fill),
                     text("Keybinds").size(20),
-                    horizontal_space()
+                    space().width(Length::Fill)
                 ],
                 self.render_keybinds(),
                 row![
@@ -340,7 +339,7 @@ impl SettingPage {
         column![
             row![
                 text("Play toggle"),
-                horizontal_space(),
+                space().width(Length::Fill),
                 combo_box(
                     &self.key_options,
                     "Key",
@@ -366,7 +365,7 @@ impl SettingPage {
             .padding(10),
             row![
                 text("Skip Forwards"),
-                horizontal_space(),
+                space().width(Length::Fill),
                 combo_box(
                     &self.key_options,
                     "Key",
@@ -392,7 +391,7 @@ impl SettingPage {
             .padding(10),
             row![
                 text("Skip Backwards"),
-                horizontal_space(),
+                space().width(Length::Fill),
                 combo_box(
                     &self.key_options,
                     "Key",
@@ -418,7 +417,7 @@ impl SettingPage {
             .padding(10),
             row![
                 text("Shuffle toggle"),
-                horizontal_space(),
+                space().width(Length::Fill),
                 combo_box(
                     &self.key_options,
                     "Key",
@@ -444,7 +443,7 @@ impl SettingPage {
             .padding(10),
             row![
                 text("Static volume up"),
-                horizontal_space(),
+                space().width(Length::Fill),
                 combo_box(
                     &self.key_options,
                     "Key",
@@ -470,7 +469,7 @@ impl SettingPage {
             .padding(10),
             row![
                 text("Static volume down"),
-                horizontal_space(),
+                space().width(Length::Fill),
                 combo_box(
                     &self.key_options,
                     "Key",
@@ -500,7 +499,7 @@ impl SettingPage {
             .padding(10),
             row![
                 text("Go to album (coming soon!)"),
-                horizontal_space(),
+                space().width(Length::Fill),
                 combo_box(
                     &self.key_options,
                     "Key",
