@@ -20,7 +20,7 @@ pub fn cmd_download(
     // -o "here.mp3" for output
     // --write-thumbnail
     // -x (converts to audio-only), maybe it is worth to do this ourselves, so we can have some logging output?
-    let temp_path = format!("./{}.webm", id); // i think it always gives you a webm...
+    let mut temp_path = format!("./{}.webm", id); // i think it always gives you a webm...
     info!("downloading to {}", &temp_path);
     // also download the thumbnail!!
     let cmd = Command::new("yt-dlp.exe")
@@ -37,10 +37,13 @@ pub fn cmd_download(
         .output();
     match cmd {
         Ok(t) => {
-            info!(
-                "does file exist after download={:?}",
-                std::path::Path::new(&temp_path).exists()
-            );
+            if !std::path::Path::new(&temp_path).exists() {
+                temp_path = format!("{}.mkv", temp_path);
+                info!(
+                    "{} not found. we're chaning it into the .mkv version..",
+                    &temp_path
+                )
+            };
             info!("download successful! {:?} time to convert the file..", &t);
             let ffmpeg_cmd = Command::new("ffmpeg.exe")
                 .args([

@@ -1,9 +1,12 @@
+use arc_swap::ArcSwap;
 use chrono::{Local, NaiveDate};
 use global_hotkey::hotkey::{Code, Modifiers};
 use rusqlite::{types::FromSqlError, Error};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
+use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 use thiserror::Error as terror;
 use uuid::Uuid;
 // object that will be returned, used to input into the database, this object is the
@@ -26,6 +29,53 @@ pub struct PungeMusicObject {
     pub weight: i16,
     pub threshold: u16,
     pub order: usize,
+}
+
+// new requirement for the data passed into a uh, subscription to have the hash impl
+#[derive(Clone)]
+pub struct Moveable {
+    pub data: Arc<ArcSwap<MusicData>>,
+}
+// satisfying stupid iced rquirement s to types passed into subscription::with()
+impl std::hash::Hash for Moveable {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
+        self.data.load().song_id.clone();
+    }
+}
+
+#[derive(Clone)]
+pub struct DiscordData {
+    pub data: Arc<ArcSwap<MusicData>>,
+    pub config: Arc<ArcSwap<Config>>,
+}
+// satisfying stupid iced rquirement s to types passed into subscription::with()
+impl std::hash::Hash for DiscordData {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
+        self.data.load().song_id.clone();
+    }
+}
+
+#[derive(Clone)]
+// more requirement stuff...
+pub struct MusicLoopData {
+    pub config: Arc<ArcSwap<Config>>,
+    pub playlist_name: String,
+}
+impl std::hash::Hash for MusicLoopData {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
+        self.playlist_name.clone();
+    }
+}
+
+#[derive(Clone)]
+// more requirement stuff...
+pub struct ConfigLoopData {
+    pub config: Arc<ArcSwap<Config>>,
+}
+impl std::hash::Hash for ConfigLoopData {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
+        "";
+    }
 }
 
 #[derive(Clone)]
