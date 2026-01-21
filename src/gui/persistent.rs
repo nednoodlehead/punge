@@ -131,6 +131,7 @@ where
             .style(|_t, status| punge_button_style(status))
             .width(110)
     ]
+    .padding(10.0)
     .into()
 }
 
