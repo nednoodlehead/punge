@@ -93,7 +93,6 @@ where
             theme,
             style,
             lay_1,
-            // layout,
             cursor,
             &layout.bounds(),
         );

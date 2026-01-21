@@ -175,24 +175,15 @@ where
                 if cursor.is_over(layout.bounds()) {
                     st.show_menu = true;
                     st.cursor_pos = cursor.position().unwrap();
+                    st.cursor_pos.x = st.cursor_pos.x - 10.0;
+                    st.cursor_pos.y = st.cursor_pos.y - 10.0;
+                    shell.request_redraw();
+                } else {
                 }
             }
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 if cursor.is_over(layout.bounds()) {
                     shell.publish(self.view_message.clone());
-                }
-            }
-            Event::Mouse(mouse::Event::CursorMoved { position: _ }) => {
-                if st.show_menu {
-                    let tmp = cursor.position();
-                    match tmp {
-                        None => (),
-                        Some(_) => {
-                            if !cursor.is_over(layout.children().next().unwrap().bounds()) {
-                                st.show_menu = false;
-                            }
-                        }
-                    }
                 }
             }
             _ => (),
@@ -211,7 +202,6 @@ where
         if !st.show_menu {
             return None;
         }
-        println!("{:?}", &tree);
         Some(
             PlaylistButtonOverlay {
                 tree,
@@ -222,7 +212,6 @@ where
                     self.dupe_message.clone(),
                     self.play_message.clone(),
                 )),
-                postion: self.cursor_pos,
             }
             .into(),
         )
@@ -237,7 +226,6 @@ where
 {
     pub tree: &'a mut Tree,
     pub overlay: Element<'a, Message, Theme, Renderer>,
-    pub postion: Point,
 }
 
 impl<'a, Message, Theme, Renderer> Overlay<Message, Theme, Renderer>
@@ -254,7 +242,7 @@ where
             self.overlay
                 .as_widget_mut()
                 .layout(&mut self.tree.children[1], renderer, &limits);
-        println!("tyring to move to: {:?}", &st.cursor_pos);
+        // because there is the padding (fn create_playlist_button_menu) of 10px, we need to remove 10 from the postiiton
         node.move_to(st.cursor_pos)
     }
     fn draw(
@@ -275,6 +263,7 @@ where
             &layout.bounds(),
         )
     }
+
     fn update(
         &mut self,
         event: &Event,
@@ -284,16 +273,47 @@ where
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
     ) {
-        self.overlay.as_widget_mut().update(
-            &mut self.tree.children[1],
-            event,
-            layout,
-            cursor,
-            renderer,
-            clipboard,
-            shell,
-            &layout.bounds(),
-        );
+        let st = self.tree.state.downcast_mut::<PlaylistButtonState>();
+        match event {
+            Event::Mouse(mouse::Event::CursorMoved { position: _ }) => {
+                if st.show_menu {
+                    let tmp = cursor.position();
+                    match tmp {
+                        None => (),
+                        Some(_) => {
+                            if !cursor.is_over(layout.bounds()) {
+                                st.show_menu = false;
+                            }
+                        }
+                    }
+                }
+            }
+            Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
+                self.overlay.as_widget_mut().update(
+                    &mut self.tree.children[1],
+                    event,
+                    layout,
+                    cursor,
+                    renderer,
+                    clipboard,
+                    shell,
+                    &layout.bounds(),
+                );
+                st.show_menu = false;
+            }
+            _ => {
+                self.overlay.as_widget_mut().update(
+                    &mut self.tree.children[1],
+                    event,
+                    layout,
+                    cursor,
+                    renderer,
+                    clipboard,
+                    shell,
+                    &layout.bounds(),
+                );
+            }
+        }
     }
 }
 
