@@ -131,7 +131,7 @@ where
             .style(|_t, status| punge_button_style(status))
             .width(110)
     ]
-    .padding(10.0)
+    .padding(5.0)
     .into()
 }
 
@@ -245,12 +245,13 @@ impl App {
                         .style(|_t, status| playlist_text_style(status))
                         .into(),
                     ProgramCommands::ChangeViewingPlaylist(playlist.uniqueid.clone()),
-                    create_playlist_button_menu,
-                    ProgramCommands::OpenPlaylistEditPage(playlist.clone()),
-                    ProgramCommands::MovePlaylistUp(playlistid.clone()),
-                    ProgramCommands::MovePlaylistDown(playlistid.clone()),
-                    ProgramCommands::DuplicatePlaylist(playlistid.clone()),
-                    ProgramCommands::PlayFromPlaylist(playlistid.clone()),
+                    create_playlist_button_menu(
+                        ProgramCommands::OpenPlaylistEditPage(playlist.clone()),
+                        ProgramCommands::MovePlaylistUp(playlistid.clone()),
+                        ProgramCommands::MovePlaylistDown(playlistid.clone()),
+                        ProgramCommands::DuplicatePlaylist(playlistid.clone()),
+                        ProgramCommands::PlayFromPlaylist(playlistid.clone()),
+                    ),
                 )
                 .into()
             })

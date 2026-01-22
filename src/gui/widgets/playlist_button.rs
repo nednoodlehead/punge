@@ -18,18 +18,7 @@ where
 {
     button: Element<'a, Message, Theme, Renderer>,
     view_message: Message,
-    button_overlay: fn(
-        Message, // edit
-        Message, // move up
-        Message, // move down
-        Message, // duplicate
-        Message, // play
-    ) -> Element<'a, Message, Theme, Renderer>,
-    edit_message: Message,      // edit
-    move_up_message: Message,   // move up
-    move_down_message: Message, // move down
-    dupe_message: Message,      // duplicate
-    play_message: Message,      // play
+    button_overlay: Element<'a, Message, Theme, Renderer>,
     cursor_pos: Point,
 }
 
@@ -42,18 +31,7 @@ where
     pub fn new(
         button: Element<'a, Message, Theme, Renderer>,
         view_message: Message,
-        button_overlay: fn(
-            Message, // edit
-            Message, // move up
-            Message, // move down
-            Message, // duplicate
-            Message, // play
-        ) -> Element<'a, Message, Theme, Renderer>,
-        edit_message: Message,      // edit
-        move_up_message: Message,   // move up
-        move_down_message: Message, // move down
-        dupe_message: Message,      // duplicate
-        play_message: Message,      // play
+        button_overlay: Element<'a, Message, Theme, Renderer>,
     ) -> Self
     where
         <Theme as iced::widget::button::Catalog>::Class<'a>: From<
@@ -64,11 +42,6 @@ where
             button,
             view_message,
             button_overlay,
-            edit_message,
-            move_up_message,
-            move_down_message,
-            dupe_message,
-            play_message,
             cursor_pos: Point::default(),
         }
     }
@@ -87,39 +60,21 @@ where
 }
 
 impl<'a, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for PlaylistButton<'a, Message, Theme, Renderer>
+    for PlaylistButton<'_, Message, Theme, Renderer>
 where
     Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
     Theme: 'a + iced::widget::text::Catalog + iced::widget::button::Catalog,
     Message: 'a + Clone,
 {
     fn children(&self) -> Vec<Tree> {
-        vec![
-            Tree::new(&self.button),
-            Tree::new(&(self.button_overlay)(
-                self.edit_message.clone(),
-                self.move_up_message.clone(),
-                self.move_down_message.clone(),
-                self.dupe_message.clone(),
-                self.play_message.clone(),
-            )),
-        ]
+        vec![Tree::new(&self.button), Tree::new(&self.button_overlay)]
     }
 
     fn size(&self) -> Size<Length> {
         self.button.as_widget().size()
     }
     fn diff(&self, tree: &mut Tree) {
-        tree.diff_children(&[
-            &self.button,
-            &(self.button_overlay)(
-                self.edit_message.clone(),
-                self.move_up_message.clone(),
-                self.move_down_message.clone(),
-                self.dupe_message.clone(),
-                self.play_message.clone(),
-            ),
-        ]);
+        tree.diff_children(&[&self.button, &self.button_overlay]);
     }
     fn layout(
         &mut self,
@@ -175,8 +130,8 @@ where
                 if cursor.is_over(layout.bounds()) {
                     st.show_menu = true;
                     st.cursor_pos = cursor.position().unwrap();
-                    st.cursor_pos.x = st.cursor_pos.x - 10.0;
-                    st.cursor_pos.y = st.cursor_pos.y - 10.0;
+                    st.cursor_pos.x = st.cursor_pos.x - 5.0;
+                    st.cursor_pos.y = st.cursor_pos.y - 5.0;
                     shell.request_redraw();
                 } else {
                 }
@@ -193,7 +148,7 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        _layout: layout::Layout<'_>,
+        _layout: layout::Layout<'b>,
         _renderer: &Renderer,
         _viewport: &Rectangle,
         _translation: Vector,
@@ -202,48 +157,42 @@ where
         if !st.show_menu {
             return None;
         }
-        Some(
+        Some(iced::advanced::overlay::Element::new(Box::new(
             PlaylistButtonOverlay {
-                tree,
-                overlay: ((self.button_overlay)(
-                    self.edit_message.clone(),
-                    self.move_up_message.clone(),
-                    self.move_down_message.clone(),
-                    self.dupe_message.clone(),
-                    self.play_message.clone(),
-                )),
-            }
-            .into(),
-        )
+                tree: &mut tree.children[1],
+                overlay: &mut self.button_overlay,
+                state: st,
+            },
+        )))
     }
 }
 
-pub struct PlaylistButtonOverlay<'a, Message, Theme, Renderer>
+pub struct PlaylistButtonOverlay<'a, 'b, Message, Theme, Renderer>
 where
-    Message: 'a + Clone,
+    Message: 'b + Clone,
     Theme: iced::widget::button::Catalog,
     Renderer: iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
-    pub tree: &'a mut Tree,
-    pub overlay: Element<'a, Message, Theme, Renderer>,
+    pub tree: &'b mut Tree,
+    pub overlay: &'b mut Element<'a, Message, Theme, Renderer>,
+    pub state: &'b mut PlaylistButtonState,
 }
 
-impl<'a, Message, Theme, Renderer> Overlay<Message, Theme, Renderer>
-    for PlaylistButtonOverlay<'a, Message, Theme, Renderer>
+impl<'a, 'b, Message, Theme, Renderer> Overlay<Message, Theme, Renderer>
+    for PlaylistButtonOverlay<'a, 'b, Message, Theme, Renderer>
 where
     Message: Clone,
     Theme: iced::widget::button::Catalog + iced::widget::text::Catalog,
     Renderer: iced::advanced::Renderer + iced::advanced::text::Renderer,
 {
     fn layout(&mut self, renderer: &Renderer, bounds: Size) -> layout::Node {
-        let st = self.tree.state.downcast_mut::<PlaylistButtonState>();
         let limits = Limits::new(Size::ZERO, bounds);
-        let node =
-            self.overlay
-                .as_widget_mut()
-                .layout(&mut self.tree.children[1], renderer, &limits);
+        let node = self
+            .overlay
+            .as_widget_mut()
+            .layout(&mut self.tree, renderer, &limits);
         // because there is the padding (fn create_playlist_button_menu) of 10px, we need to remove 10 from the postiiton
-        node.move_to(st.cursor_pos)
+        node.move_to(self.state.cursor_pos)
     }
     fn draw(
         &self,
@@ -254,7 +203,7 @@ where
         cursor: mouse::Cursor,
     ) {
         self.overlay.as_widget().draw(
-            &self.tree.children[1],
+            &self.tree,
             renderer,
             theme,
             style,
@@ -273,24 +222,25 @@ where
         clipboard: &mut dyn iced::advanced::Clipboard,
         shell: &mut iced::advanced::Shell<'_, Message>,
     ) {
-        let st = self.tree.state.downcast_mut::<PlaylistButtonState>();
+        // let st = self.tree.state.downcast_mut::<PlaylistButtonState>();
         match event {
             Event::Mouse(mouse::Event::CursorMoved { position: _ }) => {
-                if st.show_menu {
+                if self.state.show_menu {
                     let tmp = cursor.position();
                     match tmp {
                         None => (),
                         Some(_) => {
                             if !cursor.is_over(layout.bounds()) {
-                                st.show_menu = false;
+                                self.state.show_menu = false;
                             }
                         }
                     }
+                    shell.request_redraw();
                 }
             }
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
                 self.overlay.as_widget_mut().update(
-                    &mut self.tree.children[1],
+                    &mut self.tree,
                     event,
                     layout,
                     cursor,
@@ -299,11 +249,11 @@ where
                     shell,
                     &layout.bounds(),
                 );
-                st.show_menu = false;
+                // self.state.show_menu = false;
             }
             _ => {
                 self.overlay.as_widget_mut().update(
-                    &mut self.tree.children[1],
+                    &mut self.tree,
                     event,
                     layout,
                     cursor,
@@ -317,14 +267,14 @@ where
     }
 }
 
-impl<'a, Message, Theme, Renderer> From<PlaylistButtonOverlay<'a, Message, Theme, Renderer>>
-    for iced::advanced::overlay::Element<'a, Message, Theme, Renderer>
-where
-    Message: 'a + Clone,
-    Theme: 'a + iced::widget::button::Catalog + iced::widget::text::Catalog,
-    Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
-{
-    fn from(overlay: PlaylistButtonOverlay<'a, Message, Theme, Renderer>) -> Self {
-        Self::new(Box::new(overlay))
-    }
-}
+// impl<'a, 'b, Message, Theme, Renderer> From<PlaylistButtonOverlay<'a, 'b, Message, Theme, Renderer>>
+//     for iced::advanced::overlay::Element<'a, Message, Theme, Renderer>
+// where
+//     Message: 'a + Clone,
+//     Theme: 'a + iced::widget::button::Catalog + iced::widget::text::Catalog,
+//     Renderer: 'a + iced::advanced::Renderer + iced::advanced::text::Renderer,
+// {
+//     fn from(overlay: PlaylistButtonOverlay<'a, 'b, Message, Theme, Renderer>) -> Self {
+//         Self::new(Box::new(overlay))
+//     }
+// }
