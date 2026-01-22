@@ -472,6 +472,7 @@ where
                 }
             }
         }
+        shell.request_redraw();
     }
 
     fn draw(

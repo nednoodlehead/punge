@@ -3,7 +3,7 @@ use crate::player::player_cache::{fetch_cache, Cache};
 use crate::types::PungeMusicObject;
 use rand;
 use rand::seq::SliceRandom;
-use rodio::{Decoder, OutputStream, Sink};
+use rodio::{Decoder, OutputStream, Sink, Source};
 use std::fs::File;
 use std::io::BufReader;
 use chrono::Local;
@@ -84,6 +84,22 @@ impl MusicPlayer {
     }
 }
 
+// pub fn read_file_from_beginning(file1: &str, file2: &str) -> rodio::source::Mix<rodio::source::TakeDuration<Decoder<BufReader<File>>>, rodio::source::FadeIn<rodio::source::TakeDuration<Decoder<BufReader<File>>>>> {
+//     let dur = std::time::Duration::from_secs(4);
+//     // should pass in the duration too...
+//     // we should overhaul this at some point to be a method associated with the app. when there is a file that doesn't exist,
+//     // we can send it to some related "missing" vector. this can be written to json when program closes? or when found?
+    
+//     let reader1 = BufReader::new(File::open(file1).unwrap());
+//     let reader2 = BufReader::new(File::open(file1).unwrap());
+//     let decoder1 = Decoder::new(reader1).unwrap();
+//     let decoder2 = Decoder::new(reader2).unwrap();
+//     let mut fadeout = decoder1.take_duration(dur);
+//     fadeout.set_filter_fadeout();
+//     let fadein = decoder2.take_duration(dur).fade_in(dur);
+//     fadeout.mix(fadein)
+// }
+
 pub fn read_file_from_beginning(file: &str) -> Decoder<BufReader<File>> {
     // we should overhaul this at some point to be a method associated with the app. when there is a file that doesn't exist,
     // we can send it to some related "missing" vector. this can be written to json when program closes? or when found?
@@ -91,4 +107,3 @@ pub fn read_file_from_beginning(file: &str) -> Decoder<BufReader<File>> {
 
     Decoder::new(reader).unwrap()
 }
-

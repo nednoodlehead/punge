@@ -129,7 +129,7 @@ where
                     let mut top_of_btn = lc.position();
                     top_of_btn.y = top_of_btn.y + lc.height - 40.0;
                     // aprox size of the button at the bottom
-                    let add_to_area = iced::Rectangle::new(top_of_btn, Size::new(80.0, 37.0));
+                    let add_to_area = iced::Rectangle::new(top_of_btn, Size::new(250.0, 37.0));
                     let mut overlay_y = 0.0;
                     for _ in self.uuid_list.iter() {
                         // size of the menu.. depends on existing buttons
@@ -144,6 +144,7 @@ where
                         st.sub_menu_spot = Point::new(x_spot, y_spot);
                         st.show_sub_menu = true;
                     } else if !lc.contains(*position) {
+                        println!("we are outside of the menu");
                         // we are outside of the menus, stop showing them
                         st.show_bar = false;
                         st.show_sub_menu = false;

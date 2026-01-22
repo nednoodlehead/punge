@@ -312,7 +312,6 @@ where
     ) {
         match event {
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Right)) => {
-                // println!("current viewport: {:?}", &viewport);
                 let st: &mut RowState = state.state.downcast_mut();
                 if cursor.is_over(layout.bounds()) {
                     st.show_bar = true;
@@ -330,8 +329,10 @@ where
                         st.invert_bar = false;
                     }
                 } else {
-                    st.show_bar = false;
+                    // println!("being set false here");
+                    // st.show_bar = false;
                 }
+                shell.request_redraw();
             }
 
             Event::Mouse(mouse::Event::ButtonPressed(mouse::Button::Left)) => {
@@ -385,26 +386,6 @@ where
                     // iced::event::Status::Captured
                 } else {
                     // iced::event::Status::Ignored
-                }
-            }
-            Event::Mouse(mouse::Event::CursorMoved { position }) => {
-                // it aint perfect by any means, but it works fairly well. we are going to leave it in!!
-                let tmp_cursor = cursor.position();
-                let st: &mut RowState = state.state.downcast_mut();
-                match tmp_cursor {
-                    None => return (), // ??
-                    Some(_) => {
-                        let mut new_layout = layout.bounds();
-                        new_layout.y = new_layout.y - viewport.y + 30.0;
-                        let m = iced::advanced::mouse::Cursor::Available(*position);
-                        if !m.is_over(new_layout) {
-                            st.show_bar = false;
-                            // iced::event::Status::Captured
-                        } else {
-                            // iced::event::Status::Ignored
-                            return ();
-                        }
-                    }
                 }
             }
             _ => self.rowdata.as_widget_mut().update(
