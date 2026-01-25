@@ -384,6 +384,7 @@ where
                         ));
                     }
                     // iced::event::Status::Captured
+                    shell.request_redraw();
                 } else {
                     // iced::event::Status::Ignored
                 }
