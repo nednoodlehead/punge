@@ -1,5 +1,4 @@
 use crate::db::fetch;
-use crate::gui::messages::AppEvent;
 use crate::gui::messages::{Context, ProgramCommands, PungeCommand};
 use crate::player::interface::read_file_from_beginning;
 use crate::player::interface::{self};
@@ -90,12 +89,6 @@ pub fn hotkey_loop<'a>(old_config: &'a ConfigLoopData) -> impl Stream<Item = Pro
             }
         },
     )
-}
-
-pub fn close_app_sub() -> Subscription<ProgramCommands> {
-    // bro they took my events_with
-    iced::event::listen_with(handle_app_events)
-    // nvmd i got it back
 }
 
 // difference between this database subscription is that no sender and receiver is needed, instead we check the status of self.current_obj every 20 seconds or so and do some calculations for inserting into db
@@ -918,20 +911,6 @@ pub fn discord_loop<'a>(
             async_std::task::sleep(std::time::Duration::from_secs(5)).await;
         }
     })
-}
-
-// handles app events, used for listening for the window close event (for now)
-fn handle_app_events(
-    event: iced::Event,
-    _status: iced::event::Status,
-    id: iced::window::Id,
-) -> Option<ProgramCommands> {
-    match &event {
-        iced::Event::Window(iced::window::Event::CloseRequested) => {
-            Some(ProgramCommands::InAppEvent(AppEvent::CloseRequested))
-        }
-        _ => None,
-    }
 }
 
 pub fn change_count(incrementing: bool, count: usize, vec_len: usize) -> usize {

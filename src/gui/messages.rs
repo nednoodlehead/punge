@@ -46,7 +46,6 @@ pub enum ProgramCommands {
     SearchYouTubeResults(Vec<crate::types::YouTubeSearchResult>),
     Debug, // a message that has its associated action changed with the debug in question
     AddToDownloadFeedback(String, Result<YouTubeData, AppError>), // String = youtubelink, Result<string> = title - author
-    InAppEvent(AppEvent),
     UpdateSearch(String), // for updating the string that is used in the regex search
     GoToSong,
     SongFound(Result<PungeMusicObject, AppError>), // when the song is found from GoToSong, this is called
@@ -79,6 +78,7 @@ pub enum ProgramCommands {
     OnScroll(iced::widget::scrollable::Viewport),
     ValidatePlaylistData, // button to click in settings that re-checks the values of each playlists and sets them to their correct value
     InitiateDatabaseFix,
+    CloseRequested(iced::window::Id),
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -155,12 +155,6 @@ pub enum Context {
     SkippedTo, // skipping to the seconds part
     Seeked,    // searching for a song!
     AutoPlay,
-}
-
-#[derive(Clone, Debug)]
-pub enum AppEvent {
-    // will include in-app keybinds at some point...
-    CloseRequested,
 }
 
 // this is only for the "PungeCommand"-like variants, PlayOrPause, ShuffleToggle..

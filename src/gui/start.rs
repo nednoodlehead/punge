@@ -5,7 +5,7 @@ use crate::db::update::{
     update_auth_album, update_song,
 };
 use crate::gui::messages::{
-    AppEvent, CheckBoxType, ComboBoxType, Context, Page, ProgramCommands, PungeCommand, TextType,
+    CheckBoxType, ComboBoxType, Context, Page, ProgramCommands, PungeCommand, TextType,
 };
 use crate::gui::subscription;
 use crate::gui::widgets::row::RowData;
@@ -22,9 +22,9 @@ use crate::utils::delete::delete_record_and_file;
 use crate::yt::interface::download_interface;
 use arc_swap::ArcSwap;
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
-use iced::widget::{column, container, image, row, scrollable, space, table, text};
+use iced::widget::{column, container, image, row, scrollable, space, text};
 use iced::Subscription;
-use iced::{Element, Length, Settings, Task, Theme};
+use iced::{Element, Length, Task, Theme};
 use itertools::Itertools;
 use log::{debug, error, info, warn};
 use simplelog::{CombinedLogger, TermLogger, WriteLogger};
@@ -55,6 +55,13 @@ pub fn begin() -> iced::Result {
     iced::application(App::default, App::update, App::view)
         .subscription(App::subscription)
         .theme(App::theme)
+        .window(iced::window::Settings {
+            size: iced::Size::new(1250.0, 700.0),
+            min_size: Some(iced::Size::new(1250.0, 700.0)),
+            icon: Some(iced::window::icon::from_file("./img/punge icon.ico").unwrap()),
+            exit_on_close_request: false,
+            ..Default::default()
+        })
         .run()
 }
 // pages for the gui
@@ -478,28 +485,24 @@ impl App {
                 Task::none()
             }
             ProgramCommands::Debug => Task::none(),
-            ProgramCommands::InAppEvent(t) => match t {
-                AppEvent::CloseRequested => {
-                    let lcl = self.current_song.load();
-                    crate::db::update::update_offset(
-                        &self.viewing_playlist,
-                        self.current_table_offset.y,
-                    )
-                    .unwrap();
-                    let cache = player_cache::Cache {
-                        song_id: lcl.song_id.clone(),
-                        volume: lcl.volume,
-                        shuffle: lcl.shuffle,
-                        playlist_id: lcl.playlist.clone(),
-                        length: 190,
-                    };
-                    player_cache::dump_cache(cache); // dumps user cache
-                    info!("dumpepd cache! goodbye :)");
-
-                    // iced::window::close::<ProgramCommands>(iced::window::Id::to_owned(&self))
-                    Task::none()
-                }
-            },
+            ProgramCommands::CloseRequested(window_id) => {
+                let lcl = self.current_song.load();
+                crate::db::update::update_offset(
+                    &self.viewing_playlist,
+                    self.current_table_offset.y,
+                )
+                .unwrap();
+                let cache = player_cache::Cache {
+                    song_id: lcl.song_id.clone(),
+                    volume: lcl.volume,
+                    shuffle: lcl.shuffle,
+                    playlist_id: lcl.playlist.clone(),
+                    length: 190,
+                };
+                player_cache::dump_cache(cache); // dumps user cache
+                info!("dumpepd cache! goodbye :)");
+                iced::window::close::<ProgramCommands>(window_id)
+            }
             ProgramCommands::UpdateSearch(input) => {
                 self.search = input;
                 Task::none()
@@ -1347,7 +1350,6 @@ impl App {
                 subscription::hotkey_loop,
             ),
             iced::Subscription::run_with(shared_obj, subscription::database_subscription),
-            subscription::close_app_sub(),
             // iced::Subscription::run_with(subscription::discord_loop(self.current_song.clone(), self.config.clone())),
             iced::Subscription::run_with(
                 DiscordData {
@@ -1357,6 +1359,7 @@ impl App {
                 subscription::discord_loop,
             ),
             // need to just be able to read the memory. aaaaaaahhh
+            iced::window::close_requests().map(|win_id| ProgramCommands::CloseRequested(win_id)),
         ]) // is two batches required?? prolly not
     }
 }
