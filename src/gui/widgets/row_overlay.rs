@@ -144,8 +144,6 @@ where
                         st.sub_menu_spot = Point::new(x_spot, y_spot);
                         st.show_sub_menu = true;
                     } else if !lc.contains(*position) {
-                        println!("we are outside of the menu");
-                        // we are outside of the menus, stop showing them
                         st.show_bar = false;
                         st.show_sub_menu = false;
                     } else {
