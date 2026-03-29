@@ -334,12 +334,11 @@ where
     ) {
         let state = tree.state.downcast_mut::<State>();
         let offset = layout.position() - Point::ORIGIN;
-
         let status = self
             .visible_elements
             .iter_mut()
             .zip(&mut state.visible_layouts)
-            .map(|(mut element, (index, layout, tree))| {
+            .map(|(element, (index, layout, tree))| {
                 element.as_widget_mut().update(
                     tree,
                     &event,
@@ -472,7 +471,6 @@ where
                 }
             }
         }
-        shell.request_redraw();
     }
 
     fn draw(
@@ -563,6 +561,13 @@ where
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         let state = tree.state.downcast_mut::<State>();
+        if self.visible_elements.is_empty() && !state.visible_layouts.is_empty() {
+            self.visible_elements = state
+                .visible_layouts
+                .iter()
+                .map(|(i, _, _)| (self.view_item)(*i, &self.content.items[*i]))
+                .collect();
+        }
         let offset = layout.position() - Point::ORIGIN;
         let children = self
             .visible_elements

@@ -146,8 +146,6 @@ where
     // 3. the hover-button. so we can check if the cursor is above it, we show the submenu
     // 4. the sub-menu. for same reasons ^^
     fn children(&self) -> Vec<Tree> {
-        let state = self.state();
-        let st: &RowState = state.downcast_ref();
         vec![
             Tree::new(&self.rowdata),
             Tree::new((&self.row_overlay)(
@@ -159,7 +157,7 @@ where
                 self.edit_song_msg,
                 self.song_uuid.clone(),
                 0,
-                st.invert_bar,
+                false,
             )),
             Tree::new((self.hover_menu)(
                 self.add_to_msg,
@@ -168,6 +166,7 @@ where
             )),
         ]
     }
+    fn diff(&self, _tree: &mut Tree) {}
 
     fn size(&self) -> Size<Length> {
         Size {

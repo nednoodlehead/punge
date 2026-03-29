@@ -234,7 +234,7 @@ impl App {
                 Task::none()
             }
             ProgramCommands::MoveSlider(val) => {
-                // when this is called, we should silence any new information that the automatic change does
+                // // when this is called, we should silence any new information that the automatic change does
                 self.silence_scrubber = true;
                 self.scrubber = val;
                 // maybe in the future, we should have a function about here that tells the user what time they are skipping to
