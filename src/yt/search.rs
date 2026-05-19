@@ -1,8 +1,8 @@
 use crate::types::YouTubeSearchResult;
 use log::info;
-use rusty_ytdl::blocking::search;
-use rusty_ytdl::blocking::search::SearchResult;
-use rusty_ytdl::blocking::search::YouTube;
+use rusty_ytdl::search;
+use rusty_ytdl::search::SearchResult;
+use rusty_ytdl::search::YouTube;
 
 pub async fn content_to_text(
     search: String,
@@ -31,7 +31,7 @@ pub async fn content_to_text(
         safe_search: true,
     };
     let mut ret = vec![];
-    let results = yt.search(search, Some(&options)).unwrap();
+    let results = yt.search(search, Some(&options)).await.unwrap();
     for result in results {
         match result {
             SearchResult::Video(vid) => {
@@ -49,7 +49,9 @@ pub async fn content_to_text(
             }
             SearchResult::Playlist(playlist) => {
                 // this is required to get the videos, without it, using playlist.videos, returns 0 every time
-                let play = search::Playlist::get(playlist.url.clone(), None).unwrap();
+                let play = search::Playlist::get(playlist.url.clone(), None)
+                    .await
+                    .unwrap();
                 let n = YouTubeSearchResult {
                     title: playlist.name.clone(),
                     author: playlist.channel.name.clone(),

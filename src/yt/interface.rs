@@ -6,15 +6,20 @@ use itertools::Itertools;
 use log::{debug, error, info, warn};
 use regex::Regex;
 use rusqlite;
-use rusty_ytdl::blocking::Video;
+use rusty_ytdl::Video;
+use sipper::{sipper, Straw};
+use std::process::Stdio;
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::Command;
+use tokio::runtime;
 // it is assumed that the link passed in here should be checked for it being a playlist.
 // so every link should be just downloading one video
 // we do need to know if this function was called under the pretext of us knowing the album / playlist title
 
 pub async fn playlist_wrapper(
     link: String,
-) -> Result<rusty_ytdl::blocking::search::Playlist, rusty_ytdl::VideoError> {
-    rusty_ytdl::blocking::search::Playlist::get(link, None)
+) -> Result<rusty_ytdl::search::Playlist, rusty_ytdl::VideoError> {
+    rusty_ytdl::search::Playlist::get(link, None).await
 }
 
 pub async fn download_interface(
@@ -38,7 +43,7 @@ pub async fn download_interface(
             DatabaseErrors::DatabaseEntryExistsError,
         ));
     }
-    let details = video.get_basic_info().unwrap().video_details;
+    let details = video.get_basic_info().await.unwrap().video_details;
     let (mp3, jpg) = fetch_json();
 
     let jpg_file = format!("{}{}.jpg", &jpg, &video_id);
@@ -259,13 +264,8 @@ async fn create_punge_obj(
     }
     // keep in mind that this will add to db whether it fails or not. which is intended
     // maybe we should have the id & link passed around a bit more.. properly?
-    download_to_punge(
-        mp3_name.clone(),
-        jpg_file.clone(),
-        &vid_id,
-        &vid.get_video_url(),
-    )
-    .await?;
+    let x = init_download(&vid.get_video_url(), &mp3_name, &jpg_file, &vid_id).await;
+    println!("result of download: {:?}", &x);
     info!("The video has downloaded, it would've failed by now");
     Ok(PungeMusicObject {
         title,
@@ -298,27 +298,71 @@ pub fn clean_inputs_for_win_saving(to_check: String) -> String {
     new_string
 }
 
-async fn download_to_punge(
-    final_mp3_name: String,
-    final_jpg_name: String,
+pub fn init_download<'a>(
+    link: &str,
+    output_path: &'a str,
+    jpg_path: &'a str,
     id: &str,
-    url: &str,
-) -> Result<(), AppError> {
-    // we assume that the inputs are sanitized by "clean_input_for_win_saving"
-    // the unwrap can fail sometimes. so we loop 5 times, sleeping for 3 seconds inbetween so it will try again
-    info!("startin download!");
-    let before = std::time::Instant::now();
-    match cmd::cmd_download(url, &final_mp3_name, &final_jpg_name, id) {
-        Ok(_t) => {
-            info!("Download finsihed in: {:.2?}", before.elapsed());
-            Ok(())
-        }
-        Err(e) => {
-            error!("Download failed! {:?}", &e);
+) -> impl Straw<(), String, String> + use<'a> {
+    let link = link.to_string();
+    let id = id.to_string();
+    println!("link: {} {} {} {}", &link, &output_path, &jpg_path, &id);
+    sipper(move |mut sender| async move {
+        let temp_path = format!("./{}.webm", id);
 
-            Err(AppError::YoutubeError(format!("Error downloading {:?}", e)))
+        let mut cmd = Command::new("yt-dlp.exe")
+            .args([
+                &link,
+                "-o",
+                &temp_path,
+                "--write-thumbnail",
+                "--convert-thumbnails",
+                "jpg",
+            ])
+            .stdout(Stdio::piped()) // required or stdout is None
+            .spawn()
+            .map_err(|e| e.to_string())
+            .unwrap();
+
+        if let Some(stdout) = cmd.stdout.take() {
+            let mut line = BufReader::new(stdout).lines();
+            while let Some(line) = line.next_line().await.map_err(|e| e.to_string())? {
+                println!("INFO HERE IN INI!: {:?}", &line);
+                sender.send(line).await;
+            }
         }
-    }
+
+        let status = cmd.wait().await.map_err(|e| e.to_string())?;
+        println!("success downloading? {:?}", &status);
+
+        if status.success() {
+            // it ran successfully, now we can convert to mp3
+            sender.send(String::from("Converting to mp3")).await;
+            let mut ffmpeg_cmd = Command::new("ffmpeg.exe")
+                .args([
+                    "-i",
+                    &temp_path,
+                    "-vn",
+                    "-c:a",
+                    "libmp3lame",
+                    "-b:a",
+                    "192K",
+                    &output_path,
+                ])
+                .stdout(Stdio::piped())
+                .spawn()
+                .map_err(|e| e.to_string())?;
+            if let Some(stdout) = ffmpeg_cmd.stdout.take() {
+                let mut line = BufReader::new(stdout).lines();
+                while let Some(line) = line.next_line().await.map_err(|e| e.to_string())? {
+                    sender.send(line).await;
+                }
+            }
+            Ok(())
+        } else {
+            Err(format!("Failure! {status}"))
+        }
+    })
 }
 
 fn clean_author(author: String) -> String {

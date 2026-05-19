@@ -7,166 +7,165 @@
 // and yt-dlp.exe has like 1000 issues created within 10 seconds if the api changes
 use crate::types::AppError;
 use log::{debug, info, warn};
-use std::process::Command;
 
-pub fn cmd_download(
-    link: &str,
-    desired_output: &str,
-    jpg_full_path: &str,
-    id: &str,
-) -> Result<String, AppError> {
-    // this function is either called directly from `ProgramCommands::Download` or from the playlist_wrapper (hence need for `playlist_title` arg)
-    // we need to parse the uniqueid.
-    // -o "here.mp3" for output
-    // --write-thumbnail
-    // -x (converts to audio-only), maybe it is worth to do this ourselves, so we can have some logging output?
-    let mut temp_path = format!("./{}.webm", id); // i think it always gives you a webm...
-    info!("downloading to {}", &temp_path);
-    // also download the thumbnail!!
-    let cmd = Command::new("yt-dlp.exe")
-        .args([
-            link,
-            "-o",
-            &temp_path,
-            "--write-thumbnail",
-            "--convert-thumbnails",
-            "jpg",
-            // "--output",
-            // jpg_full_path,
-        ])
-        .output();
-    match cmd {
-        Ok(t) => {
-            if !std::path::Path::new(&temp_path).exists() {
-                temp_path = format!("{}.mkv", temp_path);
-                info!(
-                    "{} not found. we're chaning it into the .mkv version..",
-                    &temp_path
-                )
-            };
-            info!("download successful! {:?} time to convert the file..", &t);
-            let ffmpeg_cmd = Command::new("ffmpeg.exe")
-                .args([
-                    "-i",
-                    &temp_path,
-                    "-vn",
-                    "-c:a",
-                    "libmp3lame",
-                    "-b:a",
-                    "192K",
-                    &desired_output,
-                ])
-                .output();
-            match ffmpeg_cmd {
-                // TODO remove the redundasnt .webm stuff
-                Ok(t) => {
-                    info!(
-                        "File converted successfully {:?}!! now lives at: {}",
-                        &t, &desired_output
-                    );
-                    info!("we are going to remove the old file ({})", &temp_path);
+// pub fn cmd_download(
+//     link: &str,
+//     desired_output: &str,
+//     jpg_full_path: &str,
+//     id: &str,
+// ) -> Result<String, AppError> {
+//     // this function is either called directly from `ProgramCommands::Download` or from the playlist_wrapper (hence need for `playlist_title` arg)
+//     // we need to parse the uniqueid.
+//     // -o "here.mp3" for output
+//     // --write-thumbnail
+//     // -x (converts to audio-only), maybe it is worth to do this ourselves, so we can have some logging output?
+//     let mut temp_path = format!("./{}.webm", id); // i think it always gives you a webm...
+//     info!("downloading to {}", &temp_path);
+//     // also download the thumbnail!!
+//     let cmd = Command::new("yt-dlp.exe")
+//         .args([
+//             link,
+//             "-o",
+//             &temp_path,
+//             "--write-thumbnail",
+//             "--convert-thumbnails",
+//             "jpg",
+//             // "--output",
+//             // jpg_full_path,
+//         ])
+//         .output();
+//     match cmd {
+//         Ok(t) => {
+//             if !std::path::Path::new(&temp_path).exists() {
+//                 temp_path = format!("{}.mkv", temp_path);
+//                 info!(
+//                     "{} not found. we're chaning it into the .mkv version..",
+//                     &temp_path
+//                 )
+//             };
+//             info!("download successful! {:?} time to convert the file..", &t);
+//             let ffmpeg_cmd = Command::new("ffmpeg.exe")
+//                 .args([
+//                     "-i",
+//                     &temp_path,
+//                     "-vn",
+//                     "-c:a",
+//                     "libmp3lame",
+//                     "-b:a",
+//                     "192K",
+//                     &desired_output,
+//                 ])
+//                 .output();
+//             match ffmpeg_cmd {
+//                 // TODO remove the redundasnt .webm stuff
+//                 Ok(t) => {
+//                     info!(
+//                         "File converted successfully {:?}!! now lives at: {}",
+//                         &t, &desired_output
+//                     );
+//                     info!("we are going to remove the old file ({})", &temp_path);
 
-                    let old_jpg = match std::fs::remove_file(&temp_path) {
-                        Ok(_) => {
-                            info!("we found the file and are moving on...");
-                            format!("./{}.jpg", &id)
-                        }
-                        Err(e) => {
-                            warn!("failed to find the file {:?}?\nerror:{:?}", &temp_path, e);
-                            std::fs::remove_file(format!("{}.mp4", &temp_path)).unwrap();
-                            // set this because sometimes it fails to find the jpg when for some stupid f-ing reason the file gets named {id}.webm
-                            format!("./{}.webm.jpg", &id)
-                        }
-                    };
-                    // since the stupid thumbnail just downloads into the punge directory....
-                    debug!("copying {} to {}", &old_jpg, &jpg_full_path);
-                    // std::fs::File::create(&old_jpg).unwrap();
-                    std::fs::copy(&old_jpg, jpg_full_path).unwrap();
-                    // cant fail if the one above doesn't
-                    std::fs::remove_file(old_jpg).unwrap();
-                    return Ok("Download and convert appears to be successful".to_string());
-                }
-                Err(e) => {
-                    debug!(
-                        "the download returned `ok`, ffmpeg operation returned `err`: {:?}",
-                        e
-                    );
-                    return Err(AppError::FfmpegError(
-                        "Something went wrong with ffmpeg. this is rare. check the logs"
-                            .to_string(),
-                    ));
-                }
-            }
-        }
-        Err(e) => {
-            warn!("download failure: {:?}", &e);
-            return Err(AppError::FileError(format!(
-                "Something went wrong when downloading: {:?}",
-                e,
-            )));
-        }
-    }
-}
+//                     let old_jpg = match std::fs::remove_file(&temp_path) {
+//                         Ok(_) => {
+//                             info!("we found the file and are moving on...");
+//                             format!("./{}.jpg", &id)
+//                         }
+//                         Err(e) => {
+//                             warn!("failed to find the file {:?}?\nerror:{:?}", &temp_path, e);
+//                             std::fs::remove_file(format!("{}.mp4", &temp_path)).unwrap();
+//                             // set this because sometimes it fails to find the jpg when for some stupid f-ing reason the file gets named {id}.webm
+//                             format!("./{}.webm.jpg", &id)
+//                         }
+//                     };
+//                     // since the stupid thumbnail just downloads into the punge directory....
+//                     debug!("copying {} to {}", &old_jpg, &jpg_full_path);
+//                     // std::fs::File::create(&old_jpg).unwrap();
+//                     std::fs::copy(&old_jpg, jpg_full_path).unwrap();
+//                     // cant fail if the one above doesn't
+//                     std::fs::remove_file(old_jpg).unwrap();
+//                     return Ok("Download and convert appears to be successful".to_string());
+//                 }
+//                 Err(e) => {
+//                     debug!(
+//                         "the download returned `ok`, ffmpeg operation returned `err`: {:?}",
+//                         e
+//                     );
+//                     return Err(AppError::FfmpegError(
+//                         "Something went wrong with ffmpeg. this is rare. check the logs"
+//                             .to_string(),
+//                     ));
+//                 }
+//             }
+//         }
+//         Err(e) => {
+//             warn!("download failure: {:?}", &e);
+//             return Err(AppError::FileError(format!(
+//                 "Something went wrong when downloading: {:?}",
+//                 e,
+//             )));
+//         }
+//     }
+// }
 
-pub fn cmd_download_media(
-    link: &str,
-    desired_output: &str,
-    id: &str,
-    mp3_or_4: &str,
-) -> Result<(), AppError> {
-    let temp_path = format!("./{}.webm", id);
-    info!("downloading (media download tab) to {}", &temp_path);
-    let cmd = Command::new("yt-dlp.exe")
-        .args([link, "-o", &temp_path])
-        .output();
-    match cmd {
-        Ok(e) => {
-            info!(
-                "File downloaded successfully. we will convert it from webm -> {}",
-                mp3_or_4
-            );
-            let ffmpeg_args: &[&str] = if mp3_or_4 == ".mp4" {
-                &[
-                    "-i",
-                    &temp_path,
-                    "-c:v",
-                    "libx264",
-                    "-c:a",
-                    "aac",
-                    &desired_output,
-                ]
-            } else {
-                &[
-                    "-i",
-                    &temp_path,
-                    "-vn",
-                    "-c:a",
-                    "libmp3lame",
-                    "-b:a",
-                    "192K",
-                    &desired_output,
-                ]
-            };
-            match Command::new("ffmpeg.exe").args(ffmpeg_args).output() {
-                Ok(_) => {
-                    info!(
-                        "media file successfully converted... output: {}",
-                        &desired_output
-                    );
-                    // i don't think it is possible for this to fail if we have gotten this far...
-                    std::fs::remove_file(&temp_path).unwrap();
-                }
-                Err(e) => {
-                    warn!(
-                        "error converting file: {:?}\nthe file did download successfully though..",
-                        e
-                    )
-                }
-            }
-        }
-        Err(e) => {
-            warn!("yt-dlp.exe failed to download: {:?}\nPerhaps this can be solved by updating to the latest version?", e)
-        }
-    }
-    Ok(())
-}
+// pub fn cmd_download_media(
+//     link: &str,
+//     desired_output: &str,
+//     id: &str,
+//     mp3_or_4: &str,
+// ) -> Result<(), AppError> {
+//     let temp_path = format!("./{}.webm", id);
+//     info!("downloading (media download tab) to {}", &temp_path);
+//     let cmd = Command::new("yt-dlp.exe")
+//         .args([link, "-o", &temp_path])
+//         .output();
+//     match cmd {
+//         Ok(e) => {
+//             info!(
+//                 "File downloaded successfully. we will convert it from webm -> {}",
+//                 mp3_or_4
+//             );
+//             let ffmpeg_args: &[&str] = if mp3_or_4 == ".mp4" {
+//                 &[
+//                     "-i",
+//                     &temp_path,
+//                     "-c:v",
+//                     "libx264",
+//                     "-c:a",
+//                     "aac",
+//                     &desired_output,
+//                 ]
+//             } else {
+//                 &[
+//                     "-i",
+//                     &temp_path,
+//                     "-vn",
+//                     "-c:a",
+//                     "libmp3lame",
+//                     "-b:a",
+//                     "192K",
+//                     &desired_output,
+//                 ]
+//             };
+//             match Command::new("ffmpeg.exe").args(ffmpeg_args).output() {
+//                 Ok(_) => {
+//                     info!(
+//                         "media file successfully converted... output: {}",
+//                         &desired_output
+//                     );
+//                     // i don't think it is possible for this to fail if we have gotten this far...
+//                     std::fs::remove_file(&temp_path).unwrap();
+//                 }
+//                 Err(e) => {
+//                     warn!(
+//                         "error converting file: {:?}\nthe file did download successfully though..",
+//                         e
+//                     )
+//                 }
+//             }
+//         }
+//         Err(e) => {
+//             warn!("yt-dlp.exe failed to download: {:?}\nPerhaps this can be solved by updating to the latest version?", e)
+//         }
+//     }
+//     Ok(())
+// }

@@ -8,7 +8,7 @@ use iced::widget::{
 use iced::{Alignment, Element, Length};
 use itertools::Itertools;
 use log::{debug, info, warn};
-use rusty_ytdl::blocking::Video;
+use rusty_ytdl::Video;
 use rusty_ytdl::{self, VideoOptions};
 
 pub struct MediaPage {
@@ -140,12 +140,13 @@ async fn download_youtube(
     };
     // clean the inputs :D
     let title = crate::yt::interface::clean_inputs_for_win_saving(
-        vid.get_basic_info()?.video_details.title,
+        vid.get_basic_info().await?.video_details.title,
     );
     let full_output = format!("{}{} - {}{}", path, &title, vid.get_video_id(), mp3_4);
     let new_path = std::path::Path::new(&full_output);
     debug!("gonna download video to: {:?}", &new_path);
-    crate::yt::cmd::cmd_download_media(&link, &full_output, &vid.get_video_id(), &mp3_4).unwrap();
+    // TODO REIMPLEMTN
+    // crate::yt::cmd::cmd_download_media(&link, &full_output, &vid.get_video_id(), &mp3_4).unwrap();
     debug!("Video download did not throw an error");
     Ok(format!("{} downloaded successfully!", title))
 }

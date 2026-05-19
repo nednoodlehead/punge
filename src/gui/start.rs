@@ -415,6 +415,25 @@ impl App {
                 self.media_page.download_feedback.push(val);
                 Task::none()
             }
+            ProgramCommands::YouTubeDownloadStarted => {
+                println!("placeholder");
+                Task::none()
+            }
+            ProgramCommands::YouTubeDownloadProgress(string) => {
+                println!("{}", &string);
+                Task::none()
+            }
+            ProgramCommands::YouTubeDownloadFinished(result) => {
+                match result {
+                    Ok(e) => {
+                        println!("downloaded!")
+                    }
+                    Err(e) => {
+                        println!("error downloading!!")
+                    }
+                }
+                Task::none()
+            }
             ProgramCommands::SearchYouTube(str) => {
                 // should *in theory* get rid of the images in memory so there is no problem deleteing them from the
                 // content_to_text() call (remove_all_in_temp_dir)
