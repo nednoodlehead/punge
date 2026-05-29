@@ -40,7 +40,7 @@ pub enum ProgramCommands {
     DownloadMediaWorked(Result<String, AppError>), // to call when download media returns
     YouTubeDownloadStarted,
     YouTubeDownloadProgress(String),
-    YouTubeDownloadFinished(Result<(), String>),
+    YouTubeDownloadFinished(Result<PungeMusicObject, AppError>), // returns string that just says it downloaded alright
     UpdateCombobox(ComboBoxType, String), // little ugly lol. cause the type is a const
     SearchYouTube(String),
     SearchYouTubeResults(Vec<crate::types::YouTubeSearchResult>),

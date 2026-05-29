@@ -2,7 +2,8 @@ use crate::gui::messages::{CheckBoxType, ProgramCommands, TextType};
 use crate::gui::style::button::punge_button_style;
 use crate::types::YouTubeSearchResult;
 use iced::widget::{
-    button, checkbox, column, row, scrollable, space, text, text_input, Column, Container, Image,
+    button, checkbox, column, progress_bar, row, scrollable, space, text, text_input, Column,
+    Container, Image,
 };
 use iced::{Element, Length};
 
@@ -13,6 +14,7 @@ pub struct DownloadPage {
     pub youtube_content: Vec<YouTubeSearchResult>, // dyncamically created boxes
     pub include_videos: bool,
     pub include_playlists: bool,
+    pub download_progress: f32,
 }
 
 impl DownloadPage {
@@ -24,6 +26,7 @@ impl DownloadPage {
             youtube_content: vec![],
             include_videos: true,
             include_playlists: true,
+            download_progress: 0.0,
         }
     }
     pub fn view(&self) -> Element<'_, ProgramCommands> {
@@ -60,7 +63,8 @@ impl DownloadPage {
                                         val,
                                     )
                                 })
-                                .label("Include Playlists")
+                                .label("Include Playlists"),
+                            progress_bar(0.0..=100.0, self.download_progress)
                         ]
                     ]
                     .spacing(15.0),

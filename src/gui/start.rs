@@ -19,7 +19,7 @@ use crate::types::{
 use crate::utils::backup::create_backup;
 use crate::utils::cache;
 use crate::utils::delete::delete_record_and_file;
-use crate::yt::interface::download_interface;
+use crate::yt::interface::download_vid_to_punge;
 use arc_swap::ArcSwap;
 use global_hotkey::{hotkey::HotKey, GlobalHotKeyManager};
 use iced::widget::{column, container, image, row, scrollable, space, text};
@@ -346,13 +346,22 @@ impl App {
                     self.download_page
                         .download_feedback
                         .push(format!("Download started on {}", &link));
-                    Task::perform(
-                        download_interface(
+                    // Task::perform(
+                    //     download_interface(
+                    //         link.clone(),
+                    //         None,
+                    //         self.user_playlists["main"].songcount,
+                    //     ),
+                    //     |yt_data| ProgramCommands::AddToDownloadFeedback(link, yt_data),
+                    // )
+                    Task::sip(
+                        download_vid_to_punge(
                             link.clone(),
                             None,
                             self.user_playlists["main"].songcount,
                         ),
-                        |yt_data| ProgramCommands::AddToDownloadFeedback(link, yt_data),
+                        |line| line,
+                        |f| ProgramCommands::YouTubeDownloadFinished(f),
                     )
                 };
 
@@ -369,7 +378,7 @@ impl App {
                     return Task::none();
                 }
                 let playlist = playlist_or_err.unwrap();
-                let mut list_cmd = Vec::new();
+                // let mut list_cmd = Vec::new();
                 // to guarentee that the order is preserved, we add an empty entry with just the uuid
                 // then, after the downloads have completed, we either update the entry with the data
                 // or remove the entry afterwards if it fails
@@ -381,19 +390,20 @@ impl App {
                         .download_feedback
                         .push(format!("Download started on {}", &full_url));
                     self.download_list.push(song.title.clone());
-                    let cmd = Task::perform(
-                        download_interface(
-                            full_url,
-                            Some(playlist.name.clone()),
-                            default_count + count,
-                        ),
-                        |yt_data| ProgramCommands::AddToDownloadFeedback(song.title, yt_data),
-                    );
-                    list_cmd.push(cmd);
-                    count += 1;
+                    // let cmd = Task::perform(
+                    //     download_interface(
+                    //         full_url,
+                    //         Some(playlist.name.clone()),
+                    //         default_count + count,
+                    //     ),
+                    //     |yt_data| ProgramCommands::AddToDownloadFeedback(song.title, yt_data),
+                    // );
+                    // list_cmd.push(cmd);
+                    // count += 1;
                 }
                 // add the empty entries!
-                Task::batch(list_cmd)
+                // Task::batch(list_cmd) // TODO reimpl
+                Task::none()
             }
             ProgramCommands::DownloadMedia(link, path, mp3_4) => {
                 self.media_page
@@ -420,19 +430,30 @@ impl App {
                 Task::none()
             }
             ProgramCommands::YouTubeDownloadProgress(string) => {
-                println!("{}", &string);
+                println!("download status: {}", &string);
+                println!("\n\n");
+
                 Task::none()
             }
             ProgramCommands::YouTubeDownloadFinished(result) => {
                 match result {
-                    Ok(e) => {
-                        println!("downloaded!")
+                    Ok(punge_obj) => {
+                        self.download_page.download_progress = 100.0;
+                        println!("downloaded!");
+                        Task::perform(
+                            crate::yt::interface::insert_obj_and_cleanup(punge_obj),
+                            |res| match res {
+                                Ok(t) => ProgramCommands::Debug, // return to and improve ig
+                                Err(e) => ProgramCommands::Debug,
+                            },
+                        )
                     }
                     Err(e) => {
-                        println!("error downloading!!")
+                        println!("error downloading!!");
+                        Task::none()
+                        // what we should actually do is cleanup the existing files
                     }
                 }
-                Task::none()
             }
             ProgramCommands::SearchYouTube(str) => {
                 // should *in theory* get rid of the images in memory so there is no problem deleteing them from the
