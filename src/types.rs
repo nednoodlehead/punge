@@ -287,6 +287,20 @@ pub struct YouTubeData {
     pub album: String,
 }
 
+impl YouTubeData {
+    pub fn new(
+        title: impl Into<String>,
+        author: impl Into<String>,
+        album: impl Into<String>,
+    ) -> YouTubeData {
+        return YouTubeData {
+            title: title.into(),
+            author: author.into(),
+            album: album.into(),
+        };
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct YouTubeSearchResult {
     pub title: String,
