@@ -1,17 +1,16 @@
 use crate::db::insert::add_to_main;
+use crate::gui::messages::ProgramCommands;
 use crate::types::{AppError, DatabaseErrors, PungeMusicObject, YouTubeData};
 use crate::utils::sep_video;
-use crate::yt::cmd;
 use itertools::Itertools;
 use log::{debug, error, info, warn};
 use regex::Regex;
 use rusqlite;
 use rusty_ytdl::Video;
-use sipper::{sipper, Straw};
+use sipper::{sipper, Sipper, Straw};
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
-use tokio::runtime;
 // it is assumed that the link passed in here should be checked for it being a playlist.
 // so every link should be just downloading one video
 // we do need to know if this function was called under the pretext of us knowing the album / playlist title
@@ -22,31 +21,118 @@ pub async fn playlist_wrapper(
     rusty_ytdl::search::Playlist::get(link, None).await
 }
 
-pub async fn download_interface(
+pub fn download_vid_to_punge<'a>(
     url: String,
-    playlist_title: Option<String>,
-    order: usize, // where the song will be inserted in main
-) -> Result<YouTubeData, AppError> {
-    let vid_opt = rusty_ytdl::VideoOptions {
-        quality: rusty_ytdl::VideoQuality::HighestAudio,
-        filter: rusty_ytdl::VideoSearchOptions::Audio,
-        download_options: rusty_ytdl::DownloadOptions::default(),
-        request_options: rusty_ytdl::RequestOptions::default(),
-    };
-    let video = Video::new_with_options(&url, vid_opt)?; // url check
-    info!("playlist_title: {:?}", &playlist_title);
-    let video_id = video.get_video_id();
-    if check_if_exists(&video_id) && playlist_title.is_none() {
-        // if the entry exists already
-        warn!("The video already exists");
-        return Err(AppError::DatabaseError(
-            DatabaseErrors::DatabaseEntryExistsError,
-        ));
-    }
-    let details = video.get_basic_info().await.unwrap().video_details;
-    let (mp3, jpg) = fetch_json();
+    playlist_title: Option<&'a str>,
+    order: usize,
+) -> impl Straw<PungeMusicObject, ProgramCommands, AppError> + use<'a> {
+    // get info -> check if exists -> download -> stream download to main thread using sipper -> once done insert into main
+    sipper(move |mut sender| async move {
+        // define some video options
+        let vid_opt = rusty_ytdl::VideoOptions {
+            quality: rusty_ytdl::VideoQuality::LowestVideo,
+            filter: rusty_ytdl::VideoSearchOptions::Audio,
+            download_options: rusty_ytdl::DownloadOptions::default(),
+            request_options: rusty_ytdl::RequestOptions::default(),
+        };
+        let video = Video::new_with_options(&url, vid_opt)
+            .map_err(|e| AppError::YoutubeError(e.to_string()))?; // url check
+        let video_id = video.get_video_id();
+        let video_details = video.get_basic_info().await.unwrap().video_details;
+        let (mp3, jpg) = fetch_json();
+        let jpg_file = format!("{}{}.jpg", &jpg, &video_id);
+        let final_details = decipher_details(video_details.clone(), playlist_title)
+            .await
+            .unwrap(); // pretty sure it cannot fail
+        let author = clean_inputs_for_win_saving(clean_author(final_details.author));
+        let title = clean_inputs_for_win_saving(clean_title(final_details.title));
+        let album = clean_inputs_for_win_saving(final_details.album);
+        // where the song will be saved...
+        let naming_conv = format!("{} - {}{}", author, title, video_id.clone());
+        info!("the file will be named {}", &naming_conv);
+        let mp3_file = format!("{}{}.mp3", mp3, naming_conv);
+        let punge_obj = create_punge_music_obj(
+            title,
+            author,
+            album,
+            "none".to_string(),
+            mp3_file.clone(),
+            jpg_file.clone(),
+            video_id.clone(),
+            video_details
+                .length_seconds
+                .parse()
+                .expect("Somehow not a number?"),
+            order,
+        );
+        if check_if_exists(&video_id) && playlist_title.is_none() {
+            // if the entry exists already
+            warn!("The video already exists");
+            return Err(AppError::DatabaseError(
+                DatabaseErrors::DatabaseEntryExistsError,
+            ));
+        }
+        if std::path::Path::new(&mp3_file).exists() {
+            // should this be checked for eariler? can we???
+            return Err(AppError::DatabaseError(DatabaseErrors::FileExistsError));
+        }
+        let result = init_download(&url, &mp3_file, &jpg_file, &video_id)
+            .run(&sender)
+            .await;
+        match result {
+            Ok(()) => return Ok(punge_obj),
+            Err(e) => return Err(e),
+        }
+    })
+}
 
-    let jpg_file = format!("{}{}.jpg", &jpg, &video_id);
+// pub fn download_playlist_to_punge(
+//     link: String,
+// ) -> impl Straw<Vec<Result<YouTubeData, AppError>>, ProgramCommands, AppError> {
+//     // we download an entire playlist here, called straight from the task::sip in ProgramCommands::Download
+//     sipper(move |mut sender| async move {
+//         let playlist = rusty_ytdl::search::Playlist::get(link, None).await.unwrap();
+//         for video in playlist.videos {
+//             let details = dicipher_playlist_details(&video, &playlist);
+//         }
+//     });
+//     unimplemented!()
+// }
+
+pub async fn dicipher_playlist_details(
+    video: &rusty_ytdl::search::Video,
+    playlist: &rusty_ytdl::search::Playlist,
+) -> YouTubeData {
+    if playlist.name.contains(" - ") {
+        // playlist name contains a dash, meaning it is in the format of author - album
+        let playlist_split = playlist.name.split(" - ").collect::<Vec<&str>>();
+        let (author, album) = (playlist_split[0], playlist_split[1]);
+        // weird situation where a fan makes an album, and the artist has "Name - Title" in the titles...
+        if video.title.contains(" - ") {
+            let title = video.title.split(" - ").collect::<Vec<&str>>()[0];
+            return YouTubeData::new(title, author, album);
+        }
+        return YouTubeData::new(video.title.clone(), author, album);
+    } else if video.description.starts_with("Provided") {
+        // playlist title is assumed to be album if no dash is present
+        let title = video.title.clone();
+        let author = video.channel.name.clone(); // not possible to fail ... ???
+        let album = video.description.split('\n').collect_vec()[4].to_string();
+        return YouTubeData::new(title, author, album);
+    } else {
+        // not quite sure, we're going to assume that title = title, author = author, playlist title = album
+        return YouTubeData::new(
+            video.title.clone(),
+            video.channel.name.clone(),
+            playlist.name.clone(),
+        );
+    }
+}
+
+pub async fn decipher_details(
+    details: rusty_ytdl::VideoDetails,
+    playlist_title: Option<&str>,
+) -> Result<YouTubeData, AppError> {
     // different cases for videos:
     // 1. normal, title has auth and title in it, separated by " - ", no album
     // 2. auto-gen. title = title, author = author, album = 4th line in description
@@ -68,19 +154,19 @@ pub async fn download_interface(
             author,
             album,
         };
-        let obj = create_punge_obj(
-            video,
-            yt_data.clone(),
-            String::from("None"),
-            jpg,
-            mp3,
-            jpg_file,
-            details.video_id,
-            details.length_seconds.parse::<u32>().unwrap(),
-            order,
-        )
-        .await?;
-        add_to_main(obj)?;
+        // let obj = create_punge_obj(
+        //     video,
+        //     yt_data.clone(),
+        //     String::from("None"),
+        //     jpg,
+        //     mp3,
+        //     jpg_file,
+        //     details.video_id,
+        //     details.length_seconds.parse::<u32>().unwrap(),
+        //     order,
+        // )
+        // .await?;
+        // add_to_main(obj)?;
         yt_data
     // } {
     } else if playlist_title.is_some() {
@@ -91,22 +177,22 @@ pub async fn download_interface(
         let youtube_data = YouTubeData {
             title,
             author: author.unwrap().name.to_string(),
-            album,
+            album: album.to_string(),
         };
-        let obj = create_punge_obj(
-            video,
-            youtube_data.clone(),
-            String::from("None"),
-            jpg,
-            mp3,
-            jpg_file,
-            details.video_id,
-            details.length_seconds.parse::<u32>().unwrap(),
-            order,
-        )
-        .await?;
-        info!("updating: {}", &obj.title);
-        add_to_main(obj)?;
+        // let obj = create_punge_obj(
+        //     video,
+        //     youtube_data.clone(),
+        //     String::from("None"),
+        //     jpg,
+        //     mp3,
+        //     jpg_file,
+        //     details.video_id,
+        //     details.length_seconds.parse::<u32>().unwrap(),
+        //     order,
+        // )
+        // .await?;
+        // info!("updating: {}", &obj.title);
+        // add_to_main(obj)?;
         youtube_data
     } else if description_timestamp_check(details.description.as_str()) {
         // how is this meant to be done ??
@@ -123,27 +209,28 @@ pub async fn download_interface(
             author: auth,
             album,
         };
-        let temp_punge_obj = create_punge_obj(
-            video.clone(),
-            yt_data.clone(),
-            String::from("none"),
-            jpg.clone(),
-            mp3.clone(),
-            jpg_file,
-            details.video_id.clone(),
-            details.length_seconds.parse::<u32>().unwrap(),
-            order,
-        );
-        let punge_iter = sep_video::separate(
-            details.description,
-            temp_punge_obj.await.unwrap(),
-            mp3.clone(),
-            details.length_seconds.parse::<usize>().unwrap(),
-            order,
-        );
-        for sub_item in punge_iter {
-            add_to_main(sub_item)?;
-        }
+        // SPECIAL CASE TODO
+        // let temp_punge_obj = create_punge_obj(
+        //     video.clone(),
+        //     yt_data.clone(),
+        //     String::from("none"),
+        //     jpg.clone(),
+        //     mp3.clone(),
+        //     jpg_file,
+        //     details.video_id.clone(),
+        //     details.length_seconds.parse::<u32>().unwrap(),
+        //     order,
+        // );
+        // let punge_iter = sep_video::separate(
+        //     details.description,
+        //     temp_punge_obj.await.unwrap(),
+        //     mp3.clone(),
+        //     details.length_seconds.parse::<usize>().unwrap(),
+        //     order,
+        // );
+        // for sub_item in punge_iter {
+        //     add_to_main(sub_item)?;
+        // }
         yt_data
     // } else if playlist_title.is_some() {
     } else if details.description.starts_with("Provided") {
@@ -157,19 +244,19 @@ pub async fn download_interface(
             author: author.unwrap().name,
             album,
         };
-        let obj = create_punge_obj(
-            video,
-            youtube_data.clone(),
-            String::from("None"),
-            jpg,
-            mp3,
-            jpg_file,
-            details.video_id,
-            details.length_seconds.parse::<u32>().unwrap(),
-            order,
-        )
-        .await?;
-        add_to_main(obj.clone())?;
+        // let obj = create_punge_obj(
+        //     video,
+        //     youtube_data.clone(),
+        //     String::from("None"),
+        //     jpg,
+        //     mp3,
+        //     jpg_file,
+        //     details.video_id,
+        //     details.length_seconds.parse::<u32>().unwrap(),
+        //     order,
+        // )
+        // .await?;
+        // add_to_main(obj.clone())?;
         youtube_data
     } else {
         // these if elifs cannot find any recognized format. default to this...
@@ -178,19 +265,19 @@ pub async fn download_interface(
             author: details.author.unwrap().name,
             album: String::from("Single"),
         };
-        let obj = create_punge_obj(
-            video,
-            youtube_data.clone(),
-            String::from("None"),
-            jpg,
-            mp3,
-            jpg_file,
-            details.video_id,
-            details.length_seconds.parse::<u32>().unwrap(),
-            order,
-        )
-        .await?;
-        add_to_main(obj.clone())?;
+        // let obj = create_punge_obj(
+        //     video,
+        //     youtube_data.clone(),
+        //     String::from("None"),
+        //     jpg,
+        //     mp3,
+        //     jpg_file,
+        //     details.video_id,
+        //     details.length_seconds.parse::<u32>().unwrap(),
+        //     order,
+        // )
+        // .await?;
+        // add_to_main(obj.clone())?;
         youtube_data
     };
     Ok(youtube_data)
@@ -234,46 +321,33 @@ fn fetch_json() -> (String, String) {
     (mp3, jpg)
 }
 
-async fn create_punge_obj(
-    vid: Video,
-    youtube_data: YouTubeData,
+pub fn create_punge_music_obj(
+    title: String,
+    author: String,
+    album: String,
     features: String,
-    jpg_dir: String,
-    mp3_dir: String,
+    mp3_file: String,
     jpg_file: String,
     vid_id: String,
     vid_length: u32, // pass in this and vid_id to avoid calling .await unnecessarily
     order: usize,    // tells us where in 'main' the object sits
-) -> Result<PungeMusicObject, AppError> {
+) -> PungeMusicObject {
     // downloads the video, thumbnail
     // creates the punge obj for further processing if needed (like one song -> whole album)
-    let author = clean_inputs_for_win_saving(clean_author(youtube_data.author));
-    let title = clean_inputs_for_win_saving(clean_title(youtube_data.title));
-    let album = clean_inputs_for_win_saving(youtube_data.album);
     // i am also choosing to have the naming conventions for the jpg & mp3 files to be different, for a few reasons:
     // 1. if jpg becomes similar to the "author - title" variation, we do not know at the time of the jpg download
     // (only if it is a temp file) what the author - title actually is. so we cannot just move it over
     // 2. if the mp3 becomes like the jpg file (uniqueid.jpg) then debugging the audio (and what has downloaded) is much harder
     // and it also makes moving the files around platforms much easier
-    let naming_conv = format!("{} - {}{}", author, title, vid_id.clone());
-    let mp3_name = format!("{}{}.mp3", mp3_dir, naming_conv);
-    info!("we are downloading to {}", &mp3_name);
-    if std::path::Path::new(&mp3_name).exists() {
-        // should this be checked for eariler? can we???
-        return Err(AppError::DatabaseError(DatabaseErrors::FileExistsError));
-    }
     // keep in mind that this will add to db whether it fails or not. which is intended
     // maybe we should have the id & link passed around a bit more.. properly?
-    let x = init_download(&vid.get_video_url(), &mp3_name, &jpg_file, &vid_id).await;
-    println!("result of download: {:?}", &x);
-    info!("The video has downloaded, it would've failed by now");
-    Ok(PungeMusicObject {
+    let obj = PungeMusicObject {
         title,
         author,
         album,
         features,
         length: vid_length,
-        savelocationmp3: mp3_name,
+        savelocationmp3: mp3_file,
         savelocationjpg: jpg_file,
         datedownloaded: chrono::Local::now().date_naive(),
         lastlistenedto: chrono::Local::now().date_naive(),
@@ -283,7 +357,8 @@ async fn create_punge_obj(
         weight: 0,
         threshold: crate::db::utilities::calc_thres(vid_length as usize) as u16,
         order,
-    })
+    };
+    obj
 }
 
 pub fn clean_inputs_for_win_saving(to_check: String) -> String {
@@ -303,45 +378,53 @@ pub fn init_download<'a>(
     output_path: &'a str,
     jpg_path: &'a str,
     id: &str,
-) -> impl Straw<(), String, String> + use<'a> {
+) -> impl Straw<(), ProgramCommands, AppError> + use<'a> {
     let link = link.to_string();
     let id = id.to_string();
     println!("link: {} {} {} {}", &link, &output_path, &jpg_path, &id);
     sipper(move |mut sender| async move {
-        let temp_path = format!("./{}.webm", id);
-
+        let temp_path = format!("./{}", id); // exports as .opus, so ./<id>.opus
         let mut cmd = Command::new("yt-dlp.exe")
             .args([
+                "-x",
                 &link,
                 "-o",
                 &temp_path,
                 "--write-thumbnail",
                 "--convert-thumbnails",
                 "jpg",
+                "--newline",
+                "--progress",
             ])
             .stdout(Stdio::piped()) // required or stdout is None
             .spawn()
-            .map_err(|e| e.to_string())
+            .map_err(|e| AppError::YoutubeError(e.to_string()))
             .unwrap();
 
         if let Some(stdout) = cmd.stdout.take() {
             let mut line = BufReader::new(stdout).lines();
-            while let Some(line) = line.next_line().await.map_err(|e| e.to_string())? {
-                println!("INFO HERE IN INI!: {:?}", &line);
-                sender.send(line).await;
+            while let Some(line) = line.next_line().await.unwrap() {
+                sender
+                    .send(ProgramCommands::YouTubeDownloadProgress(line))
+                    .await;
             }
         }
 
-        let status = cmd.wait().await.map_err(|e| e.to_string())?;
-        println!("success downloading? {:?}", &status);
+        let status = cmd
+            .wait()
+            .await
+            .map_err(|e| AppError::YoutubeError(e.to_string()))
+            .unwrap();
 
         if status.success() {
             // it ran successfully, now we can convert to mp3
-            sender.send(String::from("Converting to mp3")).await;
+            sender
+                .send(ProgramCommands::YouTubeDownloadProgress("50".to_string())) // meaning we are 50% done cause we've downloaded it!
+                .await;
             let mut ffmpeg_cmd = Command::new("ffmpeg.exe")
                 .args([
                     "-i",
-                    &temp_path,
+                    &format!("{}.opus", &temp_path),
                     "-vn",
                     "-c:a",
                     "libmp3lame",
@@ -351,16 +434,28 @@ pub fn init_download<'a>(
                 ])
                 .stdout(Stdio::piped())
                 .spawn()
-                .map_err(|e| e.to_string())?;
+                .map_err(|e| AppError::FfmpegError(e.to_string()))
+                .unwrap();
             if let Some(stdout) = ffmpeg_cmd.stdout.take() {
                 let mut line = BufReader::new(stdout).lines();
-                while let Some(line) = line.next_line().await.map_err(|e| e.to_string())? {
-                    sender.send(line).await;
+                while let Some(line) = line
+                    .next_line()
+                    .await
+                    .map_err(|e| AppError::FfmpegError(e.to_string()))
+                    .unwrap()
+                {
+                    sender
+                        .send(ProgramCommands::YouTubeDownloadProgress(line))
+                        .await;
                 }
             }
-            Ok(())
+            // copy the jpg path to the correct location
+            match std::fs::copy(format!("./{}.jpg", &id), jpg_path) {
+                Ok(t) => Ok(()),
+                Err(e) => Err(AppError::FileError(e.to_string())),
+            }
         } else {
-            Err(format!("Failure! {status}"))
+            Err(AppError::YoutubeError("Unable to download...".to_string()))
         }
     })
 }
@@ -428,5 +523,35 @@ fn description_timestamp_check(desc: &str) -> bool {
         }
         // well, no repeats of the first found, is likely fine then
         true
+    }
+}
+
+pub async fn insert_obj_and_cleanup(obj: PungeMusicObject) -> Result<(), AppError> {
+    let id = &obj.uniqueid;
+    let jpg_path = format!("./{}.jpg", &id);
+    let opus_path = format!("./{}.opus", &id);
+    let db_add = add_to_main(obj);
+    match db_add {
+        Ok(t) => {
+            // we can remove the files from the root of the directory
+            for path in [jpg_path, opus_path].iter() {
+                let path_try_remove = std::fs::remove_file(path);
+                match path_try_remove {
+                    Ok(t) => {
+                        info!("old file successfully removed: {}", &path)
+                    }
+                    Err(e) => {
+                        warn!("old path unable to be removed: {}", &path)
+                    }
+                }
+            }
+            Ok(())
+        }
+        Err(e) => {
+            warn!("Error adding into main");
+            return Err(AppError::DatabaseError(DatabaseErrors::Other(
+                e.to_string(),
+            )));
+        }
     }
 }
